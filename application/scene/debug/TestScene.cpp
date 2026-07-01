@@ -132,6 +132,12 @@ void TestScene::Initialize()
 							{ handleCubeCollision(info); });
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
+	// 攻撃反射用のコライダー
+	auto sphereCollider = std::make_unique<SphereColliderComponent>(cubeObject_.get());
+	// 一旦衝突判定を無効化しておく（攻撃反射のトリガーが発生したら有効化する）
+	sphereCollider->SetCollisionLayer(CollisionLayer::None);
+	sphereCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
+
 	// こいつに追従カメラを追従させる
 	followCamera_->Start(&cubeObject_->GetPosition(), 30.0f, 0.05f);
 	// マネージャーに登録
@@ -233,8 +239,10 @@ void TestScene::Initialize()
 	bumperCollider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Enemy);
 
 	// 押し戻しと跳ね返りの共通処理
-	auto handleBumperCollision = [](const CollisionInfo& info) {
-		if (!info.otherCollider) return;
+	auto handleBumperCollision = [](const CollisionInfo& info)
+	{
+		if (!info.otherCollider)
+			return;
 
 		auto physics = info.otherCollider->GetOwner()->GetComponent<PhysicsComponent>();
 		if (physics)
@@ -246,14 +254,12 @@ void TestScene::Initialize()
 	};
 
 	// 衝突した瞬間（OnEnter）に跳ね返り速度を与える
-	bumperCollider->SetOnEnter([handleBumperCollision](const CollisionInfo& info) {
-		handleBumperCollision(info);
-	});
+	bumperCollider->SetOnEnter([handleBumperCollision](const CollisionInfo& info)
+							   { handleBumperCollision(info); });
 
 	// 衝突中（OnStay）も押し戻しを継続
-	bumperCollider->SetOnStay([handleBumperCollision](const CollisionInfo& info) {
-		handleBumperCollision(info);
-	});
+	bumperCollider->SetOnStay([handleBumperCollision](const CollisionInfo& info)
+							  { handleBumperCollision(info); });
 
 	bumper_->AddComponent("Collider", std::move(bumperCollider));
 
