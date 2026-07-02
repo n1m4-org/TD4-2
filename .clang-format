@@ -126,7 +126,7 @@ BreakStringLiterals: false
 SeparateDefinitionBlocks: Leave
 
 # ラムダ式のインデント
-LambdaBodyIndentation: Signature
+LambdaBodyIndentation: OuterScope
 
 # bool 演算子の改行位置
 BreakBeforeBinaryOperators: None

@@ -3,12 +3,15 @@
 #include "../common/PhysicsComponent.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "base/Camera.h"
+#include <numbers>
+#include <cmath>
 
 GameObjectComponent::PlayerMoveComponent::PlayerMoveComponent(Camera* camera)
 	: camera_(camera)
 {
 	// メンバ変数をJSONエディタ/シリアライズ用に登録
 	Register("moveSpeed", &moveSpeed_);
+	Register("turnSpeed", &turnSpeed_);
 }
 
 void GameObjectComponent::PlayerMoveComponent::Update(GameObject* owner)
@@ -41,11 +44,35 @@ void GameObjectComponent::PlayerMoveComponent::Update(GameObject* owner)
 
 	// 入力方向をカメラ基準に変換
 	Vector3 transformedDirection = (moveDirection.x * right) + (moveDirection.z * forward);
-	transformedDirection.NormalizeSelf(); // 正規化して方向ベクトルにする
 
-	// 移動速度を適用
-	transformedDirection *= moveSpeed_;
+	// 移動入力がある場合のみ処理
+	float lengthSq = transformedDirection.LengthSquared();
+	if (lengthSq > 0.001f)
+	{
+		transformedDirection.NormalizeSelf(); // 正規化して方向ベクトルにする
 
-	// 物理挙動コンポーネントに速度を設定
-	physics_->SetMovementVelocity(transformedDirection);
+		// 進行方向に基づいて目標の向き（Y軸回転）を計算
+		float targetYaw = std::atan2(transformedDirection.x, transformedDirection.z);
+
+		// 現在の回転を取得して最短で目標の向きに旋回させる
+		float currentYaw = owner->GetRotation().y;
+		float diff = targetYaw - currentYaw;
+
+		// 最短角度補正 (-PI 〜 PI)
+		while (diff < -std::numbers::pi_v<float>) diff += 2.0f * std::numbers::pi_v<float>;
+		while (diff > std::numbers::pi_v<float>) diff -= 2.0f * std::numbers::pi_v<float>;
+
+		// 旋回速度を適用して徐々に向きを変える
+		float nextYaw = currentYaw + diff * turnSpeed_;
+		owner->SetRotation({0.0f, nextYaw, 0.0f});
+
+		// 移動速度を適用
+		transformedDirection *= moveSpeed_;
+		physics_->SetMovementVelocity(transformedDirection);
+	}
+	else
+	{
+		// 入力がない時は移動速度を0にする
+		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+	}
 }

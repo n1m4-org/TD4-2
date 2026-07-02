@@ -2,10 +2,10 @@
 #include "engine/gameobject/component/base/IActionComponent.h"
 #include "jsonEditor/JsonEditableBase.h"
 
-class ICollisionComponent;
-
 namespace GameObjectComponent
 {
+	class ICollisionComponent;
+
 	/// @brief プレイヤーの反射処理を制御するコンポーネント
 	class PlayerReflectComponent : public IActionComponent
 		, public JsonEditableBase
