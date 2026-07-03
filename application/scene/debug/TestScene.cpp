@@ -70,9 +70,6 @@ void TestScene::Initialize()
 	// アクション・物理・ステータスコンポーネントの追加
 	cubeObject_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
 	cubeObject_->AddComponent("Move", std::make_unique<PlayerMoveComponent>(sceneManager_->GetCameraManager()->GetActiveCamera()));
-
-	// targetObject_はこの時点ではまだ作られていないので、nullptrで追加しておく
-	cubeObject_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(nullptr));
 	cubeObject_->AddComponent("Status", std::make_unique<StatusComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Physics", std::make_unique<PhysicsComponent>(cubeObject_.get()));
 
@@ -202,12 +199,6 @@ void TestScene::Initialize()
 	}
 	GameObjectManager::GetInstance()->Register(targetObject_.get());
 
-	// cubeObject_のHormingMoveComponentにターゲットを渡す
-	if (auto horming = cubeObject_->GetComponent<HormingMoveComponent>())
-	{
-		horming->SetTarget(targetObject_.get());
-	}
-
 	// 3. 地面キューブオブジェクトの作成
 	groundObject_ = std::make_unique<GameObject>("GroundCube");
 	groundObject_->SetName("GroundCube");
@@ -330,7 +321,18 @@ void TestScene::Initialize()
 	}
 	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
 
+	// ホーミングテスト用キューブオブジェクトの作成
+	hormingTest_ = std::make_unique<GameObject>("HormingTestCube");
+	hormingTest_->SetName("HormingTestCube");
+	hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	hormingTest_->SetModel("cube");
+	hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
+	hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
 
+	// Hキーで cubeObject_ の位置へスプライン移動する
+	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(cubeObject_.get()));
+
+	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 
 	StartState(SceneState::Playing);
 }
