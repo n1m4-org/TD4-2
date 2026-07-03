@@ -20,7 +20,6 @@ void GameObjectComponent::ChargeMoveComponent::Update(GameObject* owner)
 	// 物理コンポーネントを取得
 	physics_ = owner->GetComponent<PhysicsComponent>().get();
 
-	
 	 switch (state_)
 	{
 	case State::Move:
