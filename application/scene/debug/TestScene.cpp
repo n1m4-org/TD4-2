@@ -6,6 +6,7 @@
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
+#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
@@ -74,6 +75,8 @@ void TestScene::Initialize()
 	cubeObject_->SetPosition({0.0f, 2.0f, 0.0f});
 	cubeObject_->SetScale({2.0f, 2.0f, 2.0f});
 
+	
+
 	// アクション・物理・ステータスコンポーネントの追加
 	cubeObject_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
 	cubeObject_->AddComponent("Move", std::make_unique<PlayerMoveComponent>(sceneManager_->GetCameraManager()->GetActiveCamera()));
@@ -83,14 +86,6 @@ void TestScene::Initialize()
 	cubeObject_->AddComponent("Status", std::make_unique<StatusComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Physics", std::make_unique<PhysicsComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Reflect", std::make_unique<PlayerReflectComponent>());
-
-	// 反射用の球体コライダーを追加
-	auto reflectCollider = std::make_unique<SphereColliderComponent>(cubeObject_.get());
-	reflectCollider->SetAutoUpdatePosition(false); // プレイヤー本体の位置への自動同期をオフにする
-	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
-	reflectCollider->SetCollisionLayer(CollisionLayer::None);
-	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet); // 敵の弾のみを判定対象とする
-	cubeObject_->AddComponent("ReflectCollider", std::move(reflectCollider));
 
 	// AABBコライダーの追加
 	cubeObject_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(cubeObject_.get()));
@@ -294,22 +289,23 @@ void TestScene::Initialize()
 	GameObjectManager::GetInstance()->Register(bumper_.get());
 
 
-	// チャージ敵
-	chargeEnemy_ = std::make_unique<GameObject>("ChargeEnemy");
-	chargeEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-	chargeEnemy_->SetName("ChargeEnemy");
-	chargeEnemy_->SetModel("cube");
-	chargeEnemy_->SetScale({2.0f, 2.0f, 2.0f});
-	chargeEnemy_->SetPosition({-5.0f, 2.0f, -30.0f});
 
-	// アクション・物理・ステータスコンポーネントの追加
-	chargeEnemy_->AddComponent("Move", std::make_unique<ChargeMoveComponent>(cubeObject_.get()));
-	chargeEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(chargeEnemy_.get()));
-	chargeEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(chargeEnemy_.get()));
+	// ボムエネミーオブジェクトの生成
+	bombEnemy_ = std::make_unique<GameObject>("BombEnemy");
+	bombEnemy_->SetName("BombEnemy");
+	bombEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	bombEnemy_->SetModel("cube");
+	bombEnemy_->SetPosition({10.0f, 2.0f, 0.0f});
+	bombEnemy_->SetScale({2.0f, 2.0f, 2.0f});
 
-	// AABBコライダーの追加
-	chargeEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(chargeEnemy_.get()));
-	if (auto collider = chargeEnemy_->GetComponent<AABBColliderComponent>())
+	// ボムエネミー / 動き / 物理 / ステータスコンポーネントの追加
+	bombEnemy_->AddComponent("Move", std::make_unique<BombMoveComponent>(cubeObject_.get()));
+	bombEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
+
+
+	if (auto collider = bombEnemy_->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
 		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers);
@@ -320,16 +316,16 @@ void TestScene::Initialize()
 				return;
 			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
 				return;
-			if (!targetObject_)
+			if (!bombEnemy_)
 				return;
 
 			// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
-			Vector3 pos = chargeEnemy_->GetPosition();
+			Vector3 pos = bombEnemy_->GetPosition();
 			pos += info.normal * info.depth;
-			chargeEnemy_->SetPosition(pos);
+			bombEnemy_->SetPosition(pos);
 
 			// 接地判定と速度リセット
-			auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
+			auto physics = bombEnemy_->GetComponent<PhysicsComponent>();
 			if (!physics)
 				return;
 
@@ -346,12 +342,14 @@ void TestScene::Initialize()
 		};
 
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
-							 { handleTargetCollision(info); });
+		{ handleTargetCollision(info); });
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
-							{ handleTargetCollision(info); });
+		{ handleTargetCollision(info); });
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
-	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
+
+	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
+
 
 
 
