@@ -36,7 +36,7 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 			float yaw = owner->GetRotation().y;
 			Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
 			forward.Normalize();
-			Vector3 targetCenter = owner->GetPosition() + (forward * 3.0f);
+			Vector3 targetCenter = owner->GetPosition() + (forward * 5.0f);
 
 			auto* sphereCollider = static_cast<SphereColliderComponent*>(collider_);
 			Sphere s = sphereCollider->GetSphere();
@@ -62,7 +62,7 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 		Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
 		forward.Normalize();
 
-		Vector3 targetCenter = owner->GetPosition() + (forward * 3.0f);
+		Vector3 targetCenter = owner->GetPosition() + (forward * 5.0f);
 
 		// 球体コライダーの座標とサイズを上書き更新
 		auto* sphereCollider = static_cast<SphereColliderComponent*>(collider_);
