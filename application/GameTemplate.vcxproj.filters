@@ -19,6 +19,24 @@
     <Filter Include="gameobject\component\action">
       <UniqueIdentifier>{2F863FFC-E377-71D8-89DA-01F2AD6F1555}</UniqueIdentifier>
     </Filter>
+    <Filter Include="gameobject\component\action\common">
+      <UniqueIdentifier>{B6C3C653-41B5-759B-5C99-ACB29017302B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gameobject\component\action\enemy">
+      <UniqueIdentifier>{A38D8791-C7B0-32A3-3755-D55401FE7DC1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gameobject\component\action\enemy\bomb">
+      <UniqueIdentifier>{A2F2401F-9D84-893F-E510-2316B2DD05FD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gameobject\component\action\enemy\bullet">
+      <UniqueIdentifier>{0BA58D0B-3688-A68F-5043-58C63BF3159E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gameobject\component\action\enemy\charge">
+      <UniqueIdentifier>{91C1B32B-76A8-4857-5B25-3AE29B566E70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gameobject\component\action\player">
+      <UniqueIdentifier>{40F09B82-DC0F-0CCE-0F15-FA42698939F4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="resources">
       <UniqueIdentifier>{55B558C7-EF82-0E6E-00E5-993B9E55D93B}</UniqueIdentifier>
     </Filter>
@@ -34,10 +52,40 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gameobject\component\action\common\PhysicsComponent.cpp">
-      <Filter>gameobject\component\action</Filter>
+      <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
-      <Filter>gameobject\component\action</Filter>
+      <Filter>gameobject\component\action\common</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp">
+      <Filter>gameobject\component\action\enemy\bomb</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.cpp">
+      <Filter>gameobject\component\action\enemy\bullet</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.cpp">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.cpp">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\charge\ChargeMoveComponent.cpp">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.cpp">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerAttackComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerMoveComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="resources\LoadGameResources.cpp">
@@ -68,10 +116,40 @@
       <Filter>collision</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\PhysicsComponent.h">
-      <Filter>gameobject\component\action</Filter>
+      <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
-      <Filter>gameobject\component\action</Filter>
+      <Filter>gameobject\component\action\common</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\bomb\BombMoveComponent.h">
+      <Filter>gameobject\component\action\enemy\bomb</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.h">
+      <Filter>gameobject\component\action\enemy\bullet</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.h">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.h">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\charge\ChargeMoveComponent.h">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.h">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerAttackComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerMoveComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
     </ClInclude>
     <ClInclude Include="scene\debug\ParticleTestScene.h">
       <Filter>scene\debug</Filter>
