@@ -29,6 +29,7 @@ void MyGame::LoadTextures()
 	TextureManager::GetInstance()->LoadTexture("./Resources/fonts/nico_atlas.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/simplexNoise.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/flameEye.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/komuro.png");
 
 	// ===================
 	// ゲーム固有のリソース
