@@ -38,4 +38,7 @@ private:
 	std::unique_ptr<GameObject> groundObject_;
 	std::unique_ptr<GameObject> targetObject_;
 	std::unique_ptr<GameObject> bumper_;
+
+	std::unique_ptr<GameObject> chargeEnemy_;
+
 };

@@ -4,6 +4,7 @@
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
+#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "base/Logger.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
@@ -268,6 +269,69 @@ void TestScene::Initialize()
 	bumper_->AddComponent("Collider", std::move(bumperCollider));
 
 	GameObjectManager::GetInstance()->Register(bumper_.get());
+
+
+	// チャージ敵
+	chargeEnemy_ = std::make_unique<GameObject>("ChargeEnemy");
+	chargeEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	chargeEnemy_->SetName("ChargeEnemy");
+	chargeEnemy_->SetModel("cube");
+	chargeEnemy_->SetScale({2.0f, 2.0f, 2.0f});
+	chargeEnemy_->SetPosition({-5.0f, 2.0f, -30.0f});
+
+	// アクション・物理・ステータスコンポーネントの追加
+	chargeEnemy_->AddComponent("Move", std::make_unique<ChargeMoveComponent>(cubeObject_.get()));
+	chargeEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(chargeEnemy_.get()));
+	chargeEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(chargeEnemy_.get()));
+
+	// AABBコライダーの追加
+	chargeEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(chargeEnemy_.get()));
+	if (auto collider = chargeEnemy_->GetComponent<AABBColliderComponent>())
+	{
+		collider->SetCollisionLayer(CollisionLayer::Enemy);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+
+		auto handleTargetCollision = [this](const CollisionInfo& info)
+		{
+			if (!info.otherCollider)
+				return;
+			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
+				return;
+			if (!targetObject_)
+				return;
+
+			// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
+			Vector3 pos = chargeEnemy_->GetPosition();
+			pos += info.normal * info.depth;
+			chargeEnemy_->SetPosition(pos);
+
+			// 接地判定と速度リセット
+			auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
+			if (!physics)
+				return;
+
+			if (info.normal.y > 0.0f)
+			{
+				physics->SetGrounded(true);
+				Vector3 vel = physics->GetExternalVelocity();
+				if (vel.y < 0.0f)
+				{
+					vel.y = 0.0f;
+					physics->SetExternalVelocity(vel);
+				}
+			}
+		};
+
+		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
+							 { handleTargetCollision(info); });
+		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
+							{ handleTargetCollision(info); });
+		collider->SetOnExit([](const CollisionInfo& info) {});
+	}
+	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
+
+
+
 	StartState(SceneState::Playing);
 }
 
