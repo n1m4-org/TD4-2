@@ -57,6 +57,7 @@
     <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerAttackComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp" />
+    <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargeMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.cpp" />
@@ -86,6 +87,7 @@
     <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerAttackComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\bomb\BombMoveComponent.h" />
+    <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargeMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.h" />
