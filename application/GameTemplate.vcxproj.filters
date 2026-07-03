@@ -39,6 +39,15 @@
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
       <Filter>gameobject\component\action</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerMoveComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="resources\LoadGameResources.cpp">
       <Filter>resources</Filter>
@@ -71,6 +80,16 @@
       <Filter>gameobject\component\action</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
+      <Filter>gameobject\component\action\common</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerMoveComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
       <Filter>gameobject\component\action</Filter>
     </ClInclude>
     <ClInclude Include="scene\debug\ParticleTestScene.h">

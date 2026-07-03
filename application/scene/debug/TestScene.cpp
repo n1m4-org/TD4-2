@@ -4,14 +4,18 @@
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
+#include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "base/Logger.h"
+#include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
+#include "engine/gameobject/component/collision/SphereColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
 #include "externals/imgui/imgui.h"
+#include "gameobject/component/action/player/PlayerReflectComponent.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
@@ -56,10 +60,13 @@ void TestScene::Initialize()
 
 #ifdef USE_IMGUI
 	DebugUIManager::GetInstance()->RegisterDebugUI(this, "Collision Layer Test", [this]()
-												   { this->DrawImGui(); }, DebugUIArea::Console);
+	{ this->DrawImGui(); }, DebugUIArea::Console);
 #endif
 
-	// 1. テスト用キューブオブジェクトの作成
+	// パーティクルのロード
+	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
+
+		// 1. テスト用キューブオブジェクトの作成
 	cubeObject_ = std::make_unique<GameObject>("TestCube");
 	cubeObject_->SetName("TestCube");
 	cubeObject_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
@@ -75,6 +82,15 @@ void TestScene::Initialize()
 	cubeObject_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(nullptr));
 	cubeObject_->AddComponent("Status", std::make_unique<StatusComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Physics", std::make_unique<PhysicsComponent>(cubeObject_.get()));
+	cubeObject_->AddComponent("Reflect", std::make_unique<PlayerReflectComponent>());
+
+	// 反射用の球体コライダーを追加
+	auto reflectCollider = std::make_unique<SphereColliderComponent>(cubeObject_.get());
+	reflectCollider->SetAutoUpdatePosition(false); // プレイヤー本体の位置への自動同期をオフにする
+	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
+	reflectCollider->SetCollisionLayer(CollisionLayer::None);
+	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet); // 敵の弾のみを判定対象とする
+	cubeObject_->AddComponent("ReflectCollider", std::move(reflectCollider));
 
 	// AABBコライダーの追加
 	cubeObject_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(cubeObject_.get()));
@@ -118,7 +134,7 @@ void TestScene::Initialize()
 		};
 
 		collider->SetOnEnter([this, handleCubeCollision](const CollisionInfo& info)
-							 {
+		{
 			handleCubeCollision(info);
 
 			// 相手がEnemyの場合にHPを減らす
@@ -134,9 +150,12 @@ void TestScene::Initialize()
 				Logger::Log("TestCube Damaged! HP: " + std::to_string(prevHp) + " -> " + std::to_string(status->GetHp()) + "\n");
 			} });
 		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
-							{ handleCubeCollision(info); });
+		{
+			handleCubeCollision(info);
+		});
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
+
 	// こいつに追従カメラを追従させる
 	followCamera_->Start(&cubeObject_->GetPosition(), 30.0f, 0.05f);
 	// マネージャーに登録
@@ -195,9 +214,9 @@ void TestScene::Initialize()
 		};
 
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
-							 { handleTargetCollision(info); });
+		{ handleTargetCollision(info); });
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
-							{ handleTargetCollision(info); });
+		{ handleTargetCollision(info); });
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
 	GameObjectManager::GetInstance()->Register(targetObject_.get());
@@ -244,8 +263,10 @@ void TestScene::Initialize()
 	bumperCollider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Enemy);
 
 	// 押し戻しと跳ね返りの共通処理
-	auto handleBumperCollision = [](const CollisionInfo& info) {
-		if (!info.otherCollider) return;
+	auto handleBumperCollision = [](const CollisionInfo& info)
+	{
+		if (!info.otherCollider)
+			return;
 
 		auto physics = info.otherCollider->GetOwner()->GetComponent<PhysicsComponent>();
 		if (physics)
@@ -257,12 +278,14 @@ void TestScene::Initialize()
 	};
 
 	// 衝突した瞬間（OnEnter）に跳ね返り速度を与える
-	bumperCollider->SetOnEnter([handleBumperCollision](const CollisionInfo& info) {
+	bumperCollider->SetOnEnter([handleBumperCollision](const CollisionInfo& info)
+	{
 		handleBumperCollision(info);
 	});
 
 	// 衝突中（OnStay）も押し戻しを継続
-	bumperCollider->SetOnStay([handleBumperCollision](const CollisionInfo& info) {
+	bumperCollider->SetOnStay([handleBumperCollision](const CollisionInfo& info)
+	{
 		handleBumperCollision(info);
 	});
 
