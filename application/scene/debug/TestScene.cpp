@@ -4,6 +4,7 @@
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
+#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "base/Logger.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
@@ -68,6 +69,9 @@ void TestScene::Initialize()
 	// アクション・物理・ステータスコンポーネントの追加
 	cubeObject_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
 	cubeObject_->AddComponent("Move", std::make_unique<PlayerMoveComponent>(sceneManager_->GetCameraManager()->GetActiveCamera()));
+
+	// targetObject_はこの時点ではまだ作られていないので、nullptrで追加しておく
+	cubeObject_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(nullptr));
 	cubeObject_->AddComponent("Status", std::make_unique<StatusComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Physics", std::make_unique<PhysicsComponent>(cubeObject_.get()));
 
@@ -196,6 +200,12 @@ void TestScene::Initialize()
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
 	GameObjectManager::GetInstance()->Register(targetObject_.get());
+
+	// cubeObject_のHormingMoveComponentにターゲットを渡す
+	if (auto horming = cubeObject_->GetComponent<HormingMoveComponent>())
+	{
+		horming->SetTarget(targetObject_.get());
+	}
 
 	// 3. 地面キューブオブジェクトの作成
 	groundObject_ = std::make_unique<GameObject>("GroundCube");
