@@ -27,5 +27,7 @@ namespace GameObjectComponent
 
 		// 移動速度
 		float moveSpeed_ = 10.0f;
+		// 旋回速度 (Lerp係数 0.0 ~ 1.0)
+		float turnSpeed_ = 0.2f;
 	};
 } // namespace GameObjectComponent

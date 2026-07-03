@@ -31,6 +31,9 @@
     <Filter Include="gameobject\component\action\enemy\charge">
       <UniqueIdentifier>{91C1B32B-76A8-4857-5B25-3AE29B566E70}</UniqueIdentifier>
     </Filter>
+    <Filter Include="gameobject\component\action\enemy\horming">
+      <UniqueIdentifier>{EEC6CC74-8BA8-ECFC-C9A8-C4D398BA9E11}</UniqueIdentifier>
+    </Filter>
     <Filter Include="gameobject\component\action\player">
       <UniqueIdentifier>{40F09B82-DC0F-0CCE-0F15-FA42698939F4}</UniqueIdentifier>
     </Filter>
@@ -57,14 +60,20 @@
     <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\bomb</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.cpp">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.cpp">
       <Filter>gameobject\component\action\enemy\charge</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargeMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\charge</Filter>
     </ClCompile>
-    <ClCompile Include="gameobject\component\action\player\PlayerAttackComponent.cpp">
-      <Filter>gameobject\component\action\player</Filter>
+    <ClCompile Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.cpp">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp">
+      <Filter>gameobject\component\action\enemy\horming</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp">
       <Filter>gameobject\component\action\player</Filter>
@@ -102,14 +111,20 @@
     <ClInclude Include="gameobject\component\action\enemy\bomb\BombMoveComponent.h">
       <Filter>gameobject\component\action\enemy\bomb</Filter>
     </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.h">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.h">
       <Filter>gameobject\component\action\enemy\charge</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargeMoveComponent.h">
       <Filter>gameobject\component\action\enemy\charge</Filter>
     </ClInclude>
-    <ClInclude Include="gameobject\component\action\player\PlayerAttackComponent.h">
-      <Filter>gameobject\component\action\player</Filter>
+    <ClInclude Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.h">
+      <Filter>gameobject\component\action\enemy\charge</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h">
+      <Filter>gameobject\component\action\enemy\horming</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h">
       <Filter>gameobject\component\action\player</Filter>
