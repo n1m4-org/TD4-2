@@ -66,6 +66,7 @@ void TestScene::Initialize()
 
 	// パーティクルのロード
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
+	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 
 		// 1. テスト用キューブオブジェクトの作成
 	cubeObject_ = std::make_unique<GameObject>("TestCube");

@@ -67,6 +67,8 @@ private:
 
 	// 爆発までの残り時間
 	float lifespan_ = ignitionTime_;
+	// 爆発済みかどうかのフラグ
+	bool hasExploded_ = false;
 };
 
 } // namespace GameObjectComponent
