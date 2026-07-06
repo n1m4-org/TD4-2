@@ -2,17 +2,17 @@
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
+#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
+#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
+#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
-#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
-#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
-#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
-#include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
+#include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
 #include "externals/imgui/imgui.h"
@@ -66,15 +66,13 @@ void TestScene::Initialize()
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 
-		// 1. テスト用キューブオブジェクトの作成
+	// 1. テスト用キューブオブジェクトの作成
 	cubeObject_ = std::make_unique<GameObject>("TestCube");
 	cubeObject_->SetName("TestCube");
 	cubeObject_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	cubeObject_->SetModel("cube");
 	cubeObject_->SetPosition({0.0f, 2.0f, 0.0f});
 	cubeObject_->SetScale({2.0f, 2.0f, 2.0f});
-
-	
 
 	// アクション・物理・ステータスコンポーネントの追加
 	cubeObject_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
@@ -295,8 +293,6 @@ void TestScene::Initialize()
 
 	GameObjectManager::GetInstance()->Register(bumper_.get());
 
-
-
 	// ボムエネミーオブジェクトの生成
 	bombEnemy_ = std::make_unique<GameObject>("BombEnemy");
 	bombEnemy_->SetName("BombEnemy");
@@ -357,9 +353,6 @@ void TestScene::Initialize()
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 
-
-
-
 	StartState(SceneState::Playing);
 }
 
@@ -412,7 +405,7 @@ void TestScene::OnUpdatePlaying()
 	// 衝突判定の実行
 	CollisionManager::GetInstance()->CheckCollisions();
 
-    // 非アクティブなGameObjectを安全に回収する
+	// 非アクティブなGameObjectを安全に回収する
 	std::vector<GameObject*> removeList;
 	auto& gameObjects = GameObjectManager::GetInstance()->GetGameObjects();
 	for (GameObject* obj : gameObjects)
@@ -422,12 +415,11 @@ void TestScene::OnUpdatePlaying()
 			removeList.push_back(obj);
 		}
 	}
-	
+
 	for (GameObject* obj : removeList)
 	{
 		GameObjectManager::GetInstance()->Unregister(obj);
 	}
-
 }
 
 void TestScene::Draw3D()
