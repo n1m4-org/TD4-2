@@ -11,18 +11,16 @@
 #include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
+#include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
-#include "engine/gameobject/component/collision/SphereColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
 #include "externals/imgui/imgui.h"
-#include "gameobject/component/action/player/PlayerReflectComponent.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
-#include <numbers>
 
 using namespace GameObjectComponent;
 
@@ -87,6 +85,14 @@ void TestScene::Initialize()
 	cubeObject_->AddComponent("Status", std::make_unique<StatusComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Physics", std::make_unique<PhysicsComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Reflect", std::make_unique<PlayerReflectComponent>());
+
+	// 反射用の球体コライダーを追加
+	auto reflectCollider = std::make_unique<OBBColliderComponent>(cubeObject_.get());
+	reflectCollider->SetAutoUpdatePosition(false); // プレイヤー本体の位置への自動同期をオフにする
+	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
+	reflectCollider->SetCollisionLayer(CollisionLayer::None);
+	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet); // 敵の弾のみを判定対象とする
+	cubeObject_->AddComponent("ReflectCollider", std::move(reflectCollider));
 
 	// AABBコライダーの追加
 	cubeObject_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(cubeObject_.get()));
@@ -153,7 +159,7 @@ void TestScene::Initialize()
 	}
 
 	// こいつに追従カメラを追従させる
-	followCamera_->Start(&cubeObject_->GetPosition(), 30.0f, 0.05f);
+	followCamera_->Start(&cubeObject_->GetPosition(), 50.0f, 0.05f);
 	// マネージャーに登録
 	GameObjectManager::GetInstance()->Register(cubeObject_.get());
 
