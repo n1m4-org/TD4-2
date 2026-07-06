@@ -19,7 +19,7 @@ jobs:
 
       - name: Run UpdateFilters
         shell: pwsh
-        run: python UpdateFilters.py
+        run: py UpdateFilters.py
 
       - name: Commit and push if filters changed
         shell: pwsh
