@@ -5,6 +5,9 @@
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
+#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
+#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
+#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
@@ -61,6 +64,7 @@ void TestScene::Initialize()
 
 	// パーティクルのロード
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
+	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 
 		// 1. テスト用キューブオブジェクトの作成
 	cubeObject_ = std::make_unique<GameObject>("TestCube");
@@ -70,9 +74,14 @@ void TestScene::Initialize()
 	cubeObject_->SetPosition({0.0f, 2.0f, 0.0f});
 	cubeObject_->SetScale({2.0f, 2.0f, 2.0f});
 
+	
+
 	// アクション・物理・ステータスコンポーネントの追加
 	cubeObject_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
 	cubeObject_->AddComponent("Move", std::make_unique<PlayerMoveComponent>(sceneManager_->GetCameraManager()->GetActiveCamera()));
+
+	// targetObject_はこの時点ではまだ作られていないので、nullptrで追加しておく
+	cubeObject_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(nullptr));
 	cubeObject_->AddComponent("Status", std::make_unique<StatusComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Physics", std::make_unique<PhysicsComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Reflect", std::make_unique<PlayerReflectComponent>());
@@ -214,6 +223,12 @@ void TestScene::Initialize()
 	}
 	GameObjectManager::GetInstance()->Register(targetObject_.get());
 
+	// cubeObject_のHormingMoveComponentにターゲットを渡す
+	if (auto horming = cubeObject_->GetComponent<HormingMoveComponent>())
+	{
+		horming->SetTarget(targetObject_.get());
+	}
+
 	// 3. 地面キューブオブジェクトの作成
 	groundObject_ = std::make_unique<GameObject>("GroundCube");
 	groundObject_->SetName("GroundCube");
@@ -279,6 +294,72 @@ void TestScene::Initialize()
 	bumper_->AddComponent("Collider", std::move(bumperCollider));
 
 	GameObjectManager::GetInstance()->Register(bumper_.get());
+
+
+
+	// ボムエネミーオブジェクトの生成
+	bombEnemy_ = std::make_unique<GameObject>("BombEnemy");
+	bombEnemy_->SetName("BombEnemy");
+	bombEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	bombEnemy_->SetModel("cube");
+	bombEnemy_->SetPosition({10.0f, 2.0f, 0.0f});
+	bombEnemy_->SetScale({2.0f, 2.0f, 2.0f});
+
+	// ボムエネミー / 動き / 物理 / ステータスコンポーネントの追加
+	bombEnemy_->AddComponent("Move", std::make_unique<BombMoveComponent>(cubeObject_.get()));
+	bombEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
+
+
+	if (auto collider = bombEnemy_->GetComponent<AABBColliderComponent>())
+	{
+		collider->SetCollisionLayer(CollisionLayer::Enemy);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+
+		auto handleTargetCollision = [this](const CollisionInfo& info)
+		{
+			if (!info.otherCollider)
+				return;
+			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
+				return;
+			if (!bombEnemy_)
+				return;
+
+			// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
+			Vector3 pos = bombEnemy_->GetPosition();
+			pos += info.normal * info.depth;
+			bombEnemy_->SetPosition(pos);
+
+			// 接地判定と速度リセット
+			auto physics = bombEnemy_->GetComponent<PhysicsComponent>();
+			if (!physics)
+				return;
+
+			if (info.normal.y > 0.0f)
+			{
+				physics->SetGrounded(true);
+				Vector3 vel = physics->GetExternalVelocity();
+				if (vel.y < 0.0f)
+				{
+					vel.y = 0.0f;
+					physics->SetExternalVelocity(vel);
+				}
+			}
+		};
+
+		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
+		{ handleTargetCollision(info); });
+		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
+		{ handleTargetCollision(info); });
+		collider->SetOnExit([](const CollisionInfo& info) {});
+	}
+
+	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
+
+
+
+
 	StartState(SceneState::Playing);
 }
 
@@ -330,6 +411,23 @@ void TestScene::OnUpdatePlaying()
 
 	// 衝突判定の実行
 	CollisionManager::GetInstance()->CheckCollisions();
+
+    // 非アクティブなGameObjectを安全に回収する
+	std::vector<GameObject*> removeList;
+	auto& gameObjects = GameObjectManager::GetInstance()->GetGameObjects();
+	for (GameObject* obj : gameObjects)
+	{
+		if (!obj->IsActive() && obj->GetTag() == "Bullet")
+		{
+			removeList.push_back(obj);
+		}
+	}
+	
+	for (GameObject* obj : removeList)
+	{
+		GameObjectManager::GetInstance()->Unregister(obj);
+	}
+
 }
 
 void TestScene::Draw3D()
