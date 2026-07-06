@@ -33,7 +33,7 @@ void GameObjectComponent::PlayerInputComponent::Update(GameObject* owner)
 	}
 
 	// 反射トリガーの判定
-	if (Input::GetInstance()->PushKey(DIK_SPACE))
+	if (Input::GetInstance()->TriggerKey(DIK_SPACE))
 	{
 		isReflectTriggered_ = true;
 	}

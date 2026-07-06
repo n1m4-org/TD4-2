@@ -118,6 +118,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.cpp" />
@@ -125,7 +126,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\common\PhysicsComponent.cpp" />
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp" />
-    <ClCompile Include="gameobject\component\action\player\PlayerAttackComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp" />
@@ -137,6 +137,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.h" />
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.h" />
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.h" />
@@ -145,7 +146,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="collision\CollisionLayer.h" />
     <ClInclude Include="gameobject\component\action\common\PhysicsComponent.h" />
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h" />
-    <ClInclude Include="gameobject\component\action\player\PlayerAttackComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h" />
