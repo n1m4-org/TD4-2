@@ -26,5 +26,11 @@ namespace GameObjectComponent
 
 		// スローモーションの倍率
 		float slowMotionFactor_ = 0.5f;
+
+		// クールタイマー
+		bool isCooldown_ = false;
+
+		// スローモーション後のクールダウン時間
+		float slowMotionCooldown_ = 5.0f;
 	};
 } // namespace GameObjectComponent
