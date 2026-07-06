@@ -4,8 +4,9 @@
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/component/base/ICollisionComponent.h"
-#include "engine/gameobject/component/collision/SphereColliderComponent.h"
+#include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "time/TimeManager.h"
+#include "math/MatrixFunc.h"
 #include <cmath>
 
 void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
@@ -13,7 +14,7 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 	if (!collider_)
 	{
 		// 初回Update時にコライダーコンポーネントのポインタを取得
-		collider_ = owner->GetComponent<SphereColliderComponent>().get();
+		collider_ = owner->GetComponent<OBBColliderComponent>().get();
 	}
 
 	// コライダーコンポーネントが取得できていない場合は処理を中断
@@ -36,16 +37,17 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 			float yaw = owner->GetRotation().y;
 			Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
 			forward.Normalize();
-			Vector3 targetCenter = owner->GetPosition() + (forward * 5.0f);
+			Vector3 targetCenter = owner->GetPosition() + (forward * 4.5f);
 
-			auto* sphereCollider = static_cast<SphereColliderComponent*>(collider_);
-			Sphere s = sphereCollider->GetSphere();
-			s.center = targetCenter;
-			s.radius = 2.0f;
-			sphereCollider->SetSphere(s);
+			auto* obbCollider = static_cast<OBBColliderComponent*>(collider_);
+			OBB obb = obbCollider->GetOBB();
+			obb.center = targetCenter;
+			obb.rotate = MakeRotateMatrix(owner->GetRotation());
+			obb.size = { 5.0f,2.0f,3.0f };
+			obbCollider->SetOBB(obb);
 
 			// 更新されたコライダーの位置を取得してエフェクトを再生する
-			ParticleManager::GetInstance()->Play("reflect", sphereCollider->GetSphere().center);
+			ParticleManager::GetInstance()->Play("reflect", obbCollider->GetOBB().center);
 		}
 	}
 
@@ -62,14 +64,15 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 		Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
 		forward.Normalize();
 
-		Vector3 targetCenter = owner->GetPosition() + (forward * 5.0f);
+		Vector3 targetCenter = owner->GetPosition() + (forward * 4.5f);
 
-		// 球体コライダーの座標とサイズを上書き更新
-		auto* sphereCollider = static_cast<SphereColliderComponent*>(collider_);
-		Sphere s = sphereCollider->GetSphere();
-		s.center = targetCenter;
-		s.radius = 2.0f; // 反射判定の半径
-		sphereCollider->SetSphere(s);
+		// OBBコライダーの座標とサイズを上書き更新
+		auto* obbCollider = static_cast<OBBColliderComponent*>(collider_);
+		OBB obb = obbCollider->GetOBB();
+		obb.center = targetCenter;
+		obb.size = { 5.0f,2.0f,3.0f };
+		obb.rotate = MakeRotateMatrix(owner->GetRotation());
+		obbCollider->SetOBB(obb);
 
 		if (reflectTimer_ <= 0.0f)
 		{
