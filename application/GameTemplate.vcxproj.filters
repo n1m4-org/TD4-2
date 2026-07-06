@@ -28,6 +28,9 @@
     <Filter Include="gameobject\component\action\enemy\bomb">
       <UniqueIdentifier>{A2F2401F-9D84-893F-E510-2316B2DD05FD}</UniqueIdentifier>
     </Filter>
+    <Filter Include="gameobject\component\action\enemy\bullet">
+      <UniqueIdentifier>{0BA58D0B-3688-A68F-5043-58C63BF3159E}</UniqueIdentifier>
+    </Filter>
     <Filter Include="gameobject\component\action\enemy\charge">
       <UniqueIdentifier>{91C1B32B-76A8-4857-5B25-3AE29B566E70}</UniqueIdentifier>
     </Filter>
@@ -60,6 +63,9 @@
     <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\bomb</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.cpp">
+      <Filter>gameobject\component\action\enemy\bullet</Filter>
+    </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.cpp">
       <Filter>gameobject\component\action\enemy\charge</Filter>
     </ClCompile>
@@ -74,6 +80,9 @@
     </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\horming</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerAttackComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp">
       <Filter>gameobject\component\action\player</Filter>
@@ -111,6 +120,9 @@
     <ClInclude Include="gameobject\component\action\enemy\bomb\BombMoveComponent.h">
       <Filter>gameobject\component\action\enemy\bomb</Filter>
     </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.h">
+      <Filter>gameobject\component\action\enemy\bullet</Filter>
+    </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.h">
       <Filter>gameobject\component\action\enemy\charge</Filter>
     </ClInclude>
@@ -125,6 +137,9 @@
     </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h">
       <Filter>gameobject\component\action\enemy\horming</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerAttackComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h">
       <Filter>gameobject\component\action\player</Filter>

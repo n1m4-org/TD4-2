@@ -405,6 +405,23 @@ void TestScene::OnUpdatePlaying()
 
 	// 衝突判定の実行
 	CollisionManager::GetInstance()->CheckCollisions();
+
+    // 非アクティブなGameObjectを安全に回収する
+	std::vector<GameObject*> removeList;
+	auto& gameObjects = GameObjectManager::GetInstance()->GetGameObjects();
+	for (GameObject* obj : gameObjects)
+	{
+		if (!obj->IsActive() && obj->GetTag() == "Bullet")
+		{
+			removeList.push_back(obj);
+		}
+	}
+	
+	for (GameObject* obj : removeList)
+	{
+		GameObjectManager::GetInstance()->Unregister(obj);
+	}
+
 }
 
 void TestScene::Draw3D()
