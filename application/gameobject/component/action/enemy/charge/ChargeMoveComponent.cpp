@@ -240,8 +240,4 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 							{ handleCubeCollision(info); });
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
-
-	// マネージャーに登録
-	GameObjectManager::GetInstance()->Register(bullet_);
-
 }
