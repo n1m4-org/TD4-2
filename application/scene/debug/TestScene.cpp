@@ -72,9 +72,7 @@ void TestScene::Initialize()
 	cubeObject_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	cubeObject_->SetModel("cube");
 	cubeObject_->SetPosition({0.0f, 2.0f, 0.0f});
-	cubeObject_->SetScale({2.0f, 2.0f, 2.0f});
-
-	
+	cubeObject_->SetScale({2.0f, 2.0f, 2.0f});	
 
 	// アクション・物理・ステータスコンポーネントの追加
 	cubeObject_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
@@ -251,7 +249,6 @@ void TestScene::Initialize()
 	}
 	GameObjectManager::GetInstance()->Register(groundObject_.get());
 
-
 	// 障害物：バンパー
 	bumper_ = std::make_unique<GameObject>("Bumper");
 	bumper_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
@@ -294,8 +291,6 @@ void TestScene::Initialize()
 	bumper_->AddComponent("Collider", std::move(bumperCollider));
 
 	GameObjectManager::GetInstance()->Register(bumper_.get());
-
-
 
 	// ボムエネミーオブジェクトの生成
 	bombEnemy_ = std::make_unique<GameObject>("BombEnemy");
@@ -416,7 +411,7 @@ void TestScene::Initialize()
 	}
 	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
 
-
+	// シーンのステートをPlayingに設定
 	StartState(SceneState::Playing);
 }
 
