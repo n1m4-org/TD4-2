@@ -1,13 +1,13 @@
 #include "ChargeMoveComponent.h"
 
-#include "engine/gameobject/base/GameObject.h"
-#include "engine/time/TimeManager.h"
 #include "../../common/PhysicsComponent.h"
-#include "application/gameobject/component/action/common/StatusComponent.h"
-#include "engine/gameobject/manager/GameObjectManager.h"
 #include "application/collision/CollisionLayer.h"
+#include "application/gameobject/component/action/common/StatusComponent.h"
+#include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
+#include "engine/gameobject/manager/GameObjectManager.h"
+#include "engine/time/TimeManager.h"
 
 #include "../bullet/BulletBehaviorComponent.h"
 
@@ -27,12 +27,12 @@ void GameObjectComponent::ChargeMoveComponent::Update(GameObject* owner)
 	// 物理コンポーネントを取得
 	physics_ = owner->GetComponent<PhysicsComponent>().get();
 
-	 switch (state_)
+	switch (state_)
 	{
 	case State::Move:
 		Move(owner);
 		break;
-		
+
 	case State::Charge:
 		Charge(owner);
 		break;
@@ -45,7 +45,6 @@ void GameObjectComponent::ChargeMoveComponent::Update(GameObject* owner)
 		Cooldown(owner);
 		break;
 	}
-
 }
 
 void GameObjectComponent::ChargeMoveComponent::Move(GameObject* owner)
@@ -90,7 +89,6 @@ void GameObjectComponent::ChargeMoveComponent::Move(GameObject* owner)
 
 		state_ = State::Charge;
 	}
-	
 }
 
 void GameObjectComponent::ChargeMoveComponent::Charge(GameObject* owner)
@@ -112,9 +110,8 @@ void GameObjectComponent::ChargeMoveComponent::Charge(GameObject* owner)
 
 		// 確認用回転させる
 		owner->SetRotation(owner->GetRotation() + Vector3{0.0f, 1.0f, 0.0f});
-
 	}
-	//else
+	// else
 	//{
 	//	// プレイヤーとの距離を計算
 	//	Vector3 playerPosition = player_->GetPosition();
@@ -127,8 +124,7 @@ void GameObjectComponent::ChargeMoveComponent::Charge(GameObject* owner)
 	//		isChargeStart_ = true;
 	//		chargeTime_ = 0.0f;
 	//	}
-	//}
-
+	// }
 }
 
 void GameObjectComponent::ChargeMoveComponent::Cooldown(GameObject* owner)
@@ -162,13 +158,11 @@ void GameObjectComponent::ChargeMoveComponent::Fire(GameObject* owner)
 		// 一旦サイズをでかくする
 		owner->SetScale(Vector3{4.0f, 4.0f, 4.0f});
 		state_ = State::Cooldown;
-
 	}
 }
 
 void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owner)
 {
-
 	auto bullet_ = GameObjectManager::GetInstance()->CreateGameObject("Bullet", "Bullet");
 	bullet_->SetName("Bullet");
 	bullet_->SetModel("cube");
@@ -183,8 +177,8 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 	bullet_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bullet_));
 	if (auto collider = bullet_->GetComponent<AABBColliderComponent>())
 	{
-		collider->SetCollisionLayer(CollisionLayer::Player);
-		collider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Stage | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionLayer(CollisionLayer::EnemyBullet);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Bumpers);
 
 		// 衝突時の共通押し戻し・接地処理
 		auto handleCubeCollision = [this, bullet_](const CollisionInfo& info)
@@ -221,23 +215,29 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 		};
 
 		collider->SetOnEnter([this, bullet_, handleCubeCollision](const CollisionInfo& info)
-							 {
+		{
 			handleCubeCollision(info);
 
-			// 相手がEnemyの場合にHPを減らす
-			if (!info.otherCollider) return;
-			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Enemy)) return;
-
-			auto status = bullet_->GetComponent<StatusComponent>();
-			if (!status) return;
-
-			int32_t prevHp = status->GetHp();
-			if (status->ApplyDamage(10))
+			// ダメージを与える
+			// TODO: 反射させたときに判定を取るエンティティが変わるので後で要検討。
+			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::Player)
 			{
-				Logger::Log("Bullet Damaged! HP: " + std::to_string(prevHp) + " -> " + std::to_string(status->GetHp()) + "\n");
-			} });
-		collider->SetOnStay([this,handleCubeCollision](const CollisionInfo& info)
-							{ handleCubeCollision(info); });
+				// プレイヤーにダメージを与える処理
+				auto player = info.otherCollider->GetOwner();
+				if (!player)
+					return;
+				auto status = player->GetComponent<StatusComponent>();
+				if (!status)
+					return;
+				int32_t prevHp = status->GetHp();
+				if (status->ApplyDamage(10))
+				{
+					Logger::Log("Player Damaged! HP: " + std::to_string(prevHp) + " -> " + std::to_string(status->GetHp()) + "\n");
+				}
+			}
+		});
+		collider->SetOnStay([this, handleCubeCollision](const CollisionInfo& info)
+		{ handleCubeCollision(info); });
 		collider->SetOnExit([this](const CollisionInfo& info) {});
 	}
 }

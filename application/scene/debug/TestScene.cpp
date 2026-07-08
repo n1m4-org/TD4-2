@@ -8,6 +8,7 @@
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
+#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
@@ -90,6 +91,17 @@ void TestScene::Initialize()
 	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet); // 敵の弾のみを判定対象とする
+	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
+	{
+		auto behavior = info.other->GetComponent<BulletBehaviorComponent>();
+		if (!behavior)
+		{
+			return;
+		}
+
+		// 弾を移動方向を反転させる
+		behavior->SetVelocity(-behavior->GetVelocity());
+	});
 	cubeObject_->AddComponent("ReflectCollider", std::move(reflectCollider));
 
 	// AABBコライダーの追加
