@@ -169,7 +169,7 @@ void GameObjectComponent::ChargeMoveComponent::Fire(GameObject* owner)
 void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owner)
 {
 
-	bullet_ = GameObjectManager::GetInstance()->CreateGameObject("Bullet", "Bullet");
+	auto bullet_ = GameObjectManager::GetInstance()->CreateGameObject("Bullet", "Bullet");
 	bullet_->SetName("Bullet");
 	bullet_->SetModel("cube");
 	bullet_->SetScale({1.0f, 1.0f, 1.0f});
@@ -187,7 +187,7 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 		collider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Stage | CollisionLayer::Terrain | CollisionLayer::Bumpers);
 
 		// 衝突時の共通押し戻し・接地処理
-		auto handleCubeCollision = [this](const CollisionInfo& info)
+		auto handleCubeCollision = [this, bullet_](const CollisionInfo& info)
 		{
 			if (!info.otherCollider)
 				return;
@@ -220,7 +220,7 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 			}
 		};
 
-		collider->SetOnEnter([this, handleCubeCollision](const CollisionInfo& info)
+		collider->SetOnEnter([this, bullet_, handleCubeCollision](const CollisionInfo& info)
 							 {
 			handleCubeCollision(info);
 
@@ -236,8 +236,8 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 			{
 				Logger::Log("Bullet Damaged! HP: " + std::to_string(prevHp) + " -> " + std::to_string(status->GetHp()) + "\n");
 			} });
-		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
+		collider->SetOnStay([this,handleCubeCollision](const CollisionInfo& info)
 							{ handleCubeCollision(info); });
-		collider->SetOnExit([](const CollisionInfo& info) {});
+		collider->SetOnExit([this](const CollisionInfo& info) {});
 	}
 }
