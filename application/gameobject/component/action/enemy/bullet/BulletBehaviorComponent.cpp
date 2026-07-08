@@ -23,8 +23,7 @@ void BulletBehaviorComponent::Update(GameObject* owner)
 	if (lifetime_ <= 0.0f)
 	{
 		// オブジェクトを非アクティブ化
-		owner->SetActive(false);
+		owner->Destroy();
 
-		
 	}
 }
