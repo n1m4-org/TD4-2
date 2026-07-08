@@ -56,10 +56,7 @@ void GameObjectComponent::ChargeMoveComponent::Move(GameObject* owner)
 	Vector3 playerPosition = player_->GetPosition();
 
 	// プレイヤーへの向きを取得
-	Vector3 directionToPlayer = playerPosition - owner->GetPosition();
-
-	// 正規化
-	directionToPlayer.NormalizeSelf();
+	Vector3 directionToPlayer = Vector3::Normalize(playerPosition - owner->GetPosition());
 
 	// 移動量を計算
 	Vector3 movement = directionToPlayer * moveSpeed_ * deltaTime;
@@ -75,7 +72,6 @@ void GameObjectComponent::ChargeMoveComponent::Move(GameObject* owner)
 	float yaw = atan2f(lookDirection.x, lookDirection.z);
 	// 回転を設定
 	owner->SetRotation(Vector3{0.0f, yaw, 0.0f});
-
 
 	// プレイヤーとの距離を計算
 	Vector3 directionToPlayerForDistance = playerPosition - owner->GetPosition();
@@ -107,24 +103,9 @@ void GameObjectComponent::ChargeMoveComponent::Charge(GameObject* owner)
 
 			state_ = State::Fire;
 		}
-
 		// 確認用回転させる
 		owner->SetRotation(owner->GetRotation() + Vector3{0.0f, 1.0f, 0.0f});
 	}
-	// else
-	//{
-	//	// プレイヤーとの距離を計算
-	//	Vector3 playerPosition = player_->GetPosition();
-	//	Vector3 directionToPlayer = playerPosition - owner->GetPosition();
-	//	// 距離を取得
-	//	float distanceToPlayer = directionToPlayer.Length();
-	//	// プレイヤーとの距離が一定距離以内ならチャージ開始
-	//	if (distanceToPlayer <= chargeStartDistance_)
-	//	{
-	//		isChargeStart_ = true;
-	//		chargeTime_ = 0.0f;
-	//	}
-	// }
 }
 
 void GameObjectComponent::ChargeMoveComponent::Cooldown(GameObject* owner)

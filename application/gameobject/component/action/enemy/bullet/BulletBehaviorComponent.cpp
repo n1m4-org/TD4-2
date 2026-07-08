@@ -24,6 +24,5 @@ void BulletBehaviorComponent::Update(GameObject* owner)
 	{
 		// オブジェクトを非アクティブ化
 		owner->Destroy();
-
 	}
 }
