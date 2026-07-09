@@ -151,11 +151,12 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 	bullet->SetPosition(owner->GetPosition());
 	bullet->SetRotation(owner->GetRotation());
 	// 挙動のコンポーネント
-	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(bulletDirection_, 3.0f));
+	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(4.0f));
 	
 	//　物理コンポーネントの追加
 	auto physics = std::make_unique<PhysicsComponent>(bullet);
 	physics->SetUseGravity(false);
+	physics->SetMovementVelocity(bulletDirection_);
 	bullet->AddComponent("Physics", std::move(physics));
 
 	// AABBコライダーの追加

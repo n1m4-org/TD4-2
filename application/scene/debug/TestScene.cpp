@@ -116,12 +116,28 @@ void TestScene::Initialize()
 			return;
 		}
 
+		auto physics = info.other->GetComponent<PhysicsComponent>();
+		if (!physics)
+		{
+			return;
+		}
+
 		// 弾のレイヤーをプレイヤーにして、敵とかに充てられるようにする。
 		info.otherCollider->SetCollisionLayer(CollisionLayer::PlayerBullet);
-		info.otherCollider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Bumpers | CollisionLayer::PlayerReflect);
+		info.otherCollider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Bumpers);
 
-		// 弾を移動方向を反転させる
-		behavior->SetVelocity(-behavior->GetVelocity());
+		// プレイヤーリフレクトに衝突した場合、反射させる
+		Vector3 reflectDirection = -physics->GetVelocity();
+		reflectDirection.Normalize();
+
+		float normalSpeed = physics->GetMovementVelocity().Length();
+		physics->SetMovementVelocity(reflectDirection * normalSpeed);
+
+		static constexpr float kBurstSpeed = 15.0f;			  // バースト時の追加速度
+		static constexpr float kReflectAirResistance = 0.85f; // 反射後の空気抵抗（バーストの減衰率）
+
+		physics->SetExternalVelocity(reflectDirection * kBurstSpeed);
+		physics->SetExternalAirResistance(kReflectAirResistance);
 	});
 	player_->AddComponent("ReflectCollider", std::move(reflectCollider));
 
