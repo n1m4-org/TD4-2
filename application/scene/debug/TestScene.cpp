@@ -2,17 +2,18 @@
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
+#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
+#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
+#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
-#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
-#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
-#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
+#include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
 #include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
-#include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
+#include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
 #include "externals/imgui/imgui.h"
@@ -31,10 +32,18 @@ void TestScene::Initialize()
 	sceneManager_->GetCameraManager()->GetActiveCamera()->SetRotate({0.1f, 0.0f, 0.0f});
 
 	// ライトの調整
-	DirectionalLight dirLight = sceneManager_->GetLightManager()->GetDirectionalLight();
+	auto lightManager = sceneManager_->GetLightManager();
+	DirectionalLight dirLight = lightManager->GetDirectionalLight();
 	dirLight.direction = kLightDirection;
 	dirLight.intensity = kLightIntensity;
-	sceneManager_->GetLightManager()->SetDirectionalLight(dirLight);
+	lightManager->SetDirectionalLight(dirLight);
+
+	// スポットライトの作成
+	lightManager->AddSpotLight("player_spot_light");
+	// スポットライトの初期設定 (明るさを０にしておく)
+	lightManager->SetSpotLightIntensity("player_spot_light", 0.0f);
+	lightManager->SetSpotLightDirection("player_spot_light", {0.0f, -1.0f, -0.3f});
+	lightManager->SetSpotLightDistance("player_spot_light", 50.0);
 
 	// デフォルトライトマネージャーの設定（Object3d描画用）
 	sceneManager_->GetObject3dCommon()->SetDefaultLightManager(sceneManager_->GetLightManager());
@@ -66,7 +75,7 @@ void TestScene::Initialize()
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 
-		// 1. テスト用キューブオブジェクトの作成
+	// 1. テスト用キューブオブジェクトの作成
 	cubeObject_ = std::make_unique<GameObject>("TestCube");
 	cubeObject_->SetName("TestCube");
 	cubeObject_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
@@ -74,15 +83,13 @@ void TestScene::Initialize()
 	cubeObject_->SetPosition({0.0f, 2.0f, 0.0f});
 	cubeObject_->SetScale({2.0f, 2.0f, 2.0f});
 
-	
-
 	// アクション・物理・ステータスコンポーネントの追加
 	cubeObject_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
 	cubeObject_->AddComponent("Move", std::make_unique<PlayerMoveComponent>(sceneManager_->GetCameraManager()->GetActiveCamera()));
 	cubeObject_->AddComponent("Status", std::make_unique<StatusComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Physics", std::make_unique<PhysicsComponent>(cubeObject_.get()));
 	cubeObject_->AddComponent("Reflect", std::make_unique<PlayerReflectComponent>());
-
+	cubeObject_->AddComponent("SlowMotion", std::make_unique<PlayerSlowMotionComponent>(sceneManager_->GetLightManager()));
 	// 反射用の球体コライダーを追加
 	auto reflectCollider = std::make_unique<OBBColliderComponent>(cubeObject_.get());
 	reflectCollider->SetAutoUpdatePosition(false); // プレイヤー本体の位置への自動同期をオフにする
@@ -286,8 +293,6 @@ void TestScene::Initialize()
 
 	GameObjectManager::GetInstance()->Register(bumper_.get());
 
-
-
 	// ボムエネミーオブジェクトの生成
 	bombEnemy_ = std::make_unique<GameObject>("BombEnemy");
 	bombEnemy_->SetName("BombEnemy");
@@ -348,6 +353,56 @@ void TestScene::Initialize()
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 
+	// チャージ敵
+	chargeEnemy_ = std::make_unique<GameObject>("ChargeEnemy");
+	chargeEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	chargeEnemy_->SetName("ChargeEnemy");
+	chargeEnemy_->SetModel("cube");
+	chargeEnemy_->SetScale({2.0f, 2.0f, 2.0f});
+	chargeEnemy_->SetPosition({-5.0f, 2.0f, -30.0f});
+
+	// アクション・物理・ステータスコンポーネントの追加
+	chargeEnemy_->AddComponent("Move", std::make_unique<ChargeMoveComponent>(cubeObject_.get()));
+	chargeEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(chargeEnemy_.get()));
+	chargeEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(chargeEnemy_.get()));
+
+	// AABBコライダーの追加
+	chargeEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(chargeEnemy_.get()));
+	if (auto collider = chargeEnemy_->GetComponent<AABBColliderComponent>())
+	{
+		collider->SetCollisionLayer(CollisionLayer::Enemy);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+
+		auto handleTargetCollision = [this](const CollisionInfo& info)
+		{
+			if (!info.otherCollider)
+				return;
+			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
+				return;
+			if (!targetObject_)
+				return;
+
+			// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
+			Vector3 pos = chargeEnemy_->GetPosition();
+			pos += info.normal * info.depth;
+			chargeEnemy_->SetPosition(pos);
+
+			// 接地判定と速度リセット
+			auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
+			if (!physics)
+				return;
+
+			if (info.normal.y > 0.0f)
+			{
+				physics->SetGrounded(true);
+				Vector3 vel = physics->GetExternalVelocity();
+				if (vel.y < 0.0f)
+				{
+					vel.y = 0.0f;
+					physics->SetExternalVelocity(vel);
+				}
+			}
+		};
 
 	// ホーミングテスト用キューブオブジェクトの作成
 	hormingTest_ = std::make_unique<GameObject>("HormingTestCube");
@@ -359,6 +414,13 @@ void TestScene::Initialize()
 
 	// Hキーで cubeObject_ の位置へスプライン移動する
 	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(cubeObject_.get()));
+		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
+		{ handleTargetCollision(info); });
+		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
+		{ handleTargetCollision(info); });
+		collider->SetOnExit([](const CollisionInfo& info) {});
+	}
+	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 
@@ -413,22 +475,6 @@ void TestScene::OnUpdatePlaying()
 
 	// 衝突判定の実行
 	CollisionManager::GetInstance()->CheckCollisions();
-
-    // 非アクティブなGameObjectを安全に回収する
-	std::vector<GameObject*> removeList;
-	auto& gameObjects = GameObjectManager::GetInstance()->GetGameObjects();
-	for (GameObject* obj : gameObjects)
-	{
-		if (!obj->IsActive() && obj->GetTag() == "Bullet")
-		{
-			removeList.push_back(obj);
-		}
-	}
-	
-	for (GameObject* obj : removeList)
-	{
-		GameObjectManager::GetInstance()->Unregister(obj);
-	}
 
 }
 

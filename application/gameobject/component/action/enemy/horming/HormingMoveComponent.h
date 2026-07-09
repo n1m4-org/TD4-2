@@ -59,7 +59,7 @@ private:
 
 	// ターゲット位置への追従率
 	// 大きいほどプレイヤーの移動に強く追従する
-	float targetFollowRate_ = 0.15	f;
+	float targetFollowRate_ = 0.15f;
 
 	bool isMoving_ = false;
 };
