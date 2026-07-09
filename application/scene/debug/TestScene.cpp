@@ -105,11 +105,20 @@ void TestScene::Initialize()
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet); // 敵の弾のみを判定対象とする
 	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
 	{
+		if (!info.other)
+		{
+			return;
+		}
+
 		auto behavior = info.other->GetComponent<BulletBehaviorComponent>();
 		if (!behavior)
 		{
 			return;
 		}
+
+		// 弾のレイヤーをプレイヤーにして、敵とかに充てられるようにする。
+		info.otherCollider->SetCollisionLayer(CollisionLayer::PlayerBullet);
+		info.otherCollider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Bumpers | CollisionLayer::PlayerReflect);
 
 		// 弾を移動方向を反転させる
 		behavior->SetVelocity(-behavior->GetVelocity());
@@ -121,7 +130,7 @@ void TestScene::Initialize()
 	if (auto collider = player_->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::Player);
-		collider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Stage | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Stage | CollisionLayer::Terrain | CollisionLayer::Bumpers | CollisionLayer::EnemyBullet);
 
 		// 衝突時の共通押し戻し・接地処理
 		auto handleCubeCollision = [this](const CollisionInfo& info)
@@ -159,22 +168,28 @@ void TestScene::Initialize()
 
 		collider->SetOnEnter([this, handleCubeCollision](const CollisionInfo& info)
 		{
+			// 押し戻し
 			handleCubeCollision(info);
 
-			// 相手がEnemyの場合にHPを減らす
-			if (!info.otherCollider) return;
-			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Enemy)) return;
-
-			auto status = player_->GetComponent<StatusComponent>();
-			if (!status) return;
-
-			int32_t prevHp = status->GetHp();
-			if (status->ApplyDamage(10))
+			if (!info.otherCollider)
 			{
-				Logger::Log("TestCube Damaged! HP: " + std::to_string(prevHp) + " -> " + std::to_string(status->GetHp()) + "\n");
-			} });
+				return;
+			}
+
+			// 弾が当たったらHPを減らす
+			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::EnemyBullet)
+			{
+				auto status = player_->GetComponent<StatusComponent>();
+				if (status)
+				{
+					status->SetHp(status->GetHp());
+				}
+			}
+
+		});
 		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
 		{
+			// 押し戻し
 			handleCubeCollision(info);
 		});
 		collider->SetOnExit([](const CollisionInfo& info) {});
@@ -394,7 +409,7 @@ void TestScene::Initialize()
 	if (auto collider = chargeEnemy_->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
-		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(CollisionLayer::PlayerBullet | CollisionLayer::Terrain | CollisionLayer::Bumpers);
 
 		auto handleTargetCollision = [this](const CollisionInfo& info)
 		{

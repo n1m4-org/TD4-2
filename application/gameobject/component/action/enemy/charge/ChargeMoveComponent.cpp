@@ -144,81 +144,44 @@ void GameObjectComponent::ChargeMoveComponent::Fire(GameObject* owner)
 
 void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owner)
 {
-	auto bullet_ = GameObjectManager::GetInstance()->CreateGameObject("Bullet", "Bullet");
-	bullet_->SetName("Bullet");
-	bullet_->SetModel("cube");
-	bullet_->SetScale({1.0f, 1.0f, 1.0f});
-	bullet_->SetPosition(owner->GetPosition());
-	bullet_->SetRotation(owner->GetRotation());
-
-	bullet_->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(bulletDirection_, 3.0f));
-	bullet_->AddComponent("Status", std::make_unique<StatusComponent>(bullet_));
+	auto bullet = GameObjectManager::GetInstance()->CreateGameObject("Bullet", "Bullet");
+	bullet->SetName("Bullet");
+	bullet->SetModel("cube");
+	bullet->SetScale({1.0f, 1.0f, 1.0f});
+	bullet->SetPosition(owner->GetPosition());
+	bullet->SetRotation(owner->GetRotation());
+	// 挙動のコンポーネント
+	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(bulletDirection_, 3.0f));
+	
+	//　物理コンポーネントの追加
+	auto physics = std::make_unique<PhysicsComponent>(bullet);
+	physics->SetUseGravity(false);
+	bullet->AddComponent("Physics", std::move(physics));
 
 	// AABBコライダーの追加
-	bullet_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bullet_));
-	if (auto collider = bullet_->GetComponent<AABBColliderComponent>())
+	bullet->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bullet));
+	if (auto collider = bullet->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::EnemyBullet);
-		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Bumpers | CollisionLayer::PlayerReflect);
 
-		// 衝突時の共通押し戻し・接地処理
-		auto handleCubeCollision = [this, bullet_](const CollisionInfo& info)
+		collider->SetOnEnter([this, bullet](const CollisionInfo& info)
 		{
+			// マスクのレイヤーに衝突した場合、弾を破壊する
 			if (!info.otherCollider)
-				return;
-			// Terrain, Stage, Bumpers のいずれかであれば押し戻す
-			uint32_t targetLayers = CollisionLayer::Terrain | CollisionLayer::Stage | CollisionLayer::Bumpers;
-			if (!(info.otherCollider->GetCollisionLayer() & targetLayers))
-				return;
-			if (!bullet_)
-				return;
-
-			// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
-			Vector3 pos = bullet_->GetPosition();
-			pos += info.normal * info.depth;
-			bullet_->SetPosition(pos);
-
-			// 接地判定と速度リセット
-			auto physics = bullet_->GetComponent<PhysicsComponent>();
-			if (!physics)
-				return;
-
-			if (info.normal.y > 0.0f)
 			{
-				physics->SetGrounded(true);
-				Vector3 vel = physics->GetExternalVelocity();
-				if (vel.y < 0.0f)
-				{
-					vel.y = 0.0f;
-					physics->SetExternalVelocity(vel);
-				}
+				return;
 			}
-		};
 
-		collider->SetOnEnter([this, bullet_, handleCubeCollision](const CollisionInfo& info)
-		{
-			handleCubeCollision(info);
-
-			// ダメージを与える
-			// TODO: 反射させたときに判定を取るエンティティが変わるので後で要検討。
-			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::Player)
+			// プレイヤー、敵、バンパーに衝突した場合、弾を破壊する
+			if (info.otherCollider->GetCollisionLayer() == CollisionLayer::Player ||
+				info.otherCollider->GetCollisionLayer() == CollisionLayer::Enemy ||
+				info.otherCollider->GetCollisionLayer() == CollisionLayer::Bumpers)
 			{
-				// プレイヤーにダメージを与える処理
-				auto player = info.otherCollider->GetOwner();
-				if (!player)
-					return;
-				auto status = player->GetComponent<StatusComponent>();
-				if (!status)
-					return;
-				int32_t prevHp = status->GetHp();
-				if (status->ApplyDamage(10))
-				{
-					Logger::Log("Player Damaged! HP: " + std::to_string(prevHp) + " -> " + std::to_string(status->GetHp()) + "\n");
-				}
+				bullet->Destroy();
 			}
 		});
-		collider->SetOnStay([this, handleCubeCollision](const CollisionInfo& info)
-		{ handleCubeCollision(info); });
+		collider->SetOnStay([this](const CollisionInfo& info) {});
 		collider->SetOnExit([this](const CollisionInfo& info) {});
 	}
 }
