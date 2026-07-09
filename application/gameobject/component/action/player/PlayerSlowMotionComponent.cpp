@@ -79,11 +79,29 @@ void GameObjectComponent::PlayerSlowMotionComponent::Update(GameObject* owner)
 				float scale = EasingToEnd(slowMotionFactor_, 1.0f, EaseInSine<float>, fadeBackTimerPtr->GetProgress());
 				TimeManager::GetInstance().SetGameTimeScale(scale);
 
+				//// ライトの設定を徐々に戻す
+				//DirectionalLight dirLight = lightManager_->GetDirectionalLight();
+				//dirLight.intensity = EasingToEnd(0.0f, 0.6f, EaseInSine<float>, fadeBackTimerPtr->GetProgress());
+				//dirLight.ambient = EasingToEnd(VectorColorCodes::Black, VectorColorCodes::White, EaseInSine, fadeBackTimerPtr->GetProgress());
+				//lightManager_->SetDirectionalLight(dirLight);
+
+				// ----------------------------------------------------------------------------------------------------------------------------------- //
+
 				// ライトの設定を徐々に戻す
 				DirectionalLight dirLight = lightManager_->GetDirectionalLight();
-				dirLight.intensity = EasingToEnd(0.0f, 0.6f, EaseInSine<float>, fadeBackTimerPtr->GetProgress());
-				dirLight.ambient = EasingToEnd(VectorColorCodes::Black, VectorColorCodes::White, EaseInSine, fadeBackTimerPtr->GetProgress());
+
+				float progress = fadeBackTimerPtr->GetProgress();
+				float easedProgress = EaseInSine<float>(progress);
+
+				dirLight.intensity = EasingToEnd(0.0f, 0.6f, EaseInSine<float>, progress);
+
+				// ambient は Vector 系なので、EasingToEnd ではなく手動で補間する
+				dirLight.ambient = VectorColorCodes::Black +
+								   (VectorColorCodes::White - VectorColorCodes::Black) * easedProgress;
+
 				lightManager_->SetDirectionalLight(dirLight);
+
+				// ----------------------------------------------------------------------------------------------------------------------------------- //
 
 				// スポットライト設定を戻す
 				float spotLightIntensity = EasingToEnd(4.0f, 0.0f, EaseInSine<float>, fadeBackTimerPtr->GetProgress());

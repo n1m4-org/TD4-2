@@ -3,65 +3,102 @@
 #include "jsonEditor/JsonEditableBase.h"
 #include "math/Vector3.h"
 
+#include <vector>
+
 class GameObject;
 
 namespace GameObjectComponent
 {
 
-class HormingMoveComponent : public IActionComponent
-	, public JsonEditableBase
-{
-public:
-	HormingMoveComponent(GameObject* target = nullptr);
+	class HormingMoveComponent : public IActionComponent, public JsonEditableBase
+	{
 
-	void Update(GameObject* owner) override;
+	public:
 
-	void SetTarget(GameObject* target) { target_ = target; }
+		// コンストラクタ
+		HormingMoveComponent(GameObject* target = nullptr);
 
-private:
-	void StartMove(GameObject* owner);
-	void UpdateMove(GameObject* owner);
-	void StopMove(GameObject* owner);
+		// 更新処理
+		void Update(GameObject* owner) override;
 
-	// 3次ベジェ曲線の計算
-	Vector3 CubicBezier(
-		const Vector3& p0,
-		const Vector3& p1,
-		const Vector3& p2,
-		const Vector3& p3,
-		float t);
+		// ホーミング対象を設定する
+		void SetTarget(GameObject* target) { target_ = target; }
 
-	float EaseInOut(float t);
+	private:
 
-private:
-	// 追尾対象
-	GameObject* target_ = nullptr;
+		// ホーミング弾の情報
+		struct HomingBullet
+		{
+			GameObject* object = nullptr;
 
-	// スプライン用の制御点
-	Vector3 startPos_ = {0.0f, 0.0f, 0.0f};
-	Vector3 controlPos1_ = {0.0f, 0.0f, 0.0f};
-	Vector3 controlPos2_ = {0.0f, 0.0f, 0.0f};
-	Vector3 endPos_ = {0.0f, 0.0f, 0.0f};
+			Vector3 startPos = {};    // ベジェ曲線の開始位置
+			Vector3 controlPos1 = {}; // ベジェ曲線の制御点1
+			Vector3 controlPos2 = {}; // ベジェ曲線の制御点2
+			Vector3 endPos = {};      // ベジェ曲線の終点
+			Vector3 sideDir = {};     // 進行方向に対して横方向のベクトル
 
-	// 移動時間
-	float moveDuration_ = 3.0f;
-	float moveTimer_ = 0.0f;
+			// 弾が生成されてからの経過時間
+			float timer = 0.0f;
+			// 弾の生存時間
+			float lifeTime = 3.0f;
+			// 削除済みかどうか
+			bool isDead = false;
+		};
 
-	// 曲線の膨らみ
-	float sideOffset_ = 10.0f;
-	float heightOffset_ = 15.0f;
+	private:
 
-	// 移動中に横へ流す追加オフセット
-	float slideOffset_ = 10.0f;
+		// ホーミング弾を発射
+		void FireBullet(GameObject* owner);
 
-	// 横方向を保持
-	Vector3 sideDir_ = {0.0f, 0.0f, 0.0f};
+		// 生成済みのホーミング弾の更新
+		void UpdateBullets();
 
-	// ターゲット位置への追従率
-	// 大きいほどプレイヤーの移動に強く追従する
-	float targetFollowRate_ = 0.15f;
+		// 弾のベジェ曲線用の初期情報を作成する
+		void InitializeBulletCurve(HomingBullet& bullet);
 
-	bool isMoving_ = false;
-};
+		// 3次ベジェ曲線上の座標を計算
+		Vector3 CubicBezier(
+			const Vector3& p0,
+			const Vector3& p1,
+			const Vector3& p2,
+			const Vector3& p3,
+			float t);
 
+		float EaseInOut(float t);
+
+	private:
+
+		// ホーミング対象
+		GameObject* target_ = nullptr;
+
+		// ホーミング弾のリスト
+		std::vector<HomingBullet> bullets_;
+
+		// 弾の寿命
+		float bulletLifeTime_ = 3.0f;
+
+		// 弾のスケール
+		float bulletScale_ = 0.6f;
+
+		// ベジェ曲線の横方向の膨らみ
+		float sideOffset_ = 10.0f;
+
+		// ベジェ曲線の高さ方向の膨らみ
+		float heightOffset_ = 15.0f;
+
+		// 移動中にさらに横へ流す追加オフセット
+		float slideOffset_ = 10.0f;
+
+		// ターゲット位置への追従率
+		float targetFollowRate_ = 0.15f;
+
+		// 弾の発射間隔
+		float cooldownTime_ = 1.0f;
+
+		// クールタイムの経過時間
+		float cooldownTimer_ = 0.0f;
+
+		// クールタイム中かどうか
+		bool isCooldown_ = false;
+	};
 } // namespace GameObjectComponent

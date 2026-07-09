@@ -1,53 +1,110 @@
 #include "HormingMoveComponent.h"
 
 #include "engine/gameobject/base/GameObject.h"
+#include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
+
+#include <string>
 
 using namespace GameObjectComponent;
 
 HormingMoveComponent::HormingMoveComponent(GameObject* target)
 	: target_(target)
 {
-	Register("moveDuration", &moveDuration_);
+	Register("bulletLifeTime", &bulletLifeTime_);
+	Register("bulletScale", &bulletScale_);
 	Register("sideOffset", &sideOffset_);
 	Register("heightOffset", &heightOffset_);
 	Register("slideOffset", &slideOffset_);
 	Register("targetFollowRate", &targetFollowRate_);
+	Register("cooldownTime", &cooldownTime_);
 }
 
 void HormingMoveComponent::Update(GameObject* owner)
 {
-	if (!owner)
+	// 発射元、または追尾対象がない場合は処理しない
+	if (!owner || !target_)
 	{
 		return;
 	}
 
-	// Hキーを押した瞬間にスプライン移動開始
-	if (Input::GetInstance()->TriggerKey(DIK_H))
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	UpdateBullets();
+
+	// 発射クールタイムの更新
+	if (isCooldown_)
 	{
-		StartMove(owner);
+		cooldownTimer_ += deltaTime;
+		if (cooldownTimer_ >= cooldownTime_)
+		{
+			cooldownTimer_ = 0.0f;
+			isCooldown_ = false;
+		}
 	}
 
-	if (isMoving_)
+	// Hキーを押した瞬間にホーミング弾を発射
+	if (Input::GetInstance()->TriggerKey(DIK_H) && !isCooldown_)
 	{
-		UpdateMove(owner);
+		FireBullet(owner);
+		isCooldown_ = true;
 	}
 }
 
-void HormingMoveComponent::StartMove(GameObject* owner)
+void HormingMoveComponent::FireBullet(GameObject* owner)
 {
 	if (!owner || !target_)
 	{
 		return;
 	}
 
-	startPos_ = owner->GetPosition();
-	endPos_ = target_->GetPosition();
+	static uint32_t bulletCount = 0;
+	std::string bulletName = "HomingBullet_" + std::to_string(bulletCount++);
 
-	Vector3 toTarget = endPos_ - startPos_;
+	GameObject* bulletObject = GameObjectManager::GetInstance()->CreateGameObject(bulletName, "Bullet");
 
-	// XZ平面上の進行方向を作る
+	if (!bulletObject)
+	{
+		return;
+	}
+
+	bulletObject->SetName(bulletName);
+	bulletObject->SetModel("cube");
+	bulletObject->SetScale({bulletScale_, bulletScale_, bulletScale_});
+
+	Vector3 spawnPos = owner->GetPosition();
+	spawnPos.y += 1.0f;
+	bulletObject->SetPosition(spawnPos);
+
+	HomingBullet bullet;
+	bullet.object = bulletObject;
+	bullet.lifeTime = bulletLifeTime_;
+	bullet.timer = 0.0f;
+	bullet.isDead = false;
+
+	// ベジェ曲線用の開始点・終点・制御点を作成
+	InitializeBulletCurve(bullet);
+
+	GameObjectManager::GetInstance()->Register(bulletObject);
+
+	bullets_.push_back(bullet);
+}
+
+void HormingMoveComponent::InitializeBulletCurve(HomingBullet& bullet)
+{
+	if (!bullet.object || !target_)
+	{
+		return;
+	}
+
+	// ベジェ曲線の開始点と終点を決める
+	bullet.startPos = bullet.object->GetPosition();
+	bullet.endPos = target_->GetPosition();
+
+	// 開始点からターゲットへの方向
+	Vector3 toTarget = bullet.endPos - bullet.startPos;
+
 	Vector3 flatDir = {toTarget.x, 0.0f, toTarget.z};
 
 	float lengthSq =
@@ -64,98 +121,80 @@ void HormingMoveComponent::StartMove(GameObject* owner)
 		flatDir.NormalizeSelf();
 	}
 
-	// 進行方向に対して横方向のベクトル
-	sideDir_ = {-flatDir.z, 0.0f, flatDir.x};
+	bullet.sideDir = {-flatDir.z, 0.0f, flatDir.x};
 
-	// 3次ベジェの制御点
-	// 元のカーブ処理を維持
-	controlPos1_ = startPos_ + toTarget * 0.25f + sideDir_ * sideOffset_;
-	controlPos1_.y += heightOffset_;
+	// ベジェ曲線の制御点1
+	// 序盤の曲がり方を決める
+	bullet.controlPos1 = bullet.startPos + toTarget * 0.25f + bullet.sideDir * sideOffset_;
+	bullet.controlPos1.y += heightOffset_;
 
-	controlPos2_ = startPos_ + toTarget * 0.75f - sideDir_ * sideOffset_;
-	controlPos2_.y += heightOffset_ * 0.5f;
-
-	moveTimer_ = 0.0f;
-	isMoving_ = true;
+	// ベジェ曲線の制御点2
+	// 終盤の曲がり方を決める
+	bullet.controlPos2 = bullet.startPos + toTarget * 0.75f - bullet.sideDir * sideOffset_;
+	bullet.controlPos2.y += heightOffset_ * 0.5f;
 }
 
-void HormingMoveComponent::UpdateMove(GameObject* owner)
+void HormingMoveComponent::UpdateBullets()
 {
-	if (!owner || !target_)
+	if (!target_)
 	{
 		return;
 	}
 
-	float dt = TimeManager::GetInstance().GetGameContext().deltaTime;
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
 
-	if (moveDuration_ <= 0.001f)
+	for (HomingBullet& bullet : bullets_)
 	{
-		StopMove(owner);
-		return;
-	}
+		if (!bullet.object || bullet.isDead)
+		{
+			continue;
+		}
 
-	moveTimer_ += dt;
+		bullet.timer += deltaTime;
 
-	float t = moveTimer_ / moveDuration_;
+		float t = bullet.timer / bullet.lifeTime;
 
-	if (t >= 1.0f)
-	{
-		StopMove(owner);
-		return;
-	}
+		// 寿命が切れたら削除
+		if (t >= 1.0f)
+		{
+			bullet.isDead = true;
+			bullet.object->Destroy();
+			bullet.object = nullptr;
+			continue;
+		}
 
-	// プレイヤーが動いた場合、終点を少しずつ現在のプレイヤー位置へ寄せる
-	// ここで急に endPos_ = target_->GetPosition(); にするとガクつきやすいので補間する
-	Vector3 targetPos = target_->GetPosition();
+		// 現在のターゲット位置を取得
+		Vector3 targetPos = target_->GetPosition();
 
-	endPos_ = endPos_ + (targetPos - endPos_) * targetFollowRate_;
+		// 終点をターゲットの現在位置へ少しずつ寄せる
+		bullet.endPos = bullet.endPos + (targetPos - bullet.endPos) * targetFollowRate_;
 
-	// 終点が変わった分、後半の制御点も少し追従させる
-	// 前半の controlPos1_ はあまり動かさないことで、最初のカーブ感を残す
-	Vector3 toCurrentEnd = endPos_ - startPos_;
+		Vector3 toCurrentEnd = bullet.endPos - bullet.startPos;
 
-	Vector3 targetControlPos2 = startPos_ + toCurrentEnd * 0.75f - sideDir_ * sideOffset_;
-	targetControlPos2.y += heightOffset_ * 0.5f;
+		Vector3 targetControlPos2 =
+			bullet.startPos + toCurrentEnd * 0.75f - bullet.sideDir * sideOffset_;
 
-	controlPos2_ = controlPos2_ + (targetControlPos2 - controlPos2_) * targetFollowRate_;
+		targetControlPos2.y += heightOffset_ * 0.5f;
 
-	// 元の動きと同じく、全体を3秒かけてカーブ移動
-	float easedT = EaseInOut(t);
+		bullet.controlPos2 =
+			bullet.controlPos2 + (targetControlPos2 - bullet.controlPos2) * targetFollowRate_;
 
-	Vector3 pos = CubicBezier(
-		startPos_,
-		controlPos1_,
-		controlPos2_,
-		endPos_,
-		easedT);
+		float easedT = EaseInOut(t);
 
-	// 横方向への追加スライド
-	// t=0 と t=1 では0、途中で最大になる
-	float slideRate = 1.0f - ((easedT * 2.0f - 1.0f) * (easedT * 2.0f - 1.0f));
+		// ベジェ曲線上の位置を計算
+		Vector3 pos = CubicBezier(
+			bullet.startPos,
+			bullet.controlPos1,
+			bullet.controlPos2,
+			bullet.endPos,
+			easedT);
 
-	pos += sideDir_ * slideOffset_ * slideRate;
+		float slideRate =
+			1.0f - ((easedT * 2.0f - 1.0f) * (easedT * 2.0f - 1.0f));
 
-	owner->SetPosition(pos);
-}
+		pos += bullet.sideDir * slideOffset_ * slideRate;
 
-void HormingMoveComponent::StopMove(GameObject* owner)
-{
-	if (!owner)
-	{
-		return;
-	}
-
-	isMoving_ = false;
-	moveTimer_ = 0.0f;
-
-	// 最後は、その時点のターゲット位置に着地する
-	if (target_)
-	{
-		owner->SetPosition(target_->GetPosition());
-	}
-	else
-	{
-		owner->SetPosition(endPos_);
+		bullet.object->SetPosition(pos);
 	}
 }
 
@@ -166,6 +205,13 @@ Vector3 HormingMoveComponent::CubicBezier(
 	const Vector3& p3,
 	float t)
 {
+	// 3次ベジェ曲線
+	// p0: 開始点
+	// p1: 制御点1
+	// p2: 制御点2
+	// p3: 終点
+	// t : 進行度 0.0f ～ 1.0f
+
 	float invT = 1.0f - t;
 
 	return p0 * (invT * invT * invT) +
@@ -185,6 +231,5 @@ float HormingMoveComponent::EaseInOut(float t)
 		t = 1.0f;
 	}
 
-	// smoothstep
 	return t * t * (3.0f - 2.0f * t);
 }
