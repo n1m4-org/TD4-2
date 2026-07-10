@@ -8,14 +8,10 @@ class BulletBehaviorComponent : public GameObjectComponent::IActionComponent
 {
 public:
 
-	BulletBehaviorComponent(const Vector3& velocity, float lifetime);
+	BulletBehaviorComponent(float lifetime);
 
 	void Update(GameObject* owner) override;
 
 private:
-
-	Vector3 velocity_;
-	float lifetime_ = 3.0f;
-
-
+	float lifetime_;
 };

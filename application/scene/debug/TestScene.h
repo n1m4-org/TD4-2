@@ -34,13 +34,11 @@ private:
 	std::unique_ptr<FollowCamera> followCamera_;
 
 	// テスト用のゲームオブジェクト
-	std::unique_ptr<GameObject> cubeObject_;
+	std::unique_ptr<GameObject> player_;
 	std::unique_ptr<GameObject> groundObject_;
 	std::unique_ptr<GameObject> targetObject_;
 	std::unique_ptr<GameObject> bumper_;
-
 	std::unique_ptr<GameObject> chargeEnemy_;
-
 	std::unique_ptr<GameObject> bombEnemy_;
 	std::unique_ptr<GameObject> hormingTest_;
 
