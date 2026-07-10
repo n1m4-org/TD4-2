@@ -81,9 +81,6 @@
     <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\horming</Filter>
     </ClCompile>
-    <ClCompile Include="gameobject\component\action\player\PlayerAttackComponent.cpp">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClCompile>
     <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp">
       <Filter>gameobject\component\action\player</Filter>
     </ClCompile>
@@ -91,6 +88,9 @@
       <Filter>gameobject\component\action\player</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerSlowMotionComponent.cpp">
       <Filter>gameobject\component\action\player</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
@@ -138,9 +138,6 @@
     <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h">
       <Filter>gameobject\component\action\enemy\horming</Filter>
     </ClInclude>
-    <ClInclude Include="gameobject\component\action\player\PlayerAttackComponent.h">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClInclude>
     <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h">
       <Filter>gameobject\component\action\player</Filter>
     </ClInclude>
@@ -148,6 +145,9 @@
       <Filter>gameobject\component\action\player</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h">
       <Filter>gameobject\component\action\player</Filter>
     </ClInclude>
     <ClInclude Include="scene\debug\ParticleTestScene.h">

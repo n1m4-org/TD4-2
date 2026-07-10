@@ -41,4 +41,14 @@ void GameObjectComponent::PlayerInputComponent::Update(GameObject* owner)
 	{
 		isReflectTriggered_ = false;
 	}
+
+	// スローモーショントリガーの判定
+	if (Input::GetInstance()->TriggerKey(DIK_LSHIFT))
+	{
+		isSlowMotionTriggered_ = true;
+	}
+	else
+	{
+		isSlowMotionTriggered_ = false;
+	}
 }

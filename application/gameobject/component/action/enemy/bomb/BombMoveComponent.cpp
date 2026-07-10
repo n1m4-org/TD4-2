@@ -30,14 +30,11 @@ void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 	// フィジクスコンポーネントの取得
 	physics_ = owner->GetComponent<PhysicsComponent>().get();
 
-	// デルタタイムの取得
-	// float dt = TimeManager::GetInstance().GetGameContext().deltaTime;
-
 	// プレイヤーの座標を更新
 	playerPosition_ = player_->GetPosition();
 
 	// 自分（ボム）からプレイヤーへのベクトルと距離
-	Vector3 toPlayer = playerPosition_ - owner->GetPosition();
+	Vector3 toPlayer = Vector3::Normalize(playerPosition_ - owner->GetPosition());
 	float distance = toPlayer.Length();
 
 
