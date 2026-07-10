@@ -42,4 +42,6 @@ private:
 	std::unique_ptr<GameObject> chargeEnemy_;
 
 	std::unique_ptr<GameObject> bombEnemy_;
+
+	std::unique_ptr<GameObject> dashEnemy_;
 };

@@ -7,6 +7,7 @@
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
+#include "application/gameobject/component/action/enemy/dash/DashMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
@@ -359,6 +360,66 @@ void TestScene::Initialize()
 
 
 
+	// ダッシュエネミーオブジェクトの生成
+	dashEnemy_ = std::make_unique<GameObject>("DashEnemy");
+	dashEnemy_->SetName("DashEnemy");
+	dashEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	dashEnemy_->SetModel("cube");
+	dashEnemy_->SetPosition({-10.0f, 2.0f, 0.0f});
+	dashEnemy_->SetScale({2.0f, 2.0f, 2.0f});
+
+	// ダッシュエネミー / 動き / 物理 / ステータスコンポーネントの追加
+	dashEnemy_->AddComponent("Move", std::make_unique<DashMoveComponent>(cubeObject_.get()));
+	dashEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(dashEnemy_.get()));
+	dashEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(dashEnemy_.get()));
+	dashEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(dashEnemy_.get()));
+
+	if (auto collider = dashEnemy_->GetComponent<AABBColliderComponent>())
+	{
+		collider->SetCollisionLayer(CollisionLayer::Enemy);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+
+		auto handleDashEnemyCollision = [this](const CollisionInfo& info)
+		{
+			if (!info.otherCollider)
+				return;
+			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
+				return;
+			if (!dashEnemy_)
+				return;
+
+			// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
+			Vector3 pos = dashEnemy_->GetPosition();
+			pos += info.normal * info.depth;
+			dashEnemy_->SetPosition(pos);
+
+			// 接地判定と速度リセット
+			auto physics = dashEnemy_->GetComponent<PhysicsComponent>();
+			if (!physics)
+				return;
+
+			if (info.normal.y > 0.0f)
+			{
+				physics->SetGrounded(true);
+				Vector3 vel = physics->GetExternalVelocity();
+				if (vel.y < 0.0f)
+				{
+					vel.y = 0.0f;
+					physics->SetExternalVelocity(vel);
+				}
+			}
+		};
+
+		collider->SetOnEnter([handleDashEnemyCollision](const CollisionInfo& info)
+		{ handleDashEnemyCollision(info); });
+		collider->SetOnStay([handleDashEnemyCollision](const CollisionInfo& info)
+		{ handleDashEnemyCollision(info); });
+		collider->SetOnExit([](const CollisionInfo& info) {});
+	}
+
+	GameObjectManager::GetInstance()->Register(dashEnemy_.get());
+
+
 
 	StartState(SceneState::Playing);
 }
@@ -412,7 +473,7 @@ void TestScene::OnUpdatePlaying()
 	// 衝突判定の実行
 	CollisionManager::GetInstance()->CheckCollisions();
 
-    // 非アクティブなGameObjectを安全に回収する
+	// 非アクティブなGameObjectを安全に回収する
 	std::vector<GameObject*> removeList;
 	auto& gameObjects = GameObjectManager::GetInstance()->GetGameObjects();
 	for (GameObject* obj : gameObjects)

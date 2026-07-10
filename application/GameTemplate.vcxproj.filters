@@ -81,9 +81,6 @@
     <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\horming</Filter>
     </ClCompile>
-    <ClCompile Include="gameobject\component\action\player\PlayerAttackComponent.cpp">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClCompile>
     <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp">
       <Filter>gameobject\component\action\player</Filter>
     </ClCompile>
@@ -106,6 +103,7 @@
     <ClCompile Include="scene\play\TitleScene.cpp">
       <Filter>scene\play</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\dash\DashMoveComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="collision\CollisionLayer.h">
@@ -138,9 +136,6 @@
     <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h">
       <Filter>gameobject\component\action\enemy\horming</Filter>
     </ClInclude>
-    <ClInclude Include="gameobject\component\action\player\PlayerAttackComponent.h">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClInclude>
     <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h">
       <Filter>gameobject\component\action\player</Filter>
     </ClInclude>
@@ -159,6 +154,7 @@
     <ClInclude Include="scene\play\TitleScene.h">
       <Filter>scene\play</Filter>
     </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\dash\DashMoveComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">
