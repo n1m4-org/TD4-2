@@ -127,17 +127,7 @@ void TestScene::Initialize()
 		info.otherCollider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Bumpers);
 
 		// プレイヤーリフレクトに衝突した場合、反射させる
-		Vector3 reflectDirection = -physics->GetVelocity();
-		reflectDirection.Normalize();
-
-		float normalSpeed = physics->GetMovementVelocity().Length();
-		physics->SetMovementVelocity(reflectDirection * normalSpeed);
-
-		static constexpr float kBurstSpeed = 15.0f;			  // バースト時の追加速度
-		static constexpr float kReflectAirResistance = 0.85f; // 反射後の空気抵抗（バーストの減衰率）
-
-		physics->SetExternalVelocity(reflectDirection * kBurstSpeed);
-		physics->SetExternalAirResistance(kReflectAirResistance);
+		physics->SetMovementVelocity(-physics->GetMovementVelocity()); // 速度を反転させる
 	});
 	player_->AddComponent("ReflectCollider", std::move(reflectCollider));
 
@@ -536,82 +526,6 @@ void TestScene::Draw2D()
 #ifdef USE_IMGUI
 void TestScene::DrawImGui()
 {
-	if (player_ && targetObject_)
-	{
-		// 1. 位置の調整
-		Vector3 pos = player_->GetPosition();
-		ImGui::Text("Cube Position:");
-		if (ImGui::SliderFloat("X", &pos.x, -10.0f, 10.0f))
-		{
-			player_->SetPosition(pos);
-		}
-
-		ImGui::Separator();
-
-		// 2. レイヤーとマスクの調整
-		if (auto collider = player_->GetComponent<AABBColliderComponent>())
-		{
-			ImGui::Text("Cube Collision Settings:");
-
-			// レイヤー選択
-			int currentLayerIdx = 0;
-			ColliderLayer layer = collider->GetCollisionLayer();
-			if (layer == CollisionLayer::Player)
-				currentLayerIdx = 0;
-			else if (layer == CollisionLayer::PlayerBullet)
-				currentLayerIdx = 1;
-			else if (layer == CollisionLayer::Enemy)
-				currentLayerIdx = 2;
-			else if (layer == CollisionLayer::None)
-				currentLayerIdx = 3;
-
-			const char* layerNames[] = {"Player", "PlayerBullet", "Enemy", "None"};
-			if (ImGui::Combo("Layer", &currentLayerIdx, layerNames, IM_ARRAYSIZE(layerNames)))
-			{
-				if (currentLayerIdx == 0)
-					collider->SetCollisionLayer(CollisionLayer::Player);
-				else if (currentLayerIdx == 1)
-					collider->SetCollisionLayer(CollisionLayer::PlayerBullet);
-				else if (currentLayerIdx == 2)
-					collider->SetCollisionLayer(CollisionLayer::Enemy);
-				else if (currentLayerIdx == 3)
-					collider->SetCollisionLayer(CollisionLayer::None);
-			}
-
-			// マスク（衝突対象）のトグル
-			uint32_t mask = collider->GetCollisionMask();
-			bool collideWithPlayer = (mask & CollisionLayer::Player) != 0;
-			bool collideWithEnemy = (mask & CollisionLayer::Enemy) != 0;
-
-			ImGui::Text("Collides With:");
-			if (ImGui::Checkbox("Player (Layer)", &collideWithPlayer))
-			{
-				if (collideWithPlayer)
-					mask |= CollisionLayer::Player;
-				else
-					mask &= ~CollisionLayer::Player;
-				collider->SetCollisionMask(mask);
-			}
-			if (ImGui::Checkbox("Enemy (Layer)", &collideWithEnemy))
-			{
-				if (collideWithEnemy)
-					mask |= CollisionLayer::Enemy;
-				else
-					mask &= ~CollisionLayer::Enemy;
-				collider->SetCollisionMask(mask);
-			}
-		}
-
-		ImGui::Separator();
-		ImGui::Text("Target (Red Cube) Info:");
-		ImGui::Text("Position: X=5.0, Y=2.0, Z=0.0");
-		ImGui::Text("Layer: Enemy");
-		ImGui::Text("Mask: Player (Only collides with Player)");
-
-		// 判定のヒント表示
-		ImGui::Separator();
-		ImGui::TextWrapped("Tip: Move the Cube X position towards 5.0 to collide with the Red Cube. Change Cube's layer/mask above to see how filtering works. Check Output Log for collision events.");
-	}
 }
 #endif
 
