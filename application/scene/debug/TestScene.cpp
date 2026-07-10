@@ -350,7 +350,7 @@ void TestScene::Initialize()
 	if (auto collider = bombEnemy_->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
-		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers | CollisionLayer::Reflector);
 
 		auto handleTargetCollision = [this](const CollisionInfo& info)
 		{
@@ -383,8 +383,28 @@ void TestScene::Initialize()
 			}
 		};
 
-		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
-		{ handleTargetCollision(info); });
+		collider->SetOnEnter([this, handleTargetCollision](const CollisionInfo& info)
+		{
+			handleTargetCollision(info);
+
+			// 反射に当たったらボムを弾き返す
+			if (!info.otherCollider)
+				return;
+			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Reflector))
+				return;
+			if (!bombEnemy_ || !player_)
+				return;
+
+			if (auto move = bombEnemy_->GetComponent<BombMoveComponent>())
+			{
+				// プレイヤー→ボム方向に弾き返す
+				Vector3 dir = bombEnemy_->GetPosition() - player_->GetPosition();
+				dir.y = 0.0f;
+				move->OnReflected(dir.Normalize(), 10.0f); 
+			}
+		});
+
+		
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
 		{ handleTargetCollision(info); });
 		collider->SetOnExit([](const CollisionInfo& info) {});
