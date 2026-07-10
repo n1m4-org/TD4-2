@@ -7,6 +7,7 @@
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "time/TimeManager.h"
 #include "math/MatrixFunc.h"
+#include "base/Logger.h"
 #include <cmath>
 
 void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
@@ -57,7 +58,8 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 		reflectTimer_ -= deltaTime;
 
 		// 反射中はレイヤーを Player にして当たり判定を有効にする
-		collider_->SetCollisionLayer(CollisionLayer::Player);
+		collider_->SetCollisionLayer(CollisionLayer::PlayerReflect);
+		Logger::Log("Player is reflecting");
 
 		// 反射中のみ、プレイヤーの正面にオフセットした位置を計算してコライダーを追従させる
 		float yaw = owner->GetRotation().y;

@@ -81,8 +81,7 @@ namespace GameObjectComponent
 	  // 攻撃フラグ
 	  bool isAttacking_ = false;
 
-	  // 弾
-	  GameObject* bullet_ = nullptr;
+	
 	  // 弾の向き
 	  Vector3 bulletDirection_ = {0.0f, 0.0f, 1.0f};
 

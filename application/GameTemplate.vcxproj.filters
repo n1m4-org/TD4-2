@@ -90,6 +90,9 @@
     <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp">
       <Filter>gameobject\component\action\player</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\player\PlayerSlowMotionComponent.cpp">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="resources\LoadGameResources.cpp">
       <Filter>resources</Filter>
@@ -102,9 +105,6 @@
     </ClCompile>
     <ClCompile Include="scene\play\TitleScene.cpp">
       <Filter>scene\play</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\player\PlayerSlowMotionComponent.cpp">
-      <Filter>gameobject\component\action\player</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -147,6 +147,9 @@
     <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h">
       <Filter>gameobject\component\action\player</Filter>
     </ClInclude>
+    <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h">
+      <Filter>gameobject\component\action\player</Filter>
+    </ClInclude>
     <ClInclude Include="scene\debug\ParticleTestScene.h">
       <Filter>scene\debug</Filter>
     </ClInclude>
@@ -155,9 +158,6 @@
     </ClInclude>
     <ClInclude Include="scene\play\TitleScene.h">
       <Filter>scene\play</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h">
-      <Filter>gameobject\component\action\player</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
