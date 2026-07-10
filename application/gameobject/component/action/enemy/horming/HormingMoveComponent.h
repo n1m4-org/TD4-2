@@ -53,6 +53,9 @@ namespace GameObjectComponent
 		// 生成済みのホーミング弾の更新
 		void UpdateBullets();
 
+		// 指定した弾を削除状態にする
+		void KillBullet(GameObject* bulletObject);
+
 		// 弾のベジェ曲線用の初期情報を作成する
 		void InitializeBulletCurve(HomingBullet& bullet);
 

@@ -4,6 +4,9 @@
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
+#include "application/collision/CollisionLayer.h"
+#include "engine/gameobject/component/collision/AABBColliderComponent.h"
+#include "engine/gameobject/component/collision/CollisionManager.h"
 
 #include <string>
 
@@ -62,6 +65,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner)
 	static uint32_t bulletCount = 0;
 	std::string bulletName = "HomingBullet_" + std::to_string(bulletCount++);
 
+	// 弾のGameObjectを作成
 	GameObject* bulletObject = GameObjectManager::GetInstance()->CreateGameObject(bulletName, "Bullet");
 
 	if (!bulletObject)
@@ -76,6 +80,47 @@ void HormingMoveComponent::FireBullet(GameObject* owner)
 	Vector3 spawnPos = owner->GetPosition();
 	spawnPos.y += 1.0f;
 	bulletObject->SetPosition(spawnPos);
+
+	// AABBコライダーの追加
+	bulletObject->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bulletObject));
+
+	if (auto collider = bulletObject->GetComponent<AABBColliderComponent>())
+	{
+		// ホーミング弾は敵弾として扱う
+		collider->SetCollisionLayer(CollisionLayer::EnemyBullet);
+
+		// プレイヤー、バンパー、反射判定に当たるようにする
+		collider->SetCollisionMask(
+			CollisionLayer::Player |
+			CollisionLayer::Bumpers |
+			CollisionLayer::PlayerReflect);
+
+		collider->SetOnEnter([this, bulletObject](const CollisionInfo& info)
+		{
+			if (!info.otherCollider)
+			{
+				return;
+			}
+
+			// プレイヤー、バンパーに当たったら弾を消す
+			if ((info.otherCollider->GetCollisionLayer() & CollisionLayer::Player) ||
+				(info.otherCollider->GetCollisionLayer() & CollisionLayer::Bumpers))
+			{
+				KillBullet(bulletObject);
+				return;
+			}
+
+			// 反射判定に当たった場合も、いったん弾を消す
+			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect)
+			{
+				KillBullet(bulletObject);
+				return;
+			}
+		});
+
+		collider->SetOnStay([](const CollisionInfo& info) {});
+		collider->SetOnExit([](const CollisionInfo& info) {});
+	}
 
 	HomingBullet bullet;
 	bullet.object = bulletObject;
@@ -157,9 +202,7 @@ void HormingMoveComponent::UpdateBullets()
 		// 寿命が切れたら削除
 		if (t >= 1.0f)
 		{
-			bullet.isDead = true;
-			bullet.object->Destroy();
-			bullet.object = nullptr;
+			KillBullet(bullet.object);
 			continue;
 		}
 
@@ -195,6 +238,29 @@ void HormingMoveComponent::UpdateBullets()
 		pos += bullet.sideDir * slideOffset_ * slideRate;
 
 		bullet.object->SetPosition(pos);
+	}
+}
+
+void HormingMoveComponent::KillBullet(GameObject* bulletObject)
+{
+	if (!bulletObject)
+	{
+		return;
+	}
+
+	for (HomingBullet& bullet : bullets_)
+	{
+		if (bullet.object == bulletObject)
+		{
+			bullet.isDead = true;
+
+			// Destroyは一回だけ呼ぶ
+			bullet.object->Destroy();
+
+			// 以降UpdateBulletsで触らないようにする
+			bullet.object = nullptr;
+			return;
+		}
 	}
 }
 
