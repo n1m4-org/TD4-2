@@ -66,6 +66,9 @@
     <ClCompile Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.cpp">
       <Filter>gameobject\component\action\enemy\bullet</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.cpp">
+      <Filter>gameobject\component\action\enemy\bullet</Filter>
+    </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.cpp">
       <Filter>gameobject\component\action\enemy\charge</Filter>
     </ClCompile>
@@ -121,6 +124,9 @@
       <Filter>gameobject\component\action\enemy\bomb</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.h">
+      <Filter>gameobject\component\action\enemy\bullet</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.h">
       <Filter>gameobject\component\action\enemy\bullet</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.h">
