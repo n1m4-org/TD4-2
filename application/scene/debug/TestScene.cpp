@@ -452,7 +452,7 @@ void TestScene::Initialize()
 	hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
 
 	// Hキーで cubeObject_ の位置へスプライン移動する
-	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(cubeObject_.get()));
+	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
 		{ handleTargetCollision(info); });
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
