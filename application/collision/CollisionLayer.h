@@ -18,5 +18,6 @@ static constexpr ColliderLayer Bomb = 1 << 8;		  // 爆弾
 static constexpr ColliderLayer Charge = 1 << 9;		  // チャージ
 static constexpr ColliderLayer Horming = 1 << 10;	  // ホーミング
 static constexpr ColliderLayer Reflector = 1 << 11;	  // 反射板
+static constexpr ColliderLayer PlayerReflect = 1 << 12; // プレイヤーの反射判定
 static constexpr ColliderLayer All = 0xFFFFFFFF;
 } // namespace CollisionLayer
