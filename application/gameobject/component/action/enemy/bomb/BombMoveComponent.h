@@ -22,11 +22,20 @@ namespace GameObjectComponent
 
 
 	public: // Setter / Getter
-		// プレイヤーの座標
-		Vector3 SetPlayerPosition(const Vector3& position)
+		// 反射されたら
+		void OnReflected(const Vector3& direction, float speed)
 		{
-			playerPosition_ = position;
-			return playerPosition_;
+			// すでに反射済み、爆発済みならスルー
+			if (isReflected_ || hasExploded_)
+			{
+				return;
+			}
+			// 各種フラグを設定
+			isReflected_ = true;
+			isDashing_ = false;
+			reflectedDirection_ = direction.Normalize();
+			reflectedVelocity_ = reflectedDirection_ * speed;
+			reflectedLifespan_ = lifespan_; 
 		}
 
 
@@ -37,17 +46,8 @@ namespace GameObjectComponent
 		// プレイヤーの座標を保持
 		Vector3 playerPosition_ = {0.0f, 0.0f, 0.0f};
 
-		// 移動速度
-		float moveSpeed_ = 10.0f;
-
 		// 突進中かどうかのフラグ
 		bool isDashing_ = false;
-
-		// 突進を始めるまでの距離
-		float dashRange_ = 5.0f;
-
-		// 突進速度
-		float dashSpeed_ = 10.0f;
 
 		// 突進する方向
 		Vector3 dashDirection_ = {0.0f, 0.0f, 0.0f};
@@ -64,9 +64,23 @@ namespace GameObjectComponent
 		// 点火から爆発までの時間
 		const float ignitionTime_ = 300.0f;
 
+
 		// 爆発までの残り時間
 		float lifespan_ = ignitionTime_;
+
 		// 爆発済みかどうかのフラグ
 		bool hasExploded_ = false;
+
+
+		// リフレクト後のフラグ
+		bool isReflected_ = false;
+
+		// 爆発までの残り時間（リフレクト後） 60は仮
+		float reflectedLifespan_ = 60.0f;
+
+		// プレイヤー側から取得する反射後の方向と速度
+		Vector3 reflectedDirection_ = {0.0f, 0.0f, 0.0f};
+		Vector3 reflectedVelocity_ = {0.0f, 0.0f, 0.0f};
 	};
+
 } // namespace GameObjectComponent
