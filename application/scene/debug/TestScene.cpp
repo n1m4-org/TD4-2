@@ -97,6 +97,7 @@ void TestScene::Initialize()
 	player_->AddComponent("Physics", std::make_unique<PhysicsComponent>(player_.get()));
 	player_->AddComponent("Reflect", std::make_unique<PlayerReflectComponent>());
 	player_->AddComponent("SlowMotion", std::make_unique<PlayerSlowMotionComponent>(sceneManager_->GetLightManager()));
+
 	// 反射用の球体コライダーを追加
 	auto reflectCollider = std::make_unique<OBBColliderComponent>(player_.get());
 	reflectCollider->SetAutoUpdatePosition(false); // プレイヤー本体の位置への自動同期をオフにする
@@ -265,12 +266,6 @@ void TestScene::Initialize()
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
 	GameObjectManager::GetInstance()->Register(targetObject_.get());
-
-	// cubeObject_のHormingMoveComponentにターゲットを渡す
-	if (auto horming = player_->GetComponent<HormingMoveComponent>())
-	{
-		horming->SetTarget(targetObject_.get());
-	}
 
 	// 3. 地面キューブオブジェクトの作成
 	groundObject_ = std::make_unique<GameObject>("GroundCube");
@@ -448,6 +443,16 @@ void TestScene::Initialize()
 			}
 		};
 
+	// ホーミングテスト用キューブオブジェクトの作成
+	hormingTest_ = std::make_unique<GameObject>("HormingTestCube");
+	hormingTest_->SetName("HormingTestCube");
+	hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	hormingTest_->SetModel("cube");
+	hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
+	hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
+
+	// Hキーで cubeObject_ の位置へスプライン移動する
+	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
 		{ handleTargetCollision(info); });
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
@@ -456,7 +461,8 @@ void TestScene::Initialize()
 	}
 	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
 
-	// シーンのステートをPlayingに設定
+	GameObjectManager::GetInstance()->Register(hormingTest_.get());
+
 	StartState(SceneState::Playing);
 }
 
