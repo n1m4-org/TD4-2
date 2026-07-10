@@ -103,7 +103,7 @@ void TestScene::Initialize()
 	reflectCollider->SetAutoUpdatePosition(false); // プレイヤー本体の位置への自動同期をオフにする
 	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
-	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet); // 敵の弾のみを判定対象とする
+	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy); // 敵の弾のみを判定対象とする
 	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
 	{
 		if (!info.other)
@@ -350,7 +350,7 @@ void TestScene::Initialize()
 	if (auto collider = bombEnemy_->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
-		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers | CollisionLayer::Reflector);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers | CollisionLayer::PlayerReflect);
 
 		auto handleTargetCollision = [this](const CollisionInfo& info)
 		{
@@ -390,9 +390,7 @@ void TestScene::Initialize()
 			// 反射に当たったらボムを弾き返す
 			if (!info.otherCollider)
 				return;
-			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Reflector))
-				return;
-			if (!bombEnemy_ || !player_)
+			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect))
 				return;
 
 			if (auto move = bombEnemy_->GetComponent<BombMoveComponent>())
