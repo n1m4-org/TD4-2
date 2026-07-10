@@ -3,16 +3,13 @@
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
+#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
-#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
-#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
-#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
-#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
@@ -58,8 +55,8 @@ void TestScene::Initialize()
 	debugCamera_->Start({0.0f, 10.0f, -30.0f}, {0.2f, 0.0f, 0.0f});
 
 	// 追従カメラの初期化
-	followCamera_ = std::make_unique<FollowCamera>();
-	followCamera_->Initialize(sceneManager_->GetCameraManager()->GetActiveCamera());
+	topDownCamera_ = std::make_unique<TopDownCamera>();
+	topDownCamera_->Initialize(sceneManager_->GetCameraManager()->GetActiveCamera());
 
 	// ゲームオブジェクトマネージャーの初期化
 	GameObjectManager::GetInstance()->Initialize();
@@ -85,7 +82,7 @@ void TestScene::Initialize()
 	player_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	player_->SetModel("cube");
 	player_->SetPosition({0.0f, 2.0f, 0.0f});
-	player_->SetScale({2.0f, 2.0f, 2.0f});	
+	player_->SetScale({2.0f, 2.0f, 2.0f});
 
 	// アクション・物理・ステータスコンポーネントの追加
 	player_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
@@ -192,7 +189,6 @@ void TestScene::Initialize()
 					status->SetHp(status->GetHp());
 				}
 			}
-
 		});
 		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
 		{
@@ -203,7 +199,9 @@ void TestScene::Initialize()
 	}
 
 	// こいつに追従カメラを追従させる
-	followCamera_->Start(&player_->GetPosition(), 50.0f, 0.05f);
+	topDownCamera_->SetPitch(1.2f);
+	topDownCamera_->SetOffset({ 0.0f,0.0f,-40.0f });
+	topDownCamera_->Start(105.0f, &player_->GetPosition());
 	// マネージャーに登録
 	GameObjectManager::GetInstance()->Register(player_.get());
 
@@ -398,11 +396,9 @@ void TestScene::Initialize()
 				// プレイヤー→ボム方向に弾き返す
 				Vector3 dir = bombEnemy_->GetPosition() - player_->GetPosition();
 				dir.y = 0.0f;
-				move->OnReflected(dir.Normalize(), 10.0f); 
+				move->OnReflected(dir.Normalize(), 10.0f);
 			}
 		});
-
-		
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
 		{ handleTargetCollision(info); });
 		collider->SetOnExit([](const CollisionInfo& info) {});
@@ -461,16 +457,16 @@ void TestScene::Initialize()
 			}
 		};
 
-	// ホーミングテスト用キューブオブジェクトの作成
-	hormingTest_ = std::make_unique<GameObject>("HormingTestCube");
-	hormingTest_->SetName("HormingTestCube");
-	hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-	hormingTest_->SetModel("cube");
-	hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
-	hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
+		// ホーミングテスト用キューブオブジェクトの作成
+		hormingTest_ = std::make_unique<GameObject>("HormingTestCube");
+		hormingTest_->SetName("HormingTestCube");
+		hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+		hormingTest_->SetModel("cube");
+		hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
+		hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
 
-	// Hキーで cubeObject_ の位置へスプライン移動する
-	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
+		// Hキーで cubeObject_ の位置へスプライン移動する
+		hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
 		{ handleTargetCollision(info); });
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
@@ -503,7 +499,7 @@ void TestScene::Finalize()
 	groundObject_.reset();
 	targetObject_.reset();
 	debugCamera_.reset();
-	followCamera_.reset();
+	topDownCamera_.reset();
 }
 
 void TestScene::OnUpdatePlaying()
@@ -521,7 +517,7 @@ void TestScene::OnUpdatePlaying()
 	}
 	else
 	{
-		followCamera_->Update();
+		topDownCamera_->Update();
 	}
 
 	// コリジョンマネージャーの前フレーム位置更新
@@ -532,7 +528,6 @@ void TestScene::OnUpdatePlaying()
 
 	// 衝突判定の実行
 	CollisionManager::GetInstance()->CheckCollisions();
-
 }
 
 void TestScene::Draw3D()

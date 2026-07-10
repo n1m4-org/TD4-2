@@ -2,7 +2,7 @@
 #include "scene/interface/BaseScene.h"
 #include "camerawork/debug/DebugCamera.h"
 #include "engine/gameobject/base/GameObject.h"
-#include "engine/camerawork/follow/FollowCamera.h"
+#include "engine/camerawork/topdown/TopDownCamera.h"
 /**
  * @brief ゲームオブジェクトのテストを行うデバッグ用シーン
  */
@@ -31,7 +31,7 @@ private:
 	// デバッグカメラ
 	std::unique_ptr<DebugCamera> debugCamera_;
 	// 追従カメラ
-	std::unique_ptr<FollowCamera> followCamera_;
+	std::unique_ptr<TopDownCamera> topDownCamera_;
 
 	// テスト用のゲームオブジェクト
 	std::unique_ptr<GameObject> player_;
