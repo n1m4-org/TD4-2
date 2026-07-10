@@ -104,7 +104,9 @@ void GameObjectComponent::ChargeMoveComponent::Charge(GameObject* owner)
 			state_ = State::Fire;
 		}
 		// 確認用回転させる
-		owner->SetRotation(owner->GetRotation() + Vector3{0.0f, 1.0f, 0.0f});
+		Vector3 rotation = owner->GetRotation();
+		rotation.y += rotationSpeed_ * TimeManager::GetInstance().GetGameContext().deltaTime;
+		owner->SetRotation(rotation);
 	}
 }
 
@@ -113,14 +115,15 @@ void GameObjectComponent::ChargeMoveComponent::Cooldown(GameObject* owner)
 	// クールタイム進行
 	coolTime_ += TimeManager::GetInstance().GetGameContext().deltaTime;
 
+	StrafeMove(owner);
+
 	// クールタイムが一定時間を超えたら攻撃状態を解除
 	if (coolTime_ >= kCoolTime)
 	{
 		isAttacking_ = false;
 		coolTime_ = 0.0f;
 
-		// 確認用のサイズを元に戻す
-		owner->SetScale(Vector3{2.0f, 2.0f, 2.0f});
+		
 		state_ = State::Move;
 	}
 }
@@ -184,4 +187,43 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 		collider->SetOnStay([this](const CollisionInfo& info) {});
 		collider->SetOnExit([this](const CollisionInfo& info) {});
 	}
+}
+
+void GameObjectComponent::ChargeMoveComponent::StrafeMove(GameObject* owner)
+{
+	// タイマー更新
+	strafeTimer_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	// 確認用のサイズを元に戻す
+	owner->SetScale(Vector3{2.0f, 2.0f, 2.0f});
+
+	if (strafeTimer_ >= changeTime_)
+	{
+		moveRight_ = !moveRight_;
+
+		changeTime_ = Random(1.0f, 2.5f);
+
+		strafeTimer_ = 0.0f;
+	}
+
+	// プレイヤーへの方向
+	Vector3 toPlayer = player_->GetPosition() - owner->GetPosition();
+	float distance = toPlayer.Length();
+	toPlayer.NormalizeSelf();
+
+	// 横方向
+	Vector3 side = {-toPlayer.z, 0.0f, toPlayer.x};
+
+	// 左右移動
+	if (!moveRight_)
+	{
+		side *= -1.0f;
+	}
+
+	owner->SetPosition(owner->GetPosition() + side * moveSpeed_ * TimeManager::GetInstance().GetGameContext().deltaTime);
+}
+
+float GameObjectComponent::ChargeMoveComponent::Random(float min, float max)
+{
+	return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
 }
