@@ -57,7 +57,7 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 		reflectTimer_ -= deltaTime;
 
 		// 反射中はレイヤーを Player にして当たり判定を有効にする
-		collider_->SetCollisionLayer(CollisionLayer::Player);
+		collider_->SetCollisionLayer(CollisionLayer::Reflector);
 
 		// 反射中のみ、プレイヤーの正面にオフセットした位置を計算してコライダーを追従させる
 		float yaw = owner->GetRotation().y;

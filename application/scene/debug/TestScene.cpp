@@ -2,17 +2,17 @@
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
+#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
+#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
+#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
-#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
-#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
-#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
-#include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
+#include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
 #include "externals/imgui/imgui.h"
@@ -66,7 +66,7 @@ void TestScene::Initialize()
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 
-		// 1. テスト用キューブオブジェクトの作成
+	// 1. テスト用キューブオブジェクトの作成
 	cubeObject_ = std::make_unique<GameObject>("TestCube");
 	cubeObject_->SetName("TestCube");
 	cubeObject_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
@@ -74,7 +74,6 @@ void TestScene::Initialize()
 	cubeObject_->SetPosition({0.0f, 2.0f, 0.0f});
 	cubeObject_->SetScale({2.0f, 2.0f, 2.0f});
 
-	
 
 	// アクション・物理・ステータスコンポーネントの追加
 	cubeObject_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
@@ -91,7 +90,7 @@ void TestScene::Initialize()
 	reflectCollider->SetAutoUpdatePosition(false); // プレイヤー本体の位置への自動同期をオフにする
 	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
-	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet); // 敵の弾のみを判定対象とする
+	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy); // 敵の弾のみを判定対象とする
 	cubeObject_->AddComponent("ReflectCollider", std::move(reflectCollider));
 
 	// AABBコライダーの追加
@@ -296,7 +295,6 @@ void TestScene::Initialize()
 	GameObjectManager::GetInstance()->Register(bumper_.get());
 
 
-
 	// ボムエネミーオブジェクトの生成
 	bombEnemy_ = std::make_unique<GameObject>("BombEnemy");
 	bombEnemy_->SetName("BombEnemy");
@@ -315,7 +313,7 @@ void TestScene::Initialize()
 	if (auto collider = bombEnemy_->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
-		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers | CollisionLayer::Reflector);
 
 		auto handleTargetCollision = [this](const CollisionInfo& info)
 		{
@@ -348,16 +346,34 @@ void TestScene::Initialize()
 			}
 		};
 
-		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
-		{ handleTargetCollision(info); });
+		collider->SetOnEnter([this, handleTargetCollision](const CollisionInfo& info)
+		{
+			handleTargetCollision(info);
+
+			// 反射に当たったらボムを弾き返す
+			if (!info.otherCollider)
+				return;
+			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Reflector))
+				return;
+			if (!bombEnemy_ || !cubeObject_)
+				return;
+
+			if (auto move = bombEnemy_->GetComponent<BombMoveComponent>())
+			{
+				// プレイヤー→ボム方向に弾き返す
+				Vector3 dir = bombEnemy_->GetPosition() - cubeObject_->GetPosition();
+				dir.y = 0.0f;
+				move->OnReflected(dir.Normalize(), 10.0f); 
+			}
+		});
+
+		
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
 		{ handleTargetCollision(info); });
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
-
-
 
 
 	StartState(SceneState::Playing);
@@ -412,7 +428,7 @@ void TestScene::OnUpdatePlaying()
 	// 衝突判定の実行
 	CollisionManager::GetInstance()->CheckCollisions();
 
-    // 非アクティブなGameObjectを安全に回収する
+	// 非アクティブなGameObjectを安全に回収する
 	std::vector<GameObject*> removeList;
 	auto& gameObjects = GameObjectManager::GetInstance()->GetGameObjects();
 	for (GameObject* obj : gameObjects)
@@ -422,12 +438,11 @@ void TestScene::OnUpdatePlaying()
 			removeList.push_back(obj);
 		}
 	}
-	
+
 	for (GameObject* obj : removeList)
 	{
 		GameObjectManager::GetInstance()->Unregister(obj);
 	}
-
 }
 
 void TestScene::Draw3D()

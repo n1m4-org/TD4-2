@@ -25,8 +25,6 @@ void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 		return;
 	}
 
-	// リフレクト後の寿命を初期化
-	reflectedLifespan_ = lifespan_;
 #pragma endregion 変数の初期化
 
 	// フィジクスコンポーネントの取得
@@ -73,21 +71,17 @@ void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 	}
 
-	// ここに反射されたらフラグを立てるコードを追加
-	// isReflected_ = 
-
-	// プレイヤーからの反射情報を取得する
-	// reflectedDirection_ = 
-	// reflectedVelocity_ =
-
 	// リフレクト後の処理
 	if (isReflected_)
 	{
+		// 一旦反対方向
+		physics_->SetMovementVelocity(reflectedVelocity_);
+
+		// ライフスパン消費
+		--reflectedLifespan_;
+
 		// 移動不可
 		isDashing_ = false;
-
-		// ライフスパンを消費
-		--reflectedLifespan_;
 
 		if (reflectedLifespan_ <= 0.0f)
 		{
