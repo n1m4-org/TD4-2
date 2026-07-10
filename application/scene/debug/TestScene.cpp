@@ -392,13 +392,13 @@ void TestScene::Initialize()
 				return;
 			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Reflector))
 				return;
-			if (!bombEnemy_ || !cubeObject_)
+			if (!bombEnemy_ || !player_)
 				return;
 
 			if (auto move = bombEnemy_->GetComponent<BombMoveComponent>())
 			{
 				// プレイヤー→ボム方向に弾き返す
-				Vector3 dir = bombEnemy_->GetPosition() - cubeObject_->GetPosition();
+				Vector3 dir = bombEnemy_->GetPosition() - player_->GetPosition();
 				dir.y = 0.0f;
 				move->OnReflected(dir.Normalize(), 10.0f); 
 			}
