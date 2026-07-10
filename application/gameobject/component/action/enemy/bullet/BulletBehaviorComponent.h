@@ -13,5 +13,7 @@ public:
 	void Update(GameObject* owner) override;
 
 private:
+	
 	float lifetime_;
+
 };

@@ -144,12 +144,11 @@ void GameObjectComponent::ChargeMoveComponent::Fire(GameObject* owner)
 
 void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owner)
 {
-	auto bullet = GameObjectManager::GetInstance()->CreateGameObject("Bullet", "Bullet");
-	bullet->SetName("Bullet");
-	bullet->SetModel("cube");
-	bullet->SetScale({1.0f, 1.0f, 1.0f});
-	bullet->SetPosition(owner->GetPosition());
-	bullet->SetRotation(owner->GetRotation());
+	// 弾生成
+	bulletSpawnComponent_ = std::make_unique<BulletSpawnComponent>();
+	// 弾を生成
+	auto bullet = bulletSpawnComponent_->Fire("Bullet", owner->GetPosition(), owner->GetRotation());
+
 	// 挙動のコンポーネント
 	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(4.0f));
 	

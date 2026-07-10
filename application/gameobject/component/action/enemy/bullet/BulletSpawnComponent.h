@@ -11,7 +11,11 @@ namespace GameObjectComponent
 	{
 	public:
 
-	   GameObject* Fire(const std::string& name,  const Vector3& position, const Vector3& rotation); 
+		BulletSpawnComponent();
+
+		void Update(GameObject* owner) override {}
+
+	    GameObject* Fire(const std::string& name,  const Vector3& position, const Vector3& rotation); 
 
 	};
 

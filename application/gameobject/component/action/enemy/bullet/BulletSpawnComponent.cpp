@@ -3,6 +3,10 @@
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 
+GameObjectComponent::BulletSpawnComponent::BulletSpawnComponent()
+{
+}
+
 GameObject* GameObjectComponent::BulletSpawnComponent::Fire(const std::string& name, const Vector3& position, const Vector3& rotation)
 {
 	GameObject* bullet = GameObjectManager::GetInstance()->CreateGameObject(name, name);
