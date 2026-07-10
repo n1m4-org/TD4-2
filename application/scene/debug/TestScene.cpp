@@ -392,7 +392,7 @@ void TestScene::Initialize()
 				return;
 			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect))
 				return;
-			
+
 			if (auto move = bombEnemy_->GetComponent<BombMoveComponent>())
 			{
 				// プレイヤー→ボム方向に弾き返す
