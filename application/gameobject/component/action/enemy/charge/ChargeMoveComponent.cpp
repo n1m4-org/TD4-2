@@ -183,8 +183,8 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 	bullet_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bullet_));
 	if (auto collider = bullet_->GetComponent<AABBColliderComponent>())
 	{
-		collider->SetCollisionLayer(CollisionLayer::Player);
-		collider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Stage | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionLayer(CollisionLayer::EnemyBullet);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Stage | CollisionLayer::Terrain | CollisionLayer::Bumpers);
 
 		// 衝突時の共通押し戻し・接地処理
 		auto handleCubeCollision = [this](const CollisionInfo& info)
@@ -224,9 +224,10 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 							 {
 			handleCubeCollision(info);
 
-			// 相手がEnemyの場合にHPを減らす
+			// 相手がPlayerの場合にHPを減らす
 			if (!info.otherCollider) return;
-			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Enemy)) return;
+			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Player)) return;
+
 
 			auto status = bullet_->GetComponent<StatusComponent>();
 			if (!status) return;

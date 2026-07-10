@@ -55,6 +55,8 @@ namespace GameObjectComponent
 	  /// <param name="owner">所有者</param>
 	  void BulletInitialize(GameObject* owner);
 
+
+
   private:
 
 	  // プレイヤーのポインタ

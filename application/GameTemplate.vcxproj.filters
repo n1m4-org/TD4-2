@@ -106,6 +106,7 @@
     <ClCompile Include="gameobject\component\action\player\PlayerSlowMotionComponent.cpp">
       <Filter>gameobject\component\action\player</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="collision\CollisionLayer.h">
@@ -159,6 +160,7 @@
     <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h">
       <Filter>gameobject\component\action\player</Filter>
     </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">
