@@ -33,7 +33,7 @@ void GameObjectComponent::PlayerInputComponent::Update(GameObject* owner)
 	}
 
 	// 反射トリガーの判定
-	if (Input::GetInstance()->TriggerKey(DIK_SPACE))
+	if (Input::GetInstance()->TriggerKey(DIK_SPACE) || Input::GetInstance()->IsMouseButtonTriggered(0))
 	{
 		isReflectTriggered_ = true;
 	}
