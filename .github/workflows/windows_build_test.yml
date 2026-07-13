@@ -136,11 +136,19 @@ jobs:
 
   notify-discord:
     needs: build
-    if: success()
+    if: always()
     runs-on: highperf-hosted
 
     steps:
+      - name: Fail if build did not succeed
+        if: needs.build.result != 'success'
+        shell: pwsh
+        run: |
+          Write-Host "Build result was '${{ needs.build.result }}'. Failing this job."
+          exit 1
+
       - name: Notify Discord
+        if: needs.build.result == 'success'
         shell: pwsh
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOKURL_NOTIFY }}
