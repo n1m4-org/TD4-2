@@ -11,6 +11,7 @@
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
+#include "application/gameobject/component/action/enemy/dash/DashMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "base/Logger.h"
