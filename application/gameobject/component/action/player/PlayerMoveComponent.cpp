@@ -3,6 +3,8 @@
 #include "../common/PhysicsComponent.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "base/Camera.h"
+#include "engine/input/Input.h"
+#include "engine/math/MathUtils.h"
 #include <numbers>
 #include <cmath>
 
@@ -32,27 +34,28 @@ void GameObjectComponent::PlayerMoveComponent::Update(GameObject* owner)
 		return;
 	}
 
-	// 入力に基づいて移動方向を取得
-	const Vector3& moveDirection = input_->GetMoveDirection();
+	// プレイヤーの向きをマウスカーソルの方向に向ける
+	Input* inputSystem = Input::GetInstance();
+	Vector2 mousePos = inputSystem->GetMousePosition();
+	float width = static_cast<float>(WinApp::kClientWidth);
+	float height = static_cast<float>(WinApp::kClientHeight);
 
-	// カメラのY軸回転を取得
-	float yaw = camera_->GetRotate().y;
+	// スクリーン座標をNDC座標に変換
+	float mouseNdcX = (2.0f * mousePos.x / width) - 1.0f;
+	float mouseNdcY = 1.0f - (2.0f * mousePos.y / height);
 
-	// カメラの基準方向を計算（Y軸回転のみを考慮）
-	Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
-	Vector3 right = {std::cos(yaw), 0.0f, -std::sin(yaw)};
+	// プレイヤーのワールド座標をNDC座標に変換
+	Vector3 playerNdc = MathUtils::Transform(owner->GetPosition(), camera_->GetViewProjectionMatrix());
 
-	// 入力方向をカメラ基準に変換
-	Vector3 transformedDirection = (moveDirection.x * right) + (moveDirection.z * forward);
+	// プレイヤーからマウスへの方向ベクトル（NDC空間）
+	float diffX = mouseNdcX - playerNdc.x;
+	float diffY = mouseNdcY - playerNdc.y;
 
-	// 移動入力がある場合のみ処理
-	float lengthSq = transformedDirection.LengthSquared();
-	if (lengthSq > 0.001f)
+	if (std::abs(diffX) > 1e-6f || std::abs(diffY) > 1e-6f)
 	{
-		transformedDirection.NormalizeSelf(); // 正規化して方向ベクトルにする
-
-		// 進行方向に基づいて目標の向き（Y軸回転）を計算
-		float targetYaw = std::atan2(transformedDirection.x, transformedDirection.z);
+		//目標角度(Yaw)を計算
+		float cameraYaw = camera_->GetRotate().y;
+		float targetYaw = std::atan2(diffX, diffY) + cameraYaw;
 
 		// 現在の回転を取得して最短で目標の向きに旋回させる
 		float currentYaw = owner->GetRotation().y;
@@ -65,8 +68,23 @@ void GameObjectComponent::PlayerMoveComponent::Update(GameObject* owner)
 		// 旋回速度を適用して徐々に向きを変える
 		float nextYaw = currentYaw + diff * turnSpeed_;
 		owner->SetRotation({0.0f, nextYaw, 0.0f});
+	}
+	
+	// 入力に基づいて移動方向を取得、カメラの基準方向を計算（Y軸回転のみを考慮）
+	float yaw = camera_->GetRotate().y;
+	const Vector3& moveDirection = input_->GetMoveDirection();
+	Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
+	Vector3 right = {std::cos(yaw), 0.0f, -std::sin(yaw)};
 
+	// 入力方向をカメラ基準に変換
+	Vector3 transformedDirection = (moveDirection.x * right) + (moveDirection.z * forward);
+
+	// 移動入力がある場合のみ処理
+	float lengthSq = transformedDirection.LengthSquared();
+	if (lengthSq > 0.001f)
+	{
 		// 移動速度を適用
+		transformedDirection.NormalizeSelf();		
 		transformedDirection *= moveSpeed_;
 		physics_->SetMovementVelocity(transformedDirection);
 	}
