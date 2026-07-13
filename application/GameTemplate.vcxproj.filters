@@ -34,6 +34,9 @@
     <Filter Include="gameobject\component\action\enemy\charge">
       <UniqueIdentifier>{91C1B32B-76A8-4857-5B25-3AE29B566E70}</UniqueIdentifier>
     </Filter>
+    <Filter Include="gameobject\component\action\enemy\dash">
+      <UniqueIdentifier>{2071E47C-3DEB-9CB8-134C-4C0807B69DF1}</UniqueIdentifier>
+    </Filter>
     <Filter Include="gameobject\component\action\enemy\horming">
       <UniqueIdentifier>{EEC6CC74-8BA8-ECFC-C9A8-C4D398BA9E11}</UniqueIdentifier>
     </Filter>
@@ -78,6 +81,9 @@
     <ClCompile Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.cpp">
       <Filter>gameobject\component\action\enemy\charge</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\dash\DashMoveComponent.cpp">
+      <Filter>gameobject\component\action\enemy\dash</Filter>
+    </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\horming</Filter>
     </ClCompile>
@@ -103,7 +109,6 @@
     <ClCompile Include="scene\play\TitleScene.cpp">
       <Filter>scene\play</Filter>
     </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\dash\DashMoveComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="collision\CollisionLayer.h">
@@ -133,6 +138,9 @@
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.h">
       <Filter>gameobject\component\action\enemy\charge</Filter>
     </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\dash\DashMoveComponent.h">
+      <Filter>gameobject\component\action\enemy\dash</Filter>
+    </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h">
       <Filter>gameobject\component\action\enemy\horming</Filter>
     </ClInclude>
@@ -154,7 +162,6 @@
     <ClInclude Include="scene\play\TitleScene.h">
       <Filter>scene\play</Filter>
     </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\dash\DashMoveComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">
