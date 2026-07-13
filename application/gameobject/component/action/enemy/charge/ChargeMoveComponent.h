@@ -3,6 +3,7 @@
 #include "engine/gameobject/component/base/IActionComponent.h"
 #include "math/Vector3.h"
 
+#include "../bullet/BulletSpawnComponent.h"
 
 namespace GameObjectComponent
 {
@@ -55,6 +56,8 @@ namespace GameObjectComponent
 	  /// <param name="owner">所有者</param>
 	  void BulletInitialize(GameObject* owner);
 
+
+
   private:
 
 	  // プレイヤーのポインタ
@@ -81,8 +84,9 @@ namespace GameObjectComponent
 	  // 攻撃フラグ
 	  bool isAttacking_ = false;
 
-	  // 弾
-	  GameObject* bullet_ = nullptr;
+	  // 弾spawnコンポーネント
+	  std::unique_ptr<BulletSpawnComponent> bulletSpawnComponent_;
+
 	  // 弾の向き
 	  Vector3 bulletDirection_ = {0.0f, 0.0f, 1.0f};
 
