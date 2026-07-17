@@ -128,9 +128,13 @@ void TestScene::Initialize()
 		// 弾のレイヤーをプレイヤーにして、敵とかに充てられるようにする。
 		info.otherCollider->SetCollisionLayer(CollisionLayer::PlayerBullet);
 		info.otherCollider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Bumpers);
-
 		// プレイヤーリフレクトに衝突した場合、反射させる
-		physics->SetMovementVelocity(-physics->GetMovementVelocity()); // 速度を反転させる
+		float yaw = player_->GetRotation().y;
+		Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
+		forward.Normalize();
+
+		float speed = physics->GetMovementVelocity().Length();
+		physics->SetMovementVelocity(forward * speed);
 	});
 	player_->AddComponent("ReflectCollider", std::move(reflectCollider));
 
