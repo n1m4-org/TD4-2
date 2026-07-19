@@ -16,6 +16,12 @@ namespace GameObjectComponent
 		// 反射トリガーが発生したかどうかを取得
 		bool IsReflectTriggered() const { return isReflectTriggered_; }
 
+		/**
+		 * @brief ロックオン入力が発生したか取得する。
+		 * @return 右クリックされたフレームならtrue
+		 */
+		bool IsLockOnTriggered() const { return isLockOnTriggered_; }
+
 		// スローモーショントリガーが発生したかどうかを取得
 		bool IsSlowMotionTriggered() const { return isSlowMotionTriggered_; }
 
@@ -24,6 +30,8 @@ namespace GameObjectComponent
 		Vector3 moveDirection_ = {0.0f, 0.0f, 0.0f};
 		// 反射トリガーが発生したかどうか
 		bool isReflectTriggered_ = false;
+		// ロックオン入力が発生したフレームだけtrueになる。
+		bool isLockOnTriggered_ = false;
 		// スローモーショントリガーが発生したかどうか
 		bool isSlowMotionTriggered_ = false;
 	};
