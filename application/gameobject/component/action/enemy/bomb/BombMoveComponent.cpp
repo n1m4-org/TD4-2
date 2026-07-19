@@ -32,6 +32,7 @@ void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 	}
 
 	const float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+	// 行動を状態ごとに分け、追跡中と反射後の速度更新が混ざらないようにする。
 	switch (state_)
 	{
 	case State::Idle:
@@ -51,6 +52,7 @@ void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 
 bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
 {
+	// 多重反射と爆発後の再利用を拒否し、状態遷移を一度だけ行う。
 	if (!owner_ || !physics_ || !collider_ ||
 		state_ == State::Reflected || state_ == State::Exploded ||
 		direction.LengthSquared() <= kDirectionEpsilonSq)
@@ -70,6 +72,7 @@ bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
 	remainingLifetimeSeconds_ = reflectedLifetimeSeconds_;
 	state_ = State::Reflected;
 
+	// 反射後はプレイヤー側の攻撃として敵へ当たるレイヤーに切り替える。
 	physics_->SetMovementVelocity(reflectedVelocity_);
 	collider_->SetCollisionLayer(CollisionLayer::PlayerBullet);
 	collider_->SetCollisionMask(
@@ -93,6 +96,7 @@ bool GameObjectComponent::BombMoveComponent::InitializeComponents(GameObject* ow
 	}
 
 	owner_ = owner;
+	// 依存コンポーネントはownerが所有する。このコンポーネントは更新中だけ参照する。
 	physics_ = owner->GetComponent<PhysicsComponent>().get();
 	collider_ = owner->GetComponent<ICollisionComponent>().get();
 	if (!physics_ || !collider_)
@@ -106,6 +110,7 @@ bool GameObjectComponent::BombMoveComponent::InitializeComponents(GameObject* ow
 		CollisionLayer::Terrain |
 		CollisionLayer::Bumpers |
 		CollisionLayer::PlayerReflect);
+	// コールバックではボム自身の状態と移動だけを変更する。
 	collider_->SetOnEnter([this](const CollisionInfo& info)
 	{
 		HandleCollision(info);
@@ -193,6 +198,7 @@ void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo
 
 	if ((otherLayer & CollisionLayer::PlayerReflect) && info.other)
 	{
+		// プレイヤーから行き先だけ取得し、ボム自身のReflect APIで状態を切り替える。
 		auto reflect = info.other->GetComponent<PlayerReflectComponent>();
 		if (reflect)
 		{
@@ -203,6 +209,7 @@ void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo
 
 	if (state_ == State::Reflected && (otherLayer & CollisionLayer::Enemy))
 	{
+		// 反射されたボムが敵へ届いた時点で爆発させる。
 		Explode();
 	}
 }

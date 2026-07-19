@@ -47,8 +47,23 @@ namespace GameObjectComponent
 		Vector3 GetReflectDirectionFrom(const Vector3& sourcePosition) const;
 
 	private:
-		void UpdateLockOnTarget();
+		/**
+		 * @brief カーソル付近の敵を探し、入力時に行き先として保持する。
+		 * @param isLockOnTriggered ロックオン入力が発生したか
+		 */
+		void UpdateLockOnTarget(bool isLockOnTriggered);
+
+		/**
+		 * @brief プレイヤー正面へ反射受付コライダーを配置する。
+		 * @param owner このコンポーネントを所有するプレイヤー
+		 */
 		void UpdateReflectCollider(GameObject* owner);
+
+		/**
+		 * @brief プレイヤーのY軸回転から水平な正面方向を取得する。
+		 * @param owner このコンポーネントを所有するプレイヤー
+		 * @return 正規化した正面方向
+		 */
 		Vector3 GetPlayerForward(const GameObject* owner) const;
 
 		// ownerが所有する。PlayerReflectComponentより先に破棄されない前提。
@@ -57,10 +72,12 @@ namespace GameObjectComponent
 		Camera* camera_ = nullptr;
 		// PlayerReflectComponentが所有するロックオン表示。
 		std::unique_ptr<Sprite> lockOnMarker_;
+		// GameObjectManagerが管理するロック対象。登録中だけ参照する（所有しない）。
+		GameObject* lockOnTarget_ = nullptr;
 
 		bool isReflecting_ = false;
 		float reflectTimer_ = 0.0f;
-		float lockOnRadiusNdc_ = 5.0f;
+		float lockOnRadiusNdc_ = 0.2f;
 
 		bool hasLockOnTarget_ = false;
 		Vector3 lockOnTargetPosition_ = {};

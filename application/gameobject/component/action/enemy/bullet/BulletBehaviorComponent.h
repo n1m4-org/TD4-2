@@ -37,6 +37,8 @@ public:
 	bool IsReflected() const { return isReflected_; }
 
 private:
+	// 反射後も引き継ぐ残り寿命。
 	float lifetime_ = 0.0f;
+	// 衝突コールバックによる多重反射を防ぐ。
 	bool isReflected_ = false;
 };

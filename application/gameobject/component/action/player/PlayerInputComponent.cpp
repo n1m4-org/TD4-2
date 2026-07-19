@@ -1,6 +1,12 @@
 #include "PlayerInputComponent.h"
 #include "input/Input.h"
 
+namespace
+{
+constexpr int kLeftMouseButton = 0;
+constexpr int kRightMouseButton = 2;
+}
+
 void GameObjectComponent::PlayerInputComponent::Update(GameObject* owner)
 {
 	// 移動方向のベクトル
@@ -33,13 +39,24 @@ void GameObjectComponent::PlayerInputComponent::Update(GameObject* owner)
 	}
 
 	// 反射トリガーの判定
-	if (Input::GetInstance()->TriggerKey(DIK_SPACE) || Input::GetInstance()->IsMouseButtonTriggered(0))
+	if (Input::GetInstance()->TriggerKey(DIK_SPACE) ||
+		Input::GetInstance()->IsMouseButtonTriggered(kLeftMouseButton))
 	{
 		isReflectTriggered_ = true;
 	}
 	else
 	{
 		isReflectTriggered_ = false;
+	}
+
+	// ロック対象の確定・切り替えは右クリックの立ち上がりで行う。
+	if (Input::GetInstance()->IsMouseButtonTriggered(kRightMouseButton))
+	{
+		isLockOnTriggered_ = true;
+	}
+	else
+	{
+		isLockOnTriggered_ = false;
 	}
 
 	// スローモーショントリガーの判定

@@ -13,6 +13,7 @@
 #include "math/MatrixFunc.h"
 #include "time/TimeManager.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -55,6 +56,7 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 
 	if (!collider_)
 	{
+		// ownerが所有する反射専用コライダーを初回だけ借りる。
 		collider_ = owner->GetComponent<OBBColliderComponent>().get();
 	}
 
@@ -63,14 +65,16 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 		return;
 	}
 
-	UpdateLockOnTarget();
+	auto input = owner->GetComponent<PlayerInputComponent>();
+	UpdateLockOnTarget(input && input->IsLockOnTriggered());
 	fallbackDirection_ = GetPlayerForward(owner);
 
-	auto input = owner->GetComponent<PlayerInputComponent>();
 	if (input && input->IsReflectTriggered() && !isReflecting_)
 	{
 		isReflecting_ = true;
 		reflectTimer_ = kReflectDurationSeconds;
+
+		// 反射中にロックが切り替わっても行き先が変わらないよう、入力時点で固定する。
 		hasReflectTarget_ = hasLockOnTarget_;
 		reflectTargetPosition_ = lockOnTargetPosition_;
 
@@ -107,6 +111,7 @@ void GameObjectComponent::PlayerReflectComponent::Draw2D()
 
 Vector3 GameObjectComponent::PlayerReflectComponent::GetReflectDirectionFrom(const Vector3& sourcePosition) const
 {
+	// ロックなしなら、反射入力時に保存したプレイヤー正面を使う。
 	Vector3 direction = fallbackDirection_;
 	if (hasReflectTarget_)
 	{
@@ -123,13 +128,22 @@ Vector3 GameObjectComponent::PlayerReflectComponent::GetReflectDirectionFrom(con
 	return direction;
 }
 
-void GameObjectComponent::PlayerReflectComponent::UpdateLockOnTarget()
+void GameObjectComponent::PlayerReflectComponent::UpdateLockOnTarget(bool isLockOnTriggered)
 {
 	hasLockOnTarget_ = false;
+
+	const auto& gameObjects = GameObjectManager::GetInstance()->GetGameObjects();
+	// 破棄済みの非所有ポインタを参照しないよう、登録状態を先に確認する。
+	if (lockOnTarget_ &&
+		std::find(gameObjects.begin(), gameObjects.end(), lockOnTarget_) == gameObjects.end())
+	{
+		lockOnTarget_ = nullptr;
+	}
 
 	const Vector2 mousePosition = Input::GetInstance()->GetMousePosition();
 	const float clientWidth = static_cast<float>(WinApp::kClientWidth);
 	const float clientHeight = static_cast<float>(WinApp::kClientHeight);
+	// マウスと敵を同じ座標系で比較するため、画面座標をNDCへ変換する。
 	const Vector2 mouseNdc = {
 		(2.0f * mousePosition.x / clientWidth) - 1.0f,
 		1.0f - (2.0f * mousePosition.y / clientHeight),
@@ -137,9 +151,10 @@ void GameObjectComponent::PlayerReflectComponent::UpdateLockOnTarget()
 
 	const float lockOnRadiusSq = lockOnRadiusNdc_ * lockOnRadiusNdc_;
 	float nearestDistanceSq = lockOnRadiusSq;
-	Vector2 markerPosition = {};
+	GameObject* hoveredTarget = nullptr;
 
-	for (GameObject* object : GameObjectManager::GetInstance()->GetGameObjects())
+	// カーソルの円形範囲内にいる、最も近い有効な敵を候補にする。
+	for (GameObject* object : gameObjects)
 	{
 		if (!object || object->GetTag() != GameObjectTag::Enemy ||
 			!object->IsActive() || object->IsPendingDestroy())
@@ -166,16 +181,43 @@ void GameObjectComponent::PlayerReflectComponent::UpdateLockOnTarget()
 		}
 
 		nearestDistanceSq = distanceSq;
-		lockOnTargetPosition_ = object->GetPosition();
-		markerPosition = {
-			(enemyNdc.x - kNdcMin) * kNdcToScreenScale * Sprite::kCoordinateWidth,
-			(kNdcMax - enemyNdc.y) * kNdcToScreenScale * Sprite::kCoordinateHeight,
-		};
-		hasLockOnTarget_ = true;
+		hoveredTarget = object;
 	}
 
-	if (hasLockOnTarget_ && lockOnMarker_)
+	// 右クリック時だけ候補を確定する。同じ対象への再入力はロック解除として扱う。
+	if (isLockOnTriggered && hoveredTarget)
 	{
+		lockOnTarget_ = lockOnTarget_ == hoveredTarget ? nullptr : hoveredTarget;
+	}
+
+	// 敵でなくなった対象や破棄待ちの対象は行き先に使わない。
+	if (!lockOnTarget_ || lockOnTarget_->GetTag() != GameObjectTag::Enemy ||
+		!lockOnTarget_->IsActive() || lockOnTarget_->IsPendingDestroy())
+	{
+		lockOnTarget_ = nullptr;
+		return;
+	}
+
+	const Vector3 targetNdc = MathUtils::Transform(
+		lockOnTarget_->GetPosition(), camera_->GetViewProjectionMatrix());
+	// 画面外の対象はマーカーを配置できないため、自動でロックを解除する。
+	if (targetNdc.x < kNdcMin || targetNdc.x > kNdcMax ||
+		targetNdc.y < kNdcMin || targetNdc.y > kNdcMax ||
+		targetNdc.z < kNearNdc || targetNdc.z > kFarNdc)
+	{
+		lockOnTarget_ = nullptr;
+		return;
+	}
+
+	hasLockOnTarget_ = true;
+	lockOnTargetPosition_ = lockOnTarget_->GetPosition();
+	if (lockOnMarker_)
+	{
+		// Spriteは画面座標を受け取るため、対象のNDCを基準解像度へ変換する。
+		const Vector2 markerPosition = {
+			(targetNdc.x - kNdcMin) * kNdcToScreenScale * Sprite::kCoordinateWidth,
+			(kNdcMax - targetNdc.y) * kNdcToScreenScale * Sprite::kCoordinateHeight,
+		};
 		lockOnMarker_->SetPosition(markerPosition);
 		lockOnMarker_->Update();
 	}
@@ -183,7 +225,8 @@ void GameObjectComponent::PlayerReflectComponent::UpdateLockOnTarget()
 
 void GameObjectComponent::PlayerReflectComponent::UpdateReflectCollider(GameObject* owner)
 {
-	const Vector3 direction = GetReflectDirectionFrom(owner->GetPosition());
+	// 行き先とは分離し、攻撃を受ける判定は常にプレイヤーの現在方向へ出す。
+	const Vector3 direction = GetPlayerForward(owner);
 	const float yaw = std::atan2(direction.x, direction.z);
 
 	OBB obb = collider_->GetOBB();

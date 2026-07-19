@@ -10,6 +10,7 @@ GameObjectComponent::BulletSpawnComponent::BulletSpawnComponent()
 
 GameObject* GameObjectComponent::BulletSpawnComponent::Fire(const std::string& name, const Vector3& position, const Vector3& rotation)
 {
+	// 敵本体のロック候補と区別するため、生成時点では敵弾タグを設定する。
 	GameObject* bullet = GameObjectManager::GetInstance()->CreateGameObject(name, GameObjectTag::EnemyBullet);
 
 	bullet->SetName(name);

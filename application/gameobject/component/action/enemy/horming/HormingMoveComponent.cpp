@@ -67,6 +67,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner)
 	std::string bulletName = "HomingBullet_" + std::to_string(bulletCount++);
 
 	// 弾のGameObjectを作成
+	// 生成直後から敵弾タグを付け、ロック対象の敵本体とは区別する。
 	GameObject* bulletObject = GameObjectManager::GetInstance()->CreateGameObject(bulletName, GameObjectTag::EnemyBullet);
 
 	if (!bulletObject)
@@ -96,6 +97,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner)
 			CollisionLayer::Bumpers |
 			CollisionLayer::PlayerReflect);
 
+		// ホーミング弾自身のコールバックでは、この弾の生存状態だけを変更する。
 		collider->SetOnEnter([this, bulletObject](const CollisionInfo& info)
 		{
 			if (!info.otherCollider)
@@ -114,6 +116,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner)
 			// 反射判定に当たった場合も、いったん弾を消す
 			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect)
 			{
+				// 反射後の直線移動APIがないため、ホーミング弾は現状ここで消す。
 				KillBullet(bulletObject);
 				return;
 			}

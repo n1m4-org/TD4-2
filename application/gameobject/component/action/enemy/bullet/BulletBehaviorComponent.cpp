@@ -19,6 +19,7 @@ BulletBehaviorComponent::BulletBehaviorComponent(float lifetime)
 
 void BulletBehaviorComponent::Update(GameObject* owner)
 {
+	// 反射前後で共通の寿命を使い、画面外に残り続ける弾を防ぐ。
 	lifetime_ -= TimeManager::GetInstance().GetGameContext().deltaTime;
 	if (lifetime_ <= 0.0f)
 	{
@@ -28,6 +29,7 @@ void BulletBehaviorComponent::Update(GameObject* owner)
 
 bool BulletBehaviorComponent::Reflect(GameObject* owner, const Vector3& direction, float speed)
 {
+	// 同じ弾が複数回コールバックを受けても、反射状態への遷移は一度だけにする。
 	if (!owner || isReflected_ || direction.LengthSquared() <= kDirectionEpsilonSq)
 	{
 		return false;
@@ -42,6 +44,8 @@ bool BulletBehaviorComponent::Reflect(GameObject* owner, const Vector3& directio
 
 	Vector3 normalizedDirection = direction;
 	normalizedDirection.NormalizeSelf();
+
+	// コールバック内では弾自身の移動・当たり判定・タグだけを切り替える。
 	physics->SetMovementVelocity(normalizedDirection * speed);
 	collider->SetCollisionLayer(CollisionLayer::PlayerBullet);
 	collider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Bumpers);

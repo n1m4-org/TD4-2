@@ -39,6 +39,7 @@ namespace GameObjectComponent
 		bool Reflect(const Vector3& direction);
 
 	private:
+		/** @brief ボムの行動段階。反射後は通常の追跡へ戻さない。 */
 		enum class State
 		{
 			Idle,
@@ -47,12 +48,45 @@ namespace GameObjectComponent
 			Exploded,
 		};
 
+		/**
+		 * @brief ownerが所有する依存コンポーネントと衝突コールバックを初期化する。
+		 * @param owner このコンポーネントを所有するボム
+		 * @return 更新可能な状態ならtrue
+		 */
 		bool InitializeComponents(GameObject* owner);
+
+		/**
+		 * @brief 待機中にプレイヤーが追跡範囲へ入ったか確認する。
+		 * @param owner このコンポーネントを所有するボム
+		 */
 		void UpdateIdle(GameObject* owner);
+
+		/**
+		 * @brief 制限時間内だけプレイヤーを追跡する。
+		 * @param owner このコンポーネントを所有するボム
+		 * @param deltaTime 経過秒
+		 */
 		void UpdateChasing(GameObject* owner, float deltaTime);
+
+		/**
+		 * @brief 反射時に確定した速度を維持し、寿命切れで爆発する。
+		 * @param deltaTime 経過秒
+		 */
 		void UpdateReflected(float deltaTime);
+
+		/** @brief 爆発演出を再生し、ボム本体とコライダーを無効化する。 */
 		void Explode();
+
+		/**
+		 * @brief 衝突相手のレイヤーに応じて自身の状態を遷移させる。
+		 * @param info 衝突情報
+		 */
 		void HandleCollision(const CollisionInfo& info);
+
+		/**
+		 * @brief 地形とのめり込みと接地時の落下速度を補正する。
+		 * @param info 衝突情報
+		 */
 		void ResolveTerrainCollision(const CollisionInfo& info);
 
 		// TestSceneが所有する。ボムより先に破棄されない前提。
