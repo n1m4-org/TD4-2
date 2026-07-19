@@ -1,86 +1,77 @@
 #pragma once
+
 #include "engine/gameobject/component/base/IActionComponent.h"
 #include "jsonEditor/JsonEditableBase.h"
+#include "math/Vector3.h"
 
-// プレイヤーの前方宣言
 class GameObject;
 
 namespace GameObjectComponent
 {
-	// 物理挙動コンポーネントの前方宣言
+	class ICollisionComponent;
 	class PhysicsComponent;
+	struct CollisionInfo;
 
+	/**
+	 * @brief ボムの待機、追跡、反射、爆発を制御する。
+	 */
 	class BombMoveComponent : public IActionComponent
 		, public JsonEditableBase
 	{
 	public:
-		// プレイヤーのポインタを受け取るコンストラクタ
-		BombMoveComponent(GameObject* player);
+		/**
+		 * @brief 追跡対象のプレイヤーを設定する。
+		 * @param player TestSceneが所有するプレイヤー
+		 */
+		explicit BombMoveComponent(GameObject* player);
 
-		// 更新処理
+		/**
+		 * @brief 現在の状態に応じてボムを更新する。
+		 * @param owner このコンポーネントを所有するボム
+		 */
 		void Update(GameObject* owner) override;
 
-
-	public: // Setter / Getter
-		// 反射されたら
-		void OnReflected(const Vector3& direction, float speed)
-		{
-			// すでに反射済み、爆発済みならスルー
-			if (isReflected_ || hasExploded_)
-			{
-				return;
-			}
-			// 各種フラグを設定
-			isReflected_ = true;
-			isDashing_ = false;
-			reflectedDirection_ = direction.Normalize();
-			reflectedVelocity_ = reflectedDirection_ * speed;
-			reflectedLifespan_ = lifespan_; 
-		}
-
+		/**
+		 * @brief ボムを指定方向へ反射する。
+		 * @param direction 反射方向
+		 * @return 反射を受け付けた場合はtrue
+		 */
+		bool Reflect(const Vector3& direction);
 
 	private:
-		// プレイヤーのポインタを保持
+		enum class State
+		{
+			Idle,
+			Chasing,
+			Reflected,
+			Exploded,
+		};
+
+		bool InitializeComponents(GameObject* owner);
+		void UpdateIdle(GameObject* owner);
+		void UpdateChasing(GameObject* owner, float deltaTime);
+		void UpdateReflected(float deltaTime);
+		void Explode();
+		void HandleCollision(const CollisionInfo& info);
+		void ResolveTerrainCollision(const CollisionInfo& info);
+
+		// TestSceneが所有する。ボムより先に破棄されない前提。
 		GameObject* player_ = nullptr;
-
-		// プレイヤーの座標を保持
-		Vector3 playerPosition_ = {0.0f, 0.0f, 0.0f};
-
-		// 突進中かどうかのフラグ
-		bool isDashing_ = false;
-
-		// 突進する方向
-		Vector3 dashDirection_ = {0.0f, 0.0f, 0.0f};
-
-		// 物理挙動コンポーネントのポインタを保持
+		// owner自身。GameObjectがこのコンポーネントを所有する。
+		GameObject* owner_ = nullptr;
+		// ownerが所有する。BombMoveComponentより先に破棄されない前提。
 		PhysicsComponent* physics_ = nullptr;
+		// ownerが所有する。BombMoveComponentより先に破棄されない前提。
+		ICollisionComponent* collider_ = nullptr;
 
-		// 追尾開始距離
+		State state_ = State::Idle;
+		Vector3 reflectedVelocity_ = {};
+		float remainingLifetimeSeconds_ = 0.0f;
+
 		float chaseRange_ = 30.0f;
-
-		// 追尾速度
 		float chaseSpeed_ = 7.0f;
-
-		// 点火から爆発までの時間
-		const float ignitionTime_ = 300.0f;
-
-
-		// 爆発までの残り時間
-		float lifespan_ = ignitionTime_;
-
-		// 爆発済みかどうかのフラグ
-		bool hasExploded_ = false;
-
-
-		// リフレクト後のフラグ
-		bool isReflected_ = false;
-
-		// 爆発までの残り時間（リフレクト後） 60は仮
-		float reflectedLifespan_ = 60.0f;
-
-		// プレイヤー側から取得する反射後の方向と速度
-		Vector3 reflectedDirection_ = {0.0f, 0.0f, 0.0f};
-		Vector3 reflectedVelocity_ = {0.0f, 0.0f, 0.0f};
+		float chaseLifetimeSeconds_ = 5.0f;
+		float reflectedSpeed_ = 10.0f;
+		float reflectedLifetimeSeconds_ = 1.0f;
 	};
-
 } // namespace GameObjectComponent

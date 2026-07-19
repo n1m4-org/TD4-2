@@ -1,10 +1,12 @@
 #pragma once
+
 #include "scene/interface/BaseScene.h"
 #include "camerawork/debug/DebugCamera.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/camerawork/topdown/TopDownCamera.h"
+
 /**
- * @brief ゲームオブジェクトのテストを行うデバッグ用シーン
+ * @brief ゲームオブジェクトの動作確認を行うデバッグ用シーン。
  */
 class TestScene : public BaseScene
 {
@@ -24,9 +26,16 @@ protected:
 	void OnUpdatePlaying() override;
 
 private:
+	/**
+	 * @brief ボムエネミーを生成して必要なコンポーネントを設定する。
+	 */
+	void InitializeBombEnemy();
+
 	// ディレクショナルライト設定
 	static constexpr Vector3 kLightDirection = { -0.2f, -1.0f, 0.3f };
 	static constexpr float kLightIntensity = 0.6f;
+	static constexpr Vector3 kBombEnemyPosition = { 10.0f, 2.0f, 0.0f };
+	static constexpr Vector3 kBombEnemyScale = { 2.0f, 2.0f, 2.0f };
 
 	// デバッグカメラ
 	std::unique_ptr<DebugCamera> debugCamera_;

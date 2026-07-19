@@ -1,86 +1,202 @@
 #include "PlayerReflectComponent.h"
+
 #include "application/collision/CollisionLayer.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
+#include "base/Camera.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/base/GameObject.h"
-#include "engine/gameobject/component/base/ICollisionComponent.h"
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
-#include "time/TimeManager.h"
+#include "engine/gameobject/manager/GameObjectManager.h"
+#include "engine/input/Input.h"
+#include "engine/math/MathUtils.h"
 #include "math/MatrixFunc.h"
-#include "base/Logger.h"
+#include "time/TimeManager.h"
+
 #include <cmath>
+
+namespace
+{
+constexpr float kReflectDurationSeconds = 0.2f;
+constexpr float kReflectColliderOffset = 4.5f;
+constexpr Vector3 kReflectColliderSize = {5.0f, 2.0f, 3.0f};
+constexpr float kDirectionEpsilonSq = 0.000001f;
+constexpr float kNdcMin = -1.0f;
+constexpr float kNdcMax = 1.0f;
+constexpr float kNdcToScreenScale = 0.5f;
+constexpr float kNearNdc = 0.0f;
+constexpr float kFarNdc = 1.0f;
+constexpr char kLockOnMarkerTexture[] = "./Resources/uvChecker.png";
+constexpr Vector2 kLockOnMarkerAnchor = {0.5f, 0.5f};
+constexpr Vector2 kLockOnMarkerSize = {64.0f, 64.0f};
+}
+
+GameObjectComponent::PlayerReflectComponent::PlayerReflectComponent(
+	Camera* camera, SpriteCommon* spriteCommon)
+	: camera_(camera)
+{
+	Register("lockOnRadiusNdc", &lockOnRadiusNdc_);
+
+	if (spriteCommon)
+	{
+		lockOnMarker_ = std::make_unique<Sprite>();
+		lockOnMarker_->Initialize(spriteCommon, kLockOnMarkerTexture);
+		lockOnMarker_->SetAnchorPoint(kLockOnMarkerAnchor);
+		lockOnMarker_->SetSize(kLockOnMarkerSize);
+	}
+}
 
 void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 {
+	if (!owner || !camera_)
+	{
+		return;
+	}
+
 	if (!collider_)
 	{
-		// 初回Update時にコライダーコンポーネントのポインタを取得
 		collider_ = owner->GetComponent<OBBColliderComponent>().get();
 	}
 
-	// コライダーコンポーネントが取得できていない場合は処理を中断
 	if (!collider_)
 	{
 		return;
 	}
 
-	// 反射入力とタイマー処理
+	UpdateLockOnTarget();
+	fallbackDirection_ = GetPlayerForward(owner);
+
 	auto input = owner->GetComponent<PlayerInputComponent>();
-	if (input)
+	if (input && input->IsReflectTriggered() && !isReflecting_)
 	{
-		if (input->IsReflectTriggered() && !isReflecting_)
-		{
-			isReflecting_ = true;
-			reflectTimer_ = 0.2f;		// 0.2秒間反射判定を出し続ける
-			collider_->SetActive(true); // 反射判定を有効化
+		isReflecting_ = true;
+		reflectTimer_ = kReflectDurationSeconds;
+		hasReflectTarget_ = hasLockOnTarget_;
+		reflectTargetPosition_ = lockOnTargetPosition_;
 
-			// 先にコライダーの位置を正面に更新する
-			float yaw = owner->GetRotation().y;
-			Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
-			forward.Normalize();
-			Vector3 targetCenter = owner->GetPosition() + (forward * 4.5f);
-
-			auto* obbCollider = static_cast<OBBColliderComponent*>(collider_);
-			OBB obb = obbCollider->GetOBB();
-			obb.center = targetCenter;
-			obb.rotate = MakeRotateMatrix(owner->GetRotation());
-			obb.size = { 5.0f,2.0f,3.0f };
-			obbCollider->SetOBB(obb);
-
-			// 更新されたコライダーの位置を取得してエフェクトを再生する
-			ParticleManager::GetInstance()->Play("reflect", obbCollider->GetOBB().center);
-		}
-	}
-
-	if (isReflecting_)
-	{
-		float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
-		reflectTimer_ -= deltaTime;
-
-		// 反射中はレイヤーを Player にして当たり判定を有効にする
+		collider_->SetActive(true);
 		collider_->SetCollisionLayer(CollisionLayer::PlayerReflect);
-		Logger::Log("Player is reflecting");
-
-		// 反射中のみ、プレイヤーの正面にオフセットした位置を計算してコライダーを追従させる
-		float yaw = owner->GetRotation().y;
-		Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
-		forward.Normalize();
-
-		Vector3 targetCenter = owner->GetPosition() + (forward * 4.5f);
-
-		// OBBコライダーの座標とサイズを上書き更新
-		auto* obbCollider = static_cast<OBBColliderComponent*>(collider_);
-		OBB obb = obbCollider->GetOBB();
-		obb.center = targetCenter;
-		obb.size = { 5.0f,2.0f,3.0f };
-		obb.rotate = MakeRotateMatrix(owner->GetRotation());
-		obbCollider->SetOBB(obb);
-
-		if (reflectTimer_ <= 0.0f)
-		{
-			isReflecting_ = false;
-			collider_->SetActive(false); // 反射終了時に非アクティブ化
-			collider_->SetCollisionLayer(CollisionLayer::None);
-		}
+		UpdateReflectCollider(owner);
+		ParticleManager::GetInstance()->Play("reflect", collider_->GetOBB().center);
 	}
+
+	if (!isReflecting_)
+	{
+		return;
+	}
+
+	reflectTimer_ -= TimeManager::GetInstance().GetGameContext().deltaTime;
+	UpdateReflectCollider(owner);
+
+	if (reflectTimer_ <= 0.0f)
+	{
+		isReflecting_ = false;
+		hasReflectTarget_ = false;
+		collider_->SetActive(false);
+		collider_->SetCollisionLayer(CollisionLayer::None);
+	}
+}
+
+void GameObjectComponent::PlayerReflectComponent::Draw2D()
+{
+	if (hasLockOnTarget_ && lockOnMarker_)
+	{
+		lockOnMarker_->Draw();
+	}
+}
+
+Vector3 GameObjectComponent::PlayerReflectComponent::GetReflectDirectionFrom(const Vector3& sourcePosition) const
+{
+	Vector3 direction = fallbackDirection_;
+	if (hasReflectTarget_)
+	{
+		direction = reflectTargetPosition_ - sourcePosition;
+		direction.y = 0.0f;
+	}
+
+	if (direction.LengthSquared() <= kDirectionEpsilonSq)
+	{
+		return fallbackDirection_;
+	}
+
+	direction.NormalizeSelf();
+	return direction;
+}
+
+void GameObjectComponent::PlayerReflectComponent::UpdateLockOnTarget()
+{
+	hasLockOnTarget_ = false;
+
+	const Vector2 mousePosition = Input::GetInstance()->GetMousePosition();
+	const float clientWidth = static_cast<float>(WinApp::kClientWidth);
+	const float clientHeight = static_cast<float>(WinApp::kClientHeight);
+	const Vector2 mouseNdc = {
+		(2.0f * mousePosition.x / clientWidth) - 1.0f,
+		1.0f - (2.0f * mousePosition.y / clientHeight),
+	};
+
+	const float lockOnRadiusSq = lockOnRadiusNdc_ * lockOnRadiusNdc_;
+	float nearestDistanceSq = lockOnRadiusSq;
+	Vector2 markerPosition = {};
+
+	for (GameObject* object : GameObjectManager::GetInstance()->GetGameObjects())
+	{
+		if (!object || object->GetTag() != GameObjectTag::Enemy ||
+			!object->IsActive() || object->IsPendingDestroy())
+		{
+			continue;
+		}
+
+		const Vector3 enemyNdc = MathUtils::Transform(
+			object->GetPosition(), camera_->GetViewProjectionMatrix());
+		if (enemyNdc.x < kNdcMin || enemyNdc.x > kNdcMax ||
+			enemyNdc.y < kNdcMin || enemyNdc.y > kNdcMax ||
+			enemyNdc.z < kNearNdc || enemyNdc.z > kFarNdc)
+		{
+			continue;
+		}
+
+		const float differenceX = enemyNdc.x - mouseNdc.x;
+		const float differenceY = enemyNdc.y - mouseNdc.y;
+		const float distanceSq =
+			(differenceX * differenceX) + (differenceY * differenceY);
+		if (distanceSq > nearestDistanceSq)
+		{
+			continue;
+		}
+
+		nearestDistanceSq = distanceSq;
+		lockOnTargetPosition_ = object->GetPosition();
+		markerPosition = {
+			(enemyNdc.x - kNdcMin) * kNdcToScreenScale * Sprite::kCoordinateWidth,
+			(kNdcMax - enemyNdc.y) * kNdcToScreenScale * Sprite::kCoordinateHeight,
+		};
+		hasLockOnTarget_ = true;
+	}
+
+	if (hasLockOnTarget_ && lockOnMarker_)
+	{
+		lockOnMarker_->SetPosition(markerPosition);
+		lockOnMarker_->Update();
+	}
+}
+
+void GameObjectComponent::PlayerReflectComponent::UpdateReflectCollider(GameObject* owner)
+{
+	const Vector3 direction = GetReflectDirectionFrom(owner->GetPosition());
+	const float yaw = std::atan2(direction.x, direction.z);
+
+	OBB obb = collider_->GetOBB();
+	obb.center = owner->GetPosition() + (direction * kReflectColliderOffset);
+	obb.size = kReflectColliderSize;
+	obb.rotate = MakeRotateMatrix({0.0f, yaw, 0.0f});
+	collider_->SetOBB(obb);
+}
+
+Vector3 GameObjectComponent::PlayerReflectComponent::GetPlayerForward(const GameObject* owner) const
+{
+	const float yaw = owner->GetRotation().y;
+	Vector3 forward = {std::sin(yaw), 0.0f, std::cos(yaw)};
+	forward.NormalizeSelf();
+	return forward;
 }

@@ -1,5 +1,6 @@
 #include "HormingMoveComponent.h"
 
+#include "application/gameobject/GameObjectTag.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
@@ -66,7 +67,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner)
 	std::string bulletName = "HomingBullet_" + std::to_string(bulletCount++);
 
 	// 弾のGameObjectを作成
-	GameObject* bulletObject = GameObjectManager::GetInstance()->CreateGameObject(bulletName, "Bullet");
+	GameObject* bulletObject = GameObjectManager::GetInstance()->CreateGameObject(bulletName, GameObjectTag::EnemyBullet);
 
 	if (!bulletObject)
 	{

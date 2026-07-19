@@ -117,6 +117,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gameobject\GameObjectTag.h">
+      <Filter>gameobject</Filter>
+    </ClInclude>
     <ClInclude Include="collision\CollisionLayer.h">
       <Filter>collision</Filter>
     </ClInclude>

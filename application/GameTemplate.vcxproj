@@ -140,6 +140,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gameobject\GameObjectTag.h" />
     <ClInclude Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.h" />

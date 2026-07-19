@@ -3,6 +3,7 @@
 #include "../../common/PhysicsComponent.h"
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
+#include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
@@ -165,11 +166,28 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 		collider->SetCollisionLayer(CollisionLayer::EnemyBullet);
 		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Bumpers | CollisionLayer::PlayerReflect);
 
-		collider->SetOnEnter([this, bullet](const CollisionInfo& info)
+		collider->SetOnEnter([bullet](const CollisionInfo& info)
 		{
 			// マスクのレイヤーに衝突した場合、弾を破壊する
 			if (!info.otherCollider)
 			{
+				return;
+			}
+
+			if (info.other &&
+				(info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect))
+			{
+				auto reflect = info.other->GetComponent<PlayerReflectComponent>();
+				auto behavior = bullet->GetComponent<BulletBehaviorComponent>();
+				auto bulletPhysics = bullet->GetComponent<PhysicsComponent>();
+				if (!reflect || !behavior || !bulletPhysics)
+				{
+					return;
+				}
+
+				const Vector3 direction = reflect->GetReflectDirectionFrom(bullet->GetPosition());
+				const float speed = bulletPhysics->GetMovementVelocity().Length();
+				behavior->Reflect(bullet, direction, speed);
 				return;
 			}
 
@@ -181,7 +199,7 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 				bullet->Destroy();
 			}
 		});
-		collider->SetOnStay([this](const CollisionInfo& info) {});
-		collider->SetOnExit([this](const CollisionInfo& info) {});
+		collider->SetOnStay([](const CollisionInfo&) {});
+		collider->SetOnExit([](const CollisionInfo&) {});
 	}
 }
