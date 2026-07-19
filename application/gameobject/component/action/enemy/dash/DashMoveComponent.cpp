@@ -2,7 +2,10 @@
 
 #include "gameobject/base/GameObject.h"
 #include "gameobject/component/action/common/PhysicsComponent.h"
+#ifdef USE_IMGUI
 #include "manager/editor/DebugUIManager.h"
+#include "externals/imgui/imgui.h"
+#endif
 #include "time/TimeManager.h"
 
 namespace GameObjectComponent
@@ -11,7 +14,9 @@ namespace GameObjectComponent
 	DashMoveComponent::DashMoveComponent(GameObject* _player)
 		:player_(_player) 
 	{
+#ifdef USE_IMGUI
 		DebugUIManager::GetInstance()->RegisterDebugUI(this, "DashMove", [this](){ Debug(); });
+#endif
 	}
 
 	void DashMoveComponent::Update(GameObject* _owner)
@@ -70,6 +75,8 @@ namespace GameObjectComponent
 
 	void DashMoveComponent::Debug()
 	{
+#ifdef USE_IMGUI
 		ImGui::DragFloat("#speed", &speed_);
+#endif
 	}
 }

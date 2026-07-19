@@ -120,6 +120,9 @@
     <ClInclude Include="collision\CollisionLayer.h">
       <Filter>collision</Filter>
     </ClInclude>
+    <ClInclude Include="gameobject\GameObjectTag.h">
+      <Filter>gameobject</Filter>
+    </ClInclude>
     <ClInclude Include="gameobject\component\action\common\PhysicsComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
