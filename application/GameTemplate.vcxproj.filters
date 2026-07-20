@@ -63,6 +63,9 @@
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.cpp">
+      <Filter>gameobject\component\action\enemy</Filter>
+    </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\bomb</Filter>
     </ClCompile>
@@ -115,7 +118,6 @@
     <ClCompile Include="scene\play\TitleScene.cpp">
       <Filter>scene\play</Filter>
     </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="collision\CollisionLayer.h">
@@ -129,6 +131,9 @@
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
       <Filter>gameobject\component\action\common</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.h">
+      <Filter>gameobject\component\action\enemy</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\bomb\BombMoveComponent.h">
       <Filter>gameobject\component\action\enemy\bomb</Filter>
@@ -178,7 +183,6 @@
     <ClInclude Include="scene\play\TitleScene.h">
       <Filter>scene\play</Filter>
     </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">
