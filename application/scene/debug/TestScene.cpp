@@ -1,5 +1,6 @@
 #include "TestScene.h"
 #include "application/collision/CollisionLayer.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
@@ -9,11 +10,6 @@
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
-#include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
-#include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
-#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
-#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
-#include "base/Logger.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
@@ -58,8 +54,8 @@ void TestScene::Initialize()
 	debugCamera_->Start({0.0f, 10.0f, -30.0f}, {0.2f, 0.0f, 0.0f});
 
 	// 追従カメラの初期化
-	followCamera_ = std::make_unique<FollowCamera>();
-	followCamera_->Initialize(sceneManager_->GetCameraManager()->GetActiveCamera());
+	topDownCamera_ = std::make_unique<TopDownCamera>();
+	topDownCamera_->Initialize(sceneManager_->GetCameraManager()->GetActiveCamera());
 
 	// ゲームオブジェクトマネージャーの初期化
 	GameObjectManager::GetInstance()->Initialize();
@@ -80,12 +76,12 @@ void TestScene::Initialize()
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 
 	// 1. テスト用キューブオブジェクトの作成
-	player_ = std::make_unique<GameObject>("TestCube");
+	player_ = std::make_unique<GameObject>(GameObjectTag::Player);
 	player_->SetName("TestCube");
 	player_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	player_->SetModel("cube");
 	player_->SetPosition({0.0f, 2.0f, 0.0f});
-	player_->SetScale({2.0f, 2.0f, 2.0f});	
+	player_->SetScale({2.0f, 2.0f, 2.0f});
 
 	// アクション・物理・ステータスコンポーネントの追加
 	player_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
@@ -95,42 +91,26 @@ void TestScene::Initialize()
 	player_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(nullptr));
 	player_->AddComponent("Status", std::make_unique<StatusComponent>(player_.get()));
 	player_->AddComponent("Physics", std::make_unique<PhysicsComponent>(player_.get()));
-	player_->AddComponent("Reflect", std::make_unique<PlayerReflectComponent>());
+	player_->AddComponent(
+		"Reflect",
+		std::make_unique<PlayerReflectComponent>(
+			sceneManager_->GetCameraManager()->GetActiveCamera(),
+			sceneManager_->GetSpriteCommon()));
 	player_->AddComponent("SlowMotion", std::make_unique<PlayerSlowMotionComponent>(sceneManager_->GetLightManager()));
 
-	// 反射用の球体コライダーを追加
-	auto reflectCollider = std::make_unique<OBBColliderComponent>(player_.get());
-	reflectCollider->SetAutoUpdatePosition(false); // プレイヤー本体の位置への自動同期をオフにする
+	// 円弧の基準位置として、プレイヤーの少し前へ反射判定を配置する。
+	auto reflectHand = std::make_unique<GameObject>(GameObjectTag::Player);
+	reflectHand->SetName("ReflectHand");
+	reflectHand->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	reflectHand->SetActive(false);
+	reflectHand->SetPosition(kReflectHandLocalPosition);
+	reflectHand->SetScale(kReflectHandLocalScale);
+	auto reflectCollider = std::make_unique<OBBColliderComponent>(reflectHand.get());
 	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
-	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy); // 敵の弾のみを判定対象とする
-	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
-	{
-		if (!info.other)
-		{
-			return;
-		}
-
-		auto behavior = info.other->GetComponent<BulletBehaviorComponent>();
-		if (!behavior)
-		{
-			return;
-		}
-
-		auto physics = info.other->GetComponent<PhysicsComponent>();
-		if (!physics)
-		{
-			return;
-		}
-
-		// 弾のレイヤーをプレイヤーにして、敵とかに充てられるようにする。
-		info.otherCollider->SetCollisionLayer(CollisionLayer::PlayerBullet);
-		info.otherCollider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Bumpers);
-
-		// プレイヤーリフレクトに衝突した場合、反射させる
-		physics->SetMovementVelocity(-physics->GetMovementVelocity()); // 速度を反転させる
-	});
-	player_->AddComponent("ReflectCollider", std::move(reflectCollider));
+	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
+	reflectHand->AddComponent("ReflectCollider", std::move(reflectCollider));
+	player_->AddChild("ReflectHand", std::move(reflectHand));
 
 	// AABBコライダーの追加
 	player_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(player_.get()));
@@ -192,7 +172,6 @@ void TestScene::Initialize()
 					status->SetHp(status->GetHp());
 				}
 			}
-
 		});
 		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
 		{
@@ -203,12 +182,14 @@ void TestScene::Initialize()
 	}
 
 	// こいつに追従カメラを追従させる
-	followCamera_->Start(&player_->GetPosition(), 50.0f, 0.05f);
+	topDownCamera_->SetPitch(1.2f);
+	topDownCamera_->SetOffset({ 0.0f,0.0f,-40.0f });
+	topDownCamera_->Start(105.0f, &player_->GetPosition());
 	// マネージャーに登録
 	GameObjectManager::GetInstance()->Register(player_.get());
 
 	// 2. テスト用ターゲットオブジェクトの作成
-	targetObject_ = std::make_unique<GameObject>("TestTarget");
+	targetObject_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
 	targetObject_->SetName("TestTarget");
 	targetObject_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	targetObject_->SetModel("cube");
@@ -226,7 +207,7 @@ void TestScene::Initialize()
 	if (auto collider = targetObject_->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
-		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerBullet | CollisionLayer::Terrain | CollisionLayer::Bumpers);
 
 		auto handleTargetCollision = [this](const CollisionInfo& info)
 		{
@@ -268,7 +249,7 @@ void TestScene::Initialize()
 	GameObjectManager::GetInstance()->Register(targetObject_.get());
 
 	// 3. 地面キューブオブジェクトの作成
-	groundObject_ = std::make_unique<GameObject>("GroundCube");
+	groundObject_ = std::make_unique<GameObject>(GameObjectTag::Terrain);
 	groundObject_->SetName("GroundCube");
 	groundObject_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	groundObject_->SetModel("cube");
@@ -290,7 +271,7 @@ void TestScene::Initialize()
 	GameObjectManager::GetInstance()->Register(groundObject_.get());
 
 	// 障害物：バンパー
-	bumper_ = std::make_unique<GameObject>("Bumper");
+	bumper_ = std::make_unique<GameObject>(GameObjectTag::Bumper);
 	bumper_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	bumper_->SetName("Bumper");
 	bumper_->SetModel("cube");
@@ -410,8 +391,9 @@ void TestScene::Initialize()
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 
+
 	// チャージ敵
-	chargeEnemy_ = std::make_unique<GameObject>("ChargeEnemy");
+	chargeEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
 	chargeEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	chargeEnemy_->SetName("ChargeEnemy");
 	chargeEnemy_->SetModel("cube");
@@ -461,16 +443,16 @@ void TestScene::Initialize()
 			}
 		};
 
-	// ホーミングテスト用キューブオブジェクトの作成
-	hormingTest_ = std::make_unique<GameObject>("HormingTestCube");
-	hormingTest_->SetName("HormingTestCube");
-	hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-	hormingTest_->SetModel("cube");
-	hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
-	hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
+		// ホーミングテスト用キューブオブジェクトの作成
+		hormingTest_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
+		hormingTest_->SetName("HormingTestCube");
+		hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+		hormingTest_->SetModel("cube");
+		hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
+		hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
 
-	// Hキーで cubeObject_ の位置へスプライン移動する
-	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
+		// Hキーで cubeObject_ の位置へスプライン移動する
+		hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
 		{ handleTargetCollision(info); });
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
@@ -482,6 +464,23 @@ void TestScene::Initialize()
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 
 	StartState(SceneState::Playing);
+}
+
+void TestScene::InitializeBombEnemy()
+{
+	bombEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
+	bombEnemy_->SetName("BombEnemy");
+	bombEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	bombEnemy_->SetModel("cube");
+	bombEnemy_->SetPosition(kBombEnemyPosition);
+	bombEnemy_->SetScale(kBombEnemyScale);
+
+	bombEnemy_->AddComponent("Move", std::make_unique<BombMoveComponent>(player_.get()));
+	bombEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
+
+	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 }
 
 void TestScene::Finalize()
@@ -503,7 +502,7 @@ void TestScene::Finalize()
 	groundObject_.reset();
 	targetObject_.reset();
 	debugCamera_.reset();
-	followCamera_.reset();
+	topDownCamera_.reset();
 }
 
 void TestScene::OnUpdatePlaying()
@@ -521,7 +520,7 @@ void TestScene::OnUpdatePlaying()
 	}
 	else
 	{
-		followCamera_->Update();
+		topDownCamera_->Update();
 	}
 
 	// コリジョンマネージャーの前フレーム位置更新
@@ -532,7 +531,6 @@ void TestScene::OnUpdatePlaying()
 
 	// 衝突判定の実行
 	CollisionManager::GetInstance()->CheckCollisions();
-
 }
 
 void TestScene::Draw3D()

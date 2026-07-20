@@ -1,6 +1,11 @@
 #include "HormingMoveComponent.h"
+#include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 
+#include "application/collision/CollisionLayer.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "engine/gameobject/base/GameObject.h"
+#include "engine/gameobject/component/collision/AABBColliderComponent.h"
+#include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
@@ -18,7 +23,13 @@ HormingMoveComponent::HormingMoveComponent(GameObject* target)
 	Register("heightOffset", &heightOffset_);
 	Register("slideOffset", &slideOffset_);
 	Register("targetFollowRate", &targetFollowRate_);
-	Register("cooldownTime", &cooldownTime_);
+
+	Register("homingReleaseDistance", &homingReleaseDistance_);
+	Register("straightSpeed", &straightSpeed_);
+
+	Register("autoFireInterval", &autoFireInterval_);
+	Register("burstCount", &burstCount_);
+	Register("burstInterval", &burstInterval_);
 }
 
 void HormingMoveComponent::Update(GameObject* owner)
@@ -29,40 +40,62 @@ void HormingMoveComponent::Update(GameObject* owner)
 		return;
 	}
 
-	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
-
+	// すでに発射済みの弾を更新
 	UpdateBullets();
 
-	// 発射クールタイムの更新
-	if (isCooldown_)
+	// 一定間隔で自動発射
+	UpdateAutoFire(owner);
+}
+
+void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
+{
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	// バースト発射中なら、burstInterval_ ごとに1発ずつ撃つ
+	if (pendingBurstCount_ > 0)
 	{
-		cooldownTimer_ += deltaTime;
-		if (cooldownTimer_ >= cooldownTime_)
+		burstTimer_ += deltaTime;
+
+		if (burstTimer_ >= burstInterval_)
 		{
-			cooldownTimer_ = 0.0f;
-			isCooldown_ = false;
+			burstTimer_ = 0.0f;
+
+			FireBullet(owner, currentBurstIndex_, burstCount_);
+
+			currentBurstIndex_++;
+			pendingBurstCount_--;
 		}
+
+		return;
 	}
 
-	// Hキーを押した瞬間にホーミング弾を発射
-	if (Input::GetInstance()->TriggerKey(DIK_H) && !isCooldown_)
+	// 次の攻撃開始までの時間を進める
+	autoFireTimer_ += deltaTime;
+
+	if (autoFireTimer_ >= autoFireInterval_)
 	{
-		FireBullet(owner);
-		isCooldown_ = true;
+		autoFireTimer_ = 0.0f;
+
+		// 複数弾の発射開始
+		pendingBurstCount_ = burstCount_;
+		currentBurstIndex_ = 0;
+		burstTimer_ = burstInterval_;
 	}
 }
 
-void HormingMoveComponent::FireBullet(GameObject* owner)
+void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, int32_t bulletCount)
 {
 	if (!owner || !target_)
 	{
 		return;
 	}
 
-	static uint32_t bulletCount = 0;
-	std::string bulletName = "HomingBullet_" + std::to_string(bulletCount++);
+	static uint32_t bulletCountForName = 0;
+	std::string bulletName = "HomingBullet_" + std::to_string(bulletCountForName++);
 
-	GameObject* bulletObject = GameObjectManager::GetInstance()->CreateGameObject(bulletName, "Bullet");
+	// 弾のGameObjectを作成
+	// 生成直後から敵弾タグを付け、ロック対象の敵本体とは区別する。
+	GameObject* bulletObject = GameObjectManager::GetInstance()->CreateGameObject(bulletName, GameObjectTag::EnemyBullet);
 
 	if (!bulletObject)
 	{
@@ -77,11 +110,89 @@ void HormingMoveComponent::FireBullet(GameObject* owner)
 	spawnPos.y += 1.0f;
 	bulletObject->SetPosition(spawnPos);
 
+	// AABBコライダーの追加
+	bulletObject->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bulletObject));
+
+	if (auto collider = bulletObject->GetComponent<AABBColliderComponent>())
+	{
+		// ホーミング弾は敵弾として扱う
+		collider->SetCollisionLayer(CollisionLayer::EnemyBullet);
+
+		// プレイヤー、バンパー、反射判定に当たるようにする
+		collider->SetCollisionMask(
+			CollisionLayer::Player |
+			CollisionLayer::Bumpers |
+			CollisionLayer::PlayerReflect);
+
+		// ホーミング弾自身のコールバックでは、この弾の生存状態だけを変更する。
+		collider->SetOnEnter([this, bulletObject, owner](const CollisionInfo& info)
+		{
+			if (!info.otherCollider)
+			{
+				return;
+			}
+
+			// 反射判定に当たったら、撃ってきた敵に向かって弧を描いて跳ね返す
+			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect)
+			{
+				ReflectBullet(bulletObject, owner);
+				return;
+			}
+
+			// プレイヤー、バンパーに当たったら弾を消す
+			if ((info.otherCollider->GetCollisionLayer() & CollisionLayer::Player) ||
+				(info.otherCollider->GetCollisionLayer() & CollisionLayer::Bumpers))
+			{
+				KillBullet(bulletObject);
+				return;
+			}
+
+			// 反射後に敵へ当たったら弾を消す
+			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::Enemy)
+			{
+				// 反射後の直線移動APIがないため、ホーミング弾は現状ここで消す。
+				if (info.other)
+				{
+					GameObject* player = info.other->GetParent();
+					if (auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr)
+					{
+						reflect->NotifyReflectSucceeded();
+					}
+				}
+				KillBullet(bulletObject);
+				return;
+			}
+		});
+
+		collider->SetOnStay([](const CollisionInfo& info) {});
+		collider->SetOnExit([](const CollisionInfo& info) {});
+	}
+
 	HomingBullet bullet;
 	bullet.object = bulletObject;
+
+	// 最初はプレイヤーを狙う
+	bullet.target = target_;
+
 	bullet.lifeTime = bulletLifeTime_;
 	bullet.timer = 0.0f;
+	bullet.isStraight = false;
+	bullet.straightDir = {};
+	bullet.isReflected = false;
 	bullet.isDead = false;
+
+	// 複数弾の横方向差を作る
+	float center = static_cast<float>(bulletCount - 1) * 0.5f;
+	float offsetIndex = static_cast<float>(bulletIndex) - center;
+
+	// 横方向の膨らみ倍率
+	bullet.sidePower = 1.0f + offsetIndex * 0.45f;
+
+	// 偶数・奇数で左右の流れを変え、同じ軌道になりすぎないようにする
+	if (bulletIndex % 2 == 1)
+	{
+		bullet.sidePower *= -1.0f;
+	}
 
 	// ベジェ曲線用の開始点・終点・制御点を作成
 	InitializeBulletCurve(bullet);
@@ -93,18 +204,19 @@ void HormingMoveComponent::FireBullet(GameObject* owner)
 
 void HormingMoveComponent::InitializeBulletCurve(HomingBullet& bullet)
 {
-	if (!bullet.object || !target_)
+	if (!bullet.object || !bullet.target)
 	{
 		return;
 	}
 
 	// ベジェ曲線の開始点と終点を決める
 	bullet.startPos = bullet.object->GetPosition();
-	bullet.endPos = target_->GetPosition();
+	bullet.endPos = bullet.target->GetPosition();
 
 	// 開始点からターゲットへの方向
 	Vector3 toTarget = bullet.endPos - bullet.startPos;
 
+	// 見下ろし視点なので、XZ平面上で横方向を計算する
 	Vector3 flatDir = {toTarget.x, 0.0f, toTarget.z};
 
 	float lengthSq =
@@ -121,17 +233,29 @@ void HormingMoveComponent::InitializeBulletCurve(HomingBullet& bullet)
 		flatDir.NormalizeSelf();
 	}
 
+	// 進行方向に対して横方向のベクトル
 	bullet.sideDir = {-flatDir.z, 0.0f, flatDir.x};
 
-	// ベジェ曲線の制御点1
-	// 序盤の曲がり方を決める
-	bullet.controlPos1 = bullet.startPos + toTarget * 0.25f + bullet.sideDir * sideOffset_;
+	float sidePowerOffset = sideOffset_ * bullet.sidePower;
+	float slidePowerOffset = slideOffset_ * bullet.sidePower;
+
+	// 横方向を強めにして、見下ろし視点でも避けやすい軌道にする
+	bullet.controlPos1 =
+		bullet.startPos +
+		toTarget * 0.20f +
+		bullet.sideDir * sidePowerOffset;
+
 	bullet.controlPos1.y += heightOffset_;
 
-	// ベジェ曲線の制御点2
-	// 終盤の曲がり方を決める
-	bullet.controlPos2 = bullet.startPos + toTarget * 0.75f - bullet.sideDir * sideOffset_;
+	bullet.controlPos2 =
+		bullet.startPos +
+		toTarget * 0.70f -
+		bullet.sideDir * sidePowerOffset;
+
 	bullet.controlPos2.y += heightOffset_ * 0.5f;
+
+	// slideOffset_も弾ごとに差を出したいので、sideDir側に反映する
+	bullet.sideDir = bullet.sideDir * slidePowerOffset;
 }
 
 void HormingMoveComponent::UpdateBullets()
@@ -150,6 +274,13 @@ void HormingMoveComponent::UpdateBullets()
 			continue;
 		}
 
+		// この弾が狙う対象がない場合は削除する
+		if (!bullet.target)
+		{
+			KillBullet(bullet.object);
+			continue;
+		}
+
 		bullet.timer += deltaTime;
 
 		float t = bullet.timer / bullet.lifeTime;
@@ -157,29 +288,73 @@ void HormingMoveComponent::UpdateBullets()
 		// 寿命が切れたら削除
 		if (t >= 1.0f)
 		{
-			bullet.isDead = true;
-			bullet.object->Destroy();
-			bullet.object = nullptr;
+			KillBullet(bullet.object);
 			continue;
 		}
 
-		// 現在のターゲット位置を取得
-		Vector3 targetPos = target_->GetPosition();
+		// 現在の弾位置とターゲット位置
+		Vector3 bulletPos = bullet.object->GetPosition();
+		Vector3 targetPos = bullet.target->GetPosition();
+
+		// まだホーミング中なら、一定距離以内でホーミング解除
+		if (!bullet.isStraight)
+		{
+			Vector3 toTarget = targetPos - bulletPos;
+			float distance = toTarget.Length();
+
+			if (distance <= homingReleaseDistance_)
+			{
+				// この瞬間のターゲット方向を保存して、以降はその方向に直進する
+				if (distance > 0.001f)
+				{
+					toTarget.NormalizeSelf();
+					bullet.straightDir = toTarget;
+				}
+				else
+				{
+					// ほぼ重なっている場合の保険
+					bullet.straightDir = {0.0f, 0.0f, 1.0f};
+				}
+
+				bullet.isStraight = true;
+			}
+		}
+
+		// ホーミング解除後は、その時点の方向へまっすぐ進む
+		if (bullet.isStraight)
+		{
+			Vector3 pos = bullet.object->GetPosition();
+			pos += bullet.straightDir * straightSpeed_ * deltaTime;
+
+			if (!bullet.object || bullet.isDead)
+			{
+				continue;
+			}
+
+			bullet.object->SetPosition(pos);
+			continue;
+		}
+
+		// ホーミング処理
 
 		// 終点をターゲットの現在位置へ少しずつ寄せる
 		bullet.endPos = bullet.endPos + (targetPos - bullet.endPos) * targetFollowRate_;
 
 		Vector3 toCurrentEnd = bullet.endPos - bullet.startPos;
 
+		// 後半の制御点だけターゲット側へ少し追従させる
 		Vector3 targetControlPos2 =
-			bullet.startPos + toCurrentEnd * 0.75f - bullet.sideDir * sideOffset_;
+			bullet.startPos +
+			toCurrentEnd * 0.70f -
+			bullet.sideDir;
 
 		targetControlPos2.y += heightOffset_ * 0.5f;
 
 		bullet.controlPos2 =
-			bullet.controlPos2 + (targetControlPos2 - bullet.controlPos2) * targetFollowRate_;
+			bullet.controlPos2 +
+			(targetControlPos2 - bullet.controlPos2) * targetFollowRate_;
 
-		float easedT = EaseInOut(t);
+		float easedT = EaseBullet(t);
 
 		// ベジェ曲線上の位置を計算
 		Vector3 pos = CubicBezier(
@@ -189,12 +364,96 @@ void HormingMoveComponent::UpdateBullets()
 			bullet.endPos,
 			easedT);
 
+		// 中盤だけ横に流す（見下ろし視点で軌道が分かりやすくなるようにする）
 		float slideRate =
 			1.0f - ((easedT * 2.0f - 1.0f) * (easedT * 2.0f - 1.0f));
 
-		pos += bullet.sideDir * slideOffset_ * slideRate;
+		pos += bullet.sideDir * slideRate;
+
+		// 衝突などで途中で消えていた場合の保険
+		if (!bullet.object || bullet.isDead)
+		{
+			continue;
+		}
 
 		bullet.object->SetPosition(pos);
+	}
+}
+
+void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, GameObject* reflectTarget)
+{
+	if (!bulletObject || !reflectTarget)
+	{
+		return;
+	}
+
+	for (HomingBullet& bullet : bullets_)
+	{
+		if (bullet.object != bulletObject)
+		{
+			continue;
+		}
+
+		if (bullet.isDead)
+		{
+			return;
+		}
+
+		// すでに反射済みなら二重反射しない
+		if (bullet.isReflected)
+		{
+			return;
+		}
+
+		bullet.isReflected = true;
+
+		// 狙い先を「撃ってきた敵」に変更
+		bullet.target = reflectTarget;
+
+		// 反射後はホーミング解除状態もリセット
+		bullet.isStraight = false;
+		bullet.straightDir = {};
+
+		// 反射した瞬間から、もう一度弧を描いて飛ばす
+		bullet.timer = 0.0f;
+		bullet.lifeTime = bulletLifeTime_;
+
+		// 反射後はプレイヤー弾として扱う
+		if (auto collider = bullet.object->GetComponent<AABBColliderComponent>())
+		{
+			collider->SetCollisionLayer(CollisionLayer::PlayerBullet);
+			collider->SetCollisionMask(
+				CollisionLayer::Enemy |
+				CollisionLayer::Bumpers);
+		}
+
+		// 現在位置から敵に向かうベジェ曲線を作り直す
+		InitializeBulletCurve(bullet);
+
+		return;
+	}
+}
+
+void HormingMoveComponent::KillBullet(GameObject* bulletObject)
+{
+	if (!bulletObject)
+	{
+		return;
+	}
+
+	for (HomingBullet& bullet : bullets_)
+	{
+		if (bullet.object == bulletObject)
+		{
+			bullet.isDead = true;
+
+			// Destroyは一回だけ呼ぶ
+			bullet.object->Destroy();
+
+			// 以降UpdateBulletsで触らないようにする
+			bullet.object = nullptr;
+			return;
+		}
 	}
 }
 
@@ -205,13 +464,6 @@ Vector3 HormingMoveComponent::CubicBezier(
 	const Vector3& p3,
 	float t)
 {
-	// 3次ベジェ曲線
-	// p0: 開始点
-	// p1: 制御点1
-	// p2: 制御点2
-	// p3: 終点
-	// t : 進行度 0.0f ～ 1.0f
-
 	float invT = 1.0f - t;
 
 	return p0 * (invT * invT * invT) +
@@ -220,7 +472,7 @@ Vector3 HormingMoveComponent::CubicBezier(
 		   p3 * (t * t * t);
 }
 
-float HormingMoveComponent::EaseInOut(float t)
+float HormingMoveComponent::EaseBullet(float t)
 {
 	if (t < 0.0f)
 	{
@@ -231,5 +483,7 @@ float HormingMoveComponent::EaseInOut(float t)
 		t = 1.0f;
 	}
 
-	return t * t * (3.0f - 2.0f * t);
+	// 弾っぽく、発射直後からスッと進む補間
+	float invT = 1.0f - t;
+	return 1.0f - invT * invT * invT;
 }

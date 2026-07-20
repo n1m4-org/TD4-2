@@ -8,7 +8,7 @@
 namespace GameObjectComponent
 {
 
-	// 前方宣言
+    // 前方宣言
 	class PhysicsComponent;
 
   /// <summary>
@@ -56,7 +56,18 @@ namespace GameObjectComponent
 	  /// <param name="owner">所有者</param>
 	  void BulletInitialize(GameObject* owner);
 
+	  /// <summary>
+	  /// 左右移動移動
+	  /// </summary>
+	  /// <param name="owner"></param>
+	  void StrafeMove(GameObject* owner);
 
+	  /// <summary>
+	  /// 乱数生成
+	  /// </summary>
+	  /// <param name="min">最小値</param>
+	  /// <param name="max">最大値</param>
+	  float Random(float min, float max);
 
   private:
 
@@ -69,6 +80,9 @@ namespace GameObjectComponent
 	  // 移動速度
 	  float moveSpeed_ = 5.0f;
 
+	  // 回転速度
+	  float rotationSpeed_ = 60.0f;
+
 	  // チャージ開始距離
 	  float chargeStartDistance_ = 30.0f;
 	  // チャージ開始フラグ
@@ -78,8 +92,17 @@ namespace GameObjectComponent
 	  float chargeTime_ = 0.0f;
 
 	  // 攻撃クールタイム
-	  const float kCoolTime = 2.0f;
+	  const float kCoolTime = 5.0f;
 	  float coolTime_ = 0.0f;
+
+	   // 左右移動のタイマー
+	  float strafeTimer_ = 0.0f;
+	  // 左右移動の切り替え時間
+	  float changeTime_ = 0.5f;
+	  // 左右移動フラグ
+	  bool moveRight_ = true;
+	  // 左右移動速度
+	  float currentStrafeSpeed_ = 5.0f;
 
 	  // 攻撃フラグ
 	  bool isAttacking_ = false;
