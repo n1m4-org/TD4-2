@@ -98,13 +98,19 @@ void TestScene::Initialize()
 			sceneManager_->GetSpriteCommon()));
 	player_->AddComponent("SlowMotion", std::make_unique<PlayerSlowMotionComponent>(sceneManager_->GetLightManager()));
 
-	// 反射用の球体コライダーを追加
-	auto reflectCollider = std::make_unique<OBBColliderComponent>(player_.get());
-	reflectCollider->SetAutoUpdatePosition(false); // プレイヤー本体の位置への自動同期をオフにする
+	// 円弧の基準位置として、プレイヤーの少し前へ反射判定を配置する。
+	auto reflectHand = std::make_unique<GameObject>(GameObjectTag::Player);
+	reflectHand->SetName("ReflectHand");
+	reflectHand->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	reflectHand->SetActive(false);
+	reflectHand->SetPosition(kReflectHandLocalPosition);
+	reflectHand->SetScale(kReflectHandLocalScale);
+	auto reflectCollider = std::make_unique<OBBColliderComponent>(reflectHand.get());
 	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
-	player_->AddComponent("ReflectCollider", std::move(reflectCollider));
+	reflectHand->AddComponent("ReflectCollider", std::move(reflectCollider));
+	player_->AddChild("ReflectHand", std::move(reflectHand));
 
 	// AABBコライダーの追加
 	player_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(player_.get()));

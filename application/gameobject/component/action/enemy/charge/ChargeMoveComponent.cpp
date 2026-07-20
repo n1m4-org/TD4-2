@@ -182,7 +182,8 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 				(info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect))
 			{
 				// 行き先はプレイヤーから取得し、速度とレイヤー変更は弾自身のAPIへ任せる。
-				auto reflect = info.other->GetComponent<PlayerReflectComponent>();
+				GameObject* player = info.other->GetParent();
+				auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr;
 				auto behavior = bullet->GetComponent<BulletBehaviorComponent>();
 				auto bulletPhysics = bullet->GetComponent<PhysicsComponent>();
 				if (!reflect || !behavior || !bulletPhysics)
@@ -193,7 +194,10 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 				// 現在速度の大きさを保ったまま、反射時に確定した方向へ向け直す。
 				const Vector3 direction = reflect->GetReflectDirectionFrom(bullet->GetPosition());
 				const float speed = bulletPhysics->GetMovementVelocity().Length();
-				behavior->Reflect(bullet, direction, speed);
+				if (behavior->Reflect(bullet, direction, speed))
+				{
+					reflect->NotifyReflectSucceeded();
+				}
 				return;
 			}
 
