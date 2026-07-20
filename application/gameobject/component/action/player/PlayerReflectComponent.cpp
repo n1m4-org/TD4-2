@@ -1,6 +1,7 @@
 #include "PlayerReflectComponent.h"
 
 #include "application/collision/CollisionLayer.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "base/Camera.h"
