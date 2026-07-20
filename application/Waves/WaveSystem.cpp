@@ -5,30 +5,39 @@
 #include <sstream>
 #include <unordered_set>
 
-void WaveSystem::Initialize()
+#include "base/Logger.h"
+
+void WaveSystem::Initialize(Object3dCommon* object3dCommon, LightManager* lightManager)
 {
 	waves_.clear();
 	current_ = 0;
 	waitingInterval_ = false;
 	intervalTimer_ = 0.0f;
+	started_ = false;
+
+	spawner_.Initialize(object3dCommon, lightManager);
 
 	Load();
+}
 
-	if (!waves_.empty())
-	{
-		waves_[current_]->Start();
-	}
+void WaveSystem::Start()
+{
+	if (started_ || waves_.empty()) { return; }
+
+	started_ = true;
+	waves_[current_]->Start();
 }
 
 void WaveSystem::Update(float deltaTime)
 {
+	if (!started_) { return; }
 	if (IsCompleted()) { return; }
 
 	auto& current = waves_[current_];
 
 	if (!current->IsCompleted())
 	{
-		current->Update(deltaTime);
+		current->Update(deltaTime, &spawner_);
 		return;
 	}
 
@@ -62,16 +71,28 @@ void WaveSystem::Load()
 
 	std::mt19937 engine(std::random_device{}());
 	std::uniform_int_distribution<uint32_t> dist(0, WAVE_FILE_COUNT - 1);
-	std::unordered_set<uint32_t> used;
+	std::unordered_set<uint32_t> tried;
 
-	while (waves_.size() < WAVE_COUNT)
+	// tried.size() < WAVE_FILE_COUNT で全候補を試し切ったら打ち切るため、
+	// 読み込みに失敗するファイルがあっても無限ループしない。
+	while (waves_.size() < WAVE_COUNT && tried.size() < WAVE_FILE_COUNT)
 	{
 		uint32_t index = dist(engine);
-		if (!used.insert(index).second) { continue; } // 重複は引き直し
+		if (!tried.insert(index).second) { continue; } // 試行済みは引き直し
 
 		auto wave = std::make_unique<Wave>();
-		wave->Load(MakeWaveFileName(index));
+		if (!wave->Load(MakeWaveFileName(index)))
+		{
+			Logger::Log("[WaveSystem] Failed to load " + MakeWaveFileName(index) + ", trying another wave.\n");
+			continue; // 読み込み失敗したwaveは使わず、別のインデックスを引き直す
+		}
+
 		waves_.push_back(std::move(wave));
+	}
+
+	if (waves_.size() < WAVE_COUNT)
+	{
+		Logger::Log("[WaveSystem] Only loaded " + std::to_string(waves_.size()) + "/" + std::to_string(WAVE_COUNT) + " waves.\n");
 	}
 }
 

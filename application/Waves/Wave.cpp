@@ -1,28 +1,47 @@
 #include "Wave.h"
 
+#include "EnemySpawner.h"
 #include "WaveData.h"
 
-void Wave::Load(const std::string& fileName)
+bool Wave::Load(const std::string& fileName)
 {
 	WaveData data;
-	if (!data.LoadJson("wave/" + fileName + ".json")) { return; }
+	if (!data.LoadJson("wave/" + fileName + ".json")) { return false; }
 
 	commands_ = data.GetCommands();
-	// TODO: elapsedTime_/duration_によるダミー完了判定を、commands_基準(発行済み件数+生存敵数)に置き換える。
+	return true;
 }
 
 void Wave::Start()
 {
 	elapsedTime_ = 0.0f;
 	state_ = WaveState::Running;
+	spawned_.assign(commands_.size(), false);
 }
 
-void Wave::Update(float deltaTime)
+void Wave::Update(float deltaTime, EnemySpawner* spawner)
 {
 	if (state_ != WaveState::Running) { return; }
 
 	elapsedTime_ += deltaTime;
-	if (elapsedTime_ >= duration_)
+
+	bool allSpawned = true;
+	for (size_t i = 0; i < commands_.size(); ++i)
+	{
+		if (spawned_[i]) { continue; }
+
+		if (elapsedTime_ >= commands_[i].timing)
+		{
+			if (spawner) { spawner->Spawn(commands_[i]); }
+			spawned_[i] = true;
+		}
+		else
+		{
+			allSpawned = false;
+		}
+	}
+
+	if (allSpawned)
 	{
 		state_ = WaveState::Completed;
 	}

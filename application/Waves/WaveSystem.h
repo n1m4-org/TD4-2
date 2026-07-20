@@ -1,4 +1,5 @@
 #pragma once
+#include "EnemySpawner.h"
 #include "Wave.h"
 
 #include <cstdint>
@@ -8,7 +9,7 @@
 
 class WaveSystem
 {
-	static constexpr uint32_t WAVE_FILE_COUNT = 16; 
+	static constexpr uint32_t WAVE_FILE_COUNT = 16;
 	static constexpr uint32_t WAVE_COUNT = 5;
 	static constexpr float INTERVAL = 1.f;
 
@@ -20,11 +21,19 @@ class WaveSystem
 	bool waitingInterval_ = false;
 	float intervalTimer_ = 0.0f;
 
+	EnemySpawner spawner_;
+	bool started_ = false;
+
 public:
-	void Initialize();
+	void Initialize(Object3dCommon* object3dCommon, LightManager* lightManager);
+
+	// ImGuiの「Start」ボタン等から呼ぶ。最初のWaveのスポーンを開始する
+	void Start();
+
 	void Update(float deltaTime);
 
 	bool IsCompleted() const;
+	bool HasStarted() const { return started_; }
 
 	// デバッグ表示用
 	uint32_t GetCurrentWaveIndex() const { return current_; }

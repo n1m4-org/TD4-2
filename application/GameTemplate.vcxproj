@@ -143,6 +143,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Waves\WaveSystem.cpp" />
     <ClCompile Include="Waves\SpawnCommand.cpp" />
     <ClCompile Include="Waves\WaveData.cpp" />
+    <ClCompile Include="Waves\EnemySpawner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.h" />
@@ -169,6 +170,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Waves\WaveSystem.h" />
     <ClInclude Include="Waves\SpawnCommand.h" />
     <ClInclude Include="Waves\WaveData.h" />
+    <ClInclude Include="Waves\EnemySpawner.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">

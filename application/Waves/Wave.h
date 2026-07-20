@@ -4,6 +4,8 @@
 
 #include "SpawnCommand.h"
 
+class EnemySpawner;
+
 enum class WaveState
 {
 	Ready,
@@ -14,17 +16,18 @@ enum class WaveState
 class Wave
 {
 	std::vector<SpawnCommand> commands_;
+	// commands_[i]が発行済みかどうか(commands_と添字対応)
+	std::vector<bool> spawned_;
 
 	float elapsedTime_ = 0.0f;
-	float duration_ = 3.0f;
 
 	WaveState state_ = WaveState::Ready;
 
 public:
-	void Load(const std::string& fileName);
+	bool Load(const std::string& fileName);
 
 	void Start();
-	void Update(float deltaTime);
+	void Update(float deltaTime, EnemySpawner* spawner);
 
 	bool IsCompleted() const { return state_ == WaveState::Completed; }
 	WaveState GetState() const { return state_; }
