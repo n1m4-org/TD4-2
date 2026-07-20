@@ -313,7 +313,9 @@ void TestScene::Initialize()
 
 	GameObjectManager::GetInstance()->Register(bumper_.get());
 
+	// ボムエネミーの生成
 	InitializeBombEnemy();
+
 
 	// チャージ敵
 	chargeEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
@@ -394,7 +396,7 @@ void TestScene::InitializeBombEnemy()
 	bombEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
 	bombEnemy_->SetName("BombEnemy");
 	bombEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-	bombEnemy_->SetModel("cube");
+	bombEnemy_->SetModel("bombenemy");
 	bombEnemy_->SetPosition(kBombEnemyPosition);
 	bombEnemy_->SetScale(kBombEnemyScale);
 
