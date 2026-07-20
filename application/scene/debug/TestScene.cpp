@@ -335,30 +335,44 @@ void TestScene::Initialize()
 	if (auto collider = chargeEnemy_->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
-		collider->SetCollisionMask(CollisionLayer::PlayerBullet | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(
+			CollisionLayer::PlayerBullet |
+			CollisionLayer::Terrain |
+			CollisionLayer::Bumpers);
 
 		auto handleTargetCollision = [this](const CollisionInfo& info)
 		{
 			if (!info.otherCollider)
+			{
 				return;
-			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
-				return;
-			if (!targetObject_)
-				return;
+			}
 
-			// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
+			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
+			{
+				return;
+			}
+
+			// ここは targetObject_ ではなく chargeEnemy_ を見る
+			if (!chargeEnemy_)
+			{
+				return;
+			}
+
+			// 衝突情報から押し戻し
 			Vector3 pos = chargeEnemy_->GetPosition();
 			pos += info.normal * info.depth;
 			chargeEnemy_->SetPosition(pos);
 
-			// 接地判定と速度リセット
 			auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
 			if (!physics)
+			{
 				return;
+			}
 
 			if (info.normal.y > 0.0f)
 			{
 				physics->SetGrounded(true);
+
 				Vector3 vel = physics->GetExternalVelocity();
 				if (vel.y < 0.0f)
 				{
@@ -368,23 +382,79 @@ void TestScene::Initialize()
 			}
 		};
 
-		// ホーミングテスト用キューブオブジェクトの作成
-		hormingTest_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
-		hormingTest_->SetName("HormingTestCube");
-		hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-		hormingTest_->SetModel("cube");
-		hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
-		hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
-
-		// Hキーで cubeObject_ の位置へスプライン移動する
-		hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
-		{ handleTargetCollision(info); });
+		{
+			handleTargetCollision(info);
+		});
+
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
-		{ handleTargetCollision(info); });
+		{
+			handleTargetCollision(info);
+		});
+
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
+
 	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
+
+	// ホーミング敵
+	hormingTest_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
+	hormingTest_->SetName("HormingTestCube");
+	hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	hormingTest_->SetModel("cube");
+	hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
+	hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
+
+	// HPを持たせる
+	hormingTest_->AddComponent("Status", std::make_unique<StatusComponent>(hormingTest_.get()));
+	if (auto status = hormingTest_->GetComponent<StatusComponent>())
+	{
+		// 3回当たったら倒れるようにHP3
+		status->SetHp(3);
+	}
+
+	// 当たり判定を付ける
+	hormingTest_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(hormingTest_.get()));
+	if (auto collider = hormingTest_->GetComponent<AABBColliderComponent>())
+	{
+		collider->SetCollisionLayer(CollisionLayer::Enemy);
+
+		// 跳ね返した弾(PlayerBullet)と当たるようにする
+		collider->SetCollisionMask(
+			CollisionLayer::PlayerBullet |
+			CollisionLayer::Terrain |
+			CollisionLayer::Bumpers);
+
+		collider->SetOnEnter([this](const CollisionInfo& info)
+		{
+			if (!info.otherCollider)
+			{
+				return;
+			}
+
+			// 跳ね返した弾に当たった場合
+			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerBullet)
+			{
+				auto status = hormingTest_->GetComponent<StatusComponent>();
+				if (!status)
+				{
+					return;
+				}
+
+				// 1ダメージ
+				status->ApplyDamage(1);
+
+				// 弾の削除は HormingMoveComponent 側の KillBullet に任せる
+				// ここで info.other->Destroy() はしない
+			}
+		});
+
+		collider->SetOnStay([](const CollisionInfo& info) {});
+		collider->SetOnExit([](const CollisionInfo& info) {});
+	}
+
+	// 一定間隔でプレイヤーに向かってホーミング弾を発射する
+	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 
