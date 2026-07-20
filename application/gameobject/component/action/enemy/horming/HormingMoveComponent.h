@@ -26,7 +26,11 @@ namespace GameObjectComponent
 		// ホーミング弾の情報
 		struct HomingBullet
 		{
+			// 弾のGameObject
 			GameObject* object = nullptr;
+
+			// この弾が現在狙っている対象
+			GameObject* target = nullptr;
 
 			Vector3 startPos = {};	  // ベジェ曲線の開始位置
 			Vector3 controlPos1 = {}; // ベジェ曲線の制御点1
@@ -45,6 +49,9 @@ namespace GameObjectComponent
 
 			// ホーミングを解除して直進中かどうか
 			bool isStraight = false;
+
+			// 反射済みかどうか
+			bool isReflected = false;
 
 			// ホーミング解除後に進む方向
 			Vector3 straightDir = {};
@@ -65,6 +72,9 @@ namespace GameObjectComponent
 
 		// 指定した弾を削除する
 		void KillBullet(GameObject* bulletObject);
+
+		// 反射時に、弾の狙い先を撃った敵へ変更する
+		void ReflectBullet(GameObject* bulletObject, GameObject* reflectTarget);
 
 		// 弾のベジェ曲線用の初期情報を作成する
 		void InitializeBulletCurve(HomingBullet& bullet);
