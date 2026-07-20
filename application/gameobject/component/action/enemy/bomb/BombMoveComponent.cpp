@@ -237,10 +237,7 @@ void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo
 		auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr;
 		if (reflect)
 		{
-			if (Reflect(reflect->GetReflectDirectionFrom(owner_->GetPosition())))
-			{
-				reflect->NotifyReflectSucceeded();
-			}
+			Reflect(reflect->GetReflectDirectionFrom(owner_->GetPosition()));
 		}
 		return;
 	}

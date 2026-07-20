@@ -151,14 +151,6 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::Enemy)
 			{
 				// 反射後の直線移動APIがないため、ホーミング弾は現状ここで消す。
-				if (info.other)
-				{
-					GameObject* player = info.other->GetParent();
-					if (auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr)
-					{
-						reflect->NotifyReflectSucceeded();
-					}
-				}
 				KillBullet(bulletObject);
 				return;
 			}
