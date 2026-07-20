@@ -1,17 +1,18 @@
 #include "BombMoveComponent.h"
 
 #include "application/collision/CollisionLayer.h"
-#include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/component/base/ICollisionComponent.h"
 #include "engine/time/TimeManager.h"
+#include <cmath>
 
 namespace
 {
-constexpr float kDirectionEpsilonSq = 0.000001f;
+	constexpr float kDirectionEpsilonSq = 0.000001f;
 }
 
 GameObjectComponent::BombMoveComponent::BombMoveComponent(GameObject* player)
@@ -22,6 +23,7 @@ GameObjectComponent::BombMoveComponent::BombMoveComponent(GameObject* player)
 	Register("chaseLifetimeSeconds", &chaseLifetimeSeconds_);
 	Register("reflectedSpeed", &reflectedSpeed_);
 	Register("reflectedLifetimeSeconds", &reflectedLifetimeSeconds_);
+	Register("turnRate", &turnRate_);
 }
 
 void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
@@ -133,6 +135,15 @@ void GameObjectComponent::BombMoveComponent::UpdateIdle(GameObject* owner)
 	{
 		state_ = State::Chasing;
 		remainingLifetimeSeconds_ = chaseLifetimeSeconds_;
+
+		// 追尾開始時の方向で走り出す（ドリフト用）
+		Vector3 dir = toPlayer;
+		dir.y = 0.0f;
+		if (dir.LengthSquared() > kDirectionEpsilonSq)
+		{
+			dir.NormalizeSelf();
+			dashDirection_ = dir;
+		}
 	}
 }
 
@@ -152,9 +163,18 @@ void GameObjectComponent::BombMoveComponent::UpdateChasing(GameObject* owner, fl
 		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 		return;
 	}
-
 	direction.NormalizeSelf();
-	physics_->SetMovementVelocity(direction * chaseSpeed_);
+
+	// 進行方向を毎フレーム少しずつプレイヤー方向へ寄せる（ドリフト挙動）
+	dashDirection_ += (direction - dashDirection_) * turnRate_;
+	dashDirection_.NormalizeSelf();
+	physics_->SetMovementVelocity(dashDirection_ * chaseSpeed_);
+
+	// 進行方向を正面に向かせる
+	owner->SetRotation({0.0f, std::atan2(dashDirection_.x, dashDirection_.z), 0.0f});
+
+	// 残り時間に応じて赤点滅
+	UpdateBlink(remainingLifetimeSeconds_ / chaseLifetimeSeconds_);
 }
 
 void GameObjectComponent::BombMoveComponent::UpdateReflected(float deltaTime)
@@ -167,6 +187,9 @@ void GameObjectComponent::BombMoveComponent::UpdateReflected(float deltaTime)
 	}
 
 	physics_->SetMovementVelocity(reflectedVelocity_);
+
+	// 反射後も残り時間に応じて赤点滅
+	UpdateBlink(remainingLifetimeSeconds_ / reflectedLifetimeSeconds_);
 }
 
 void GameObjectComponent::BombMoveComponent::Explode()
@@ -181,6 +204,17 @@ void GameObjectComponent::BombMoveComponent::Explode()
 	ParticleManager::GetInstance()->Play("bomber", owner_->GetPosition());
 	collider_->SetActive(false);
 	owner_->SetActive(false);
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateBlink(float remainRatio)
+{
+	// 残りが減るほど位相の進みを速くする
+	blinkPhase_ += blinkSpeedMin_ + (blinkSpeedMax_ - blinkSpeedMin_) * (1.0f - remainRatio);
+
+	// sinが正の間だけ赤くする（パキッと切り替わる点滅）
+	bool redOn = std::sin(blinkPhase_) > 0.0f;
+	owner_->SetColor(redOn ? Vector4{1.0f, 0.2f, 0.2f, 1.0f}
+						   : Vector4{1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo& info)

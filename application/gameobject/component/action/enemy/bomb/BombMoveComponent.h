@@ -78,6 +78,12 @@ namespace GameObjectComponent
 		void Explode();
 
 		/**
+		 * @brief 残り時間の割合に応じて赤点滅させる。
+		 * @param remainRatio 残り時間の割合（1.0=開始直後、0.0=爆発直前）
+		 */
+		void UpdateBlink(float remainRatio);
+
+		/**
 		 * @brief 衝突相手のレイヤーに応じて自身の状態を遷移させる。
 		 * @param info 衝突情報
 		 */
@@ -107,5 +113,16 @@ namespace GameObjectComponent
 		float chaseLifetimeSeconds_ = 5.0f;
 		float reflectedSpeed_ = 10.0f;
 		float reflectedLifetimeSeconds_ = 1.0f;
+
+		// ドリフト用: 現在の進行方向
+		Vector3 dashDirection_ = {0.0f, 0.0f, 1.0f};
+		// 旋回の追従率（小さいほど曲がりにくく、ドリフトが大きくなる）
+		float turnRate_ = 0.04f;
+
+		// 赤点滅の位相（累積値）
+		float blinkPhase_ = 0.0f;
+		// 点滅速度（1フレームあたりの位相の進み）: 開始直後〜爆発直前
+		float blinkSpeedMin_ = 0.08f;
+		float blinkSpeedMax_ = 0.7f;
 	};
 } // namespace GameObjectComponent
