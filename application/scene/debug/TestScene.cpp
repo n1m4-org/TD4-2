@@ -330,6 +330,10 @@ void TestScene::Initialize()
 	chargeEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(chargeEnemy_.get()));
 	chargeEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(chargeEnemy_.get()));
 
+	// HPを設定
+	auto status = chargeEnemy_->GetComponent<StatusComponent>();
+	status->SetHp(5);
+
 	// AABBコライダーの追加
 	chargeEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(chargeEnemy_.get()));
 	if (auto collider = chargeEnemy_->GetComponent<AABBColliderComponent>())
@@ -380,7 +384,14 @@ void TestScene::Initialize()
 
 				if (status)
 				{
-					status->SetHp(status->GetHp() - 25);
+					status->SetHp(status->GetHp() - 1);
+
+					// 攻撃を食らったらシェイクする
+					auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
+					if (move && status->GetHp() > 0)
+					{
+						move->StartShake();
+					}
 				}
 			}
 

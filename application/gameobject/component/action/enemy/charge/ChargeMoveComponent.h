@@ -73,8 +73,19 @@ namespace GameObjectComponent
 	  /// <summary>
 	  /// コンポーネント破棄時の処理
 	  /// </summary>
-	  /// <param name="owner"></param>
+	  /// <param name="owner">所有者</param>
 	  void Destroy(GameObject* owner);
+
+	  /// <summary>
+	  /// 揺れ開始
+	  /// </summary>
+	  void StartShake();
+
+	  /// <summary>
+	  /// 揺れ処理
+	  /// </summary>
+	  /// <param name="owner">所有者</param>
+	  void Shake(GameObject* owner);
 
   private:
 
@@ -139,6 +150,15 @@ namespace GameObjectComponent
 	  const float kExpandTime = 0.08f;
 	  const float kShrinkTime = 0.15f;
 
+	  // 揺れフラグ
+	  bool isShake_ = false;
+	  // 揺れタイマー
+	  float shakeTimer_ = 0.0f;
+	  const float kShakeTime_ = 0.1f;
+	  // 揺れの強さ
+	  float shakePower_ = 0.5f;
+	  // 揺れの基準位置
+	  Vector3 basePosition_;
   };
 
 

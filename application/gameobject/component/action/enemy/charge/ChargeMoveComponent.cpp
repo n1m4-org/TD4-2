@@ -67,6 +67,12 @@ void GameObjectComponent::ChargeMoveComponent::Update(GameObject* owner)
 		break;
 	}
 
+	// 揺れ処理
+	if (isShake_)
+	{
+		Shake(owner);
+	}
+
 }
 
 void GameObjectComponent::ChargeMoveComponent::Move(GameObject* owner)
@@ -309,5 +315,39 @@ void GameObjectComponent::ChargeMoveComponent::Destroy(GameObject* owner)
 		{
 			owner->Destroy();
 		}
+	}
+}
+
+void GameObjectComponent::ChargeMoveComponent::StartShake()
+{
+	isShake_ = true;
+	shakeTimer_ = 0.0f;
+}
+
+void GameObjectComponent::ChargeMoveComponent::Shake(GameObject* owner)
+{
+	float dt = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	if (shakeTimer_ == 0.0f)
+	{
+		basePosition_ = owner->GetPosition();
+	}
+
+	shakeTimer_ += dt;
+
+	Vector3 offset;
+
+	offset.x = Random(-shakePower_, shakePower_);
+	offset.y = Random(-shakePower_, shakePower_);
+	offset.z = Random(-shakePower_, shakePower_);
+
+	owner->SetPosition(basePosition_ + offset);
+
+	if (shakeTimer_ >= kShakeTime_)
+	{
+		owner->SetPosition(basePosition_);
+
+		isShake_ = false;
+		shakeTimer_ = 0.0f;
 	}
 }
