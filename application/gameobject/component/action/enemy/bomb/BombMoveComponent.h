@@ -107,6 +107,12 @@ namespace GameObjectComponent
 		/** @brief 反射された弾に撃たれた際の即死処理。爆発演出を出して自身を破棄する。 */
 		void Die();
 
+		/**
+		 * @brief 着火モーションを再生し、終了後に追跡へ移行する。
+		 * @param deltaTime 経過秒
+		 */
+		void UpdateIgnition(float deltaTime);
+
 		// TestSceneが所有する。ボムより先に破棄されない前提。
 		GameObject* player_ = nullptr;
 		// owner自身。GameObjectがこのコンポーネントを所有する。
@@ -133,7 +139,7 @@ namespace GameObjectComponent
 
 		// 赤点滅の位相（累積値）
 		float blinkPhase_ = 0.0f;
-		// 点滅速度（1フレームあたりの位相の進み）: 開始直後〜爆発直前
+		// 点滅速度（1フレームあたりの位相の進み）
 		float blinkSpeedMin_ = 0.08f;
 		float blinkSpeedMax_ = 0.7f;
 
@@ -147,5 +153,11 @@ namespace GameObjectComponent
 		int explosionDamage_ = 20;
 		// 爆発開始からの経過秒
 		float explosionElapsedSeconds_ = 0.0f;
+
+				// 着火モーションの長さと経過秒
+		float ignitionDurationSeconds_ = 0.4f;
+		float ignitionElapsedSeconds_ = 0.0f;
+		// モーションで変形させる前の基準スケール
+		Vector3 baseScale_ = {1.0f, 1.0f, 1.0f};
 	};
 } // namespace GameObjectComponent

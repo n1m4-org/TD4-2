@@ -27,6 +27,8 @@ GameObjectComponent::BombMoveComponent::BombMoveComponent(GameObject* player)
 	Register("reflectedSpeed", &reflectedSpeed_);
 	Register("reflectedLifetimeSeconds", &reflectedLifetimeSeconds_);
 	Register("turnRate", &turnRate_);
+	Register("ignitionDurationSeconds", &ignitionDurationSeconds_);
+
 }
 
 void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
@@ -42,6 +44,9 @@ void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 	{
 	case State::Idle:
 		UpdateIdle(owner);
+		break;
+	case State::Ignition:
+		UpdateIgnition(deltaTime);
 		break;
 	case State::Chasing:
 		UpdateChasing(owner, deltaTime);
@@ -164,8 +169,10 @@ void GameObjectComponent::BombMoveComponent::UpdateIdle(GameObject* owner)
 	const float chaseRangeSq = chaseRange_ * chaseRange_;
 	if (toPlayer.LengthSquared() <= chaseRangeSq)
 	{
-		state_ = State::Chasing;
-		remainingLifetimeSeconds_ = chaseLifetimeSeconds_;
+		// まず着火モーションを挟む
+		state_ = State::Ignition; 
+		ignitionElapsedSeconds_ = 0.0f;
+		baseScale_ = owner->GetScale();
 
 		// 追尾開始時の方向で走り出す（ドリフト用）
 		Vector3 dir = toPlayer;
@@ -370,4 +377,34 @@ void GameObjectComponent::BombMoveComponent::Die()
 	}
 	owner_->SetActive(false);
 	owner_->Destroy();
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateIgnition(float deltaTime)
+{
+	ignitionElapsedSeconds_ += deltaTime;
+	const float t = std::min(ignitionElapsedSeconds_ / ignitionDurationSeconds_, 1.0f);
+
+	// その場で停止したまま演出する
+	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+
+	// ぐっと縦に潰れて横に膨らむ（0→最大→0 と戻るカーブ）
+	const float p = std::sin(t * 3.14159265f);
+	Vector3 scale = baseScale_;
+	scale.y *= 1.0f - 0.35f * p;
+	scale.x *= 1.0f + 0.25f * p;
+	scale.z *= 1.0f + 0.25f * p;
+	owner_->SetScale(scale);
+
+	// 終盤ほど収まる小刻みな震え（Y軸回転を揺らす）
+	const float baseYaw = std::atan2(dashDirection_.x, dashDirection_.z);
+	const float wobble = std::sin(ignitionElapsedSeconds_ * 60.0f) * 0.12f * (1.0f - t);
+	owner_->SetRotation({0.0f, baseYaw + wobble, 0.0f});
+
+	// モーション終了 → スケールを戻して追跡開始
+	if (t >= 1.0f)
+	{
+		owner_->SetScale(baseScale_);
+		state_ = State::Chasing;
+		remainingLifetimeSeconds_ = chaseLifetimeSeconds_;
+	}
 }

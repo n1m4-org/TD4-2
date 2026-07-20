@@ -35,7 +35,7 @@ private:
 	// ディレクショナルライト設定
 	static constexpr Vector3 kLightDirection = { -0.2f, -1.0f, 0.3f };
 	static constexpr float kLightIntensity = 0.6f;
-	static constexpr Vector3 kBombEnemyPosition = { 10.0f, 2.0f, 0.0f };
+	static constexpr Vector3 kBombEnemyPosition = { 50.0f, 2.0f, 0.0f };
 	static constexpr Vector3 kBombEnemyScale = { 2.0f, 2.0f, 2.0f };
 	static constexpr Vector3 kReflectHandLocalPosition = {0.0f, 0.0f, 1.25f};
 	static constexpr Vector3 kReflectHandLocalScale = {1.5f, 0.35f, 0.35f};
