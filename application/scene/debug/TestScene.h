@@ -4,6 +4,7 @@
 #include "camerawork/debug/DebugCamera.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/camerawork/topdown/TopDownCamera.h"
+#include "engine/gameobject/component/collision/SphereColliderComponent.h"
 
 /**
  * @brief ゲームオブジェクトの動作確認を行うデバッグ用シーン。

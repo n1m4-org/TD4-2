@@ -8,6 +8,9 @@
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/component/base/ICollisionComponent.h"
 #include "engine/time/TimeManager.h"
+#include "application/gameobject/component/action/common/StatusComponent.h"
+#include "engine/gameobject/component/collision/SphereColliderComponent.h"
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -46,6 +49,9 @@ void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 	case State::Reflected:
 		UpdateReflected(deltaTime);
 		break;
+	case State::Exploding:
+		UpdateExploding(deltaTime);
+		break;
 	case State::Exploded:
 		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 		break;
@@ -76,8 +82,11 @@ bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
 
 	// 反射後はプレイヤー側の攻撃として敵へ当たるレイヤーに切り替える。
 	physics_->SetMovementVelocity(reflectedVelocity_);
+	physics_->SetUseGravity(false);
 	collider_->SetCollisionLayer(CollisionLayer::PlayerBullet);
 	collider_->SetCollisionMask(
+		CollisionLayer::Player|
+		CollisionLayer::PlayerBullet|
 		CollisionLayer::Enemy |
 		CollisionLayer::Terrain |
 		CollisionLayer::Bumpers);
@@ -111,6 +120,7 @@ bool GameObjectComponent::BombMoveComponent::InitializeComponents(GameObject* ow
 		CollisionLayer::Player |
 		CollisionLayer::Terrain |
 		CollisionLayer::Bumpers |
+		CollisionLayer::PlayerBullet |
 		CollisionLayer::PlayerReflect);
 	// コールバックではボム自身の状態と移動だけを変更する。
 	collider_->SetOnEnter([this](const CollisionInfo& info)
@@ -122,6 +132,27 @@ bool GameObjectComponent::BombMoveComponent::InitializeComponents(GameObject* ow
 		ResolveTerrainCollision(info);
 	});
 	collider_->SetOnExit([](const CollisionInfo&) {});
+
+	// 爆発判定用の球コライダー
+	explosionCollider_ = owner->GetComponent<SphereColliderComponent>("ExplosionCollider").get();
+	if (explosionCollider_)
+	{
+		explosionCollider_->SetActive(false);
+		explosionCollider_->SetCollisionLayer(CollisionLayer::Enemy);
+		explosionCollider_->SetCollisionMask(CollisionLayer::Player);
+		explosionCollider_->SetOnEnter([this](const CollisionInfo& info)
+		{
+			// 爆風に触れたプレイヤーへダメージを与える
+			if (!info.other)
+			{
+				return;
+			}
+			if (auto status = info.other->GetComponent<StatusComponent>())
+			{
+				status->ApplyDamage(explosionDamage_);
+			}
+		});
+	}
 	return true;
 }
 
@@ -194,16 +225,29 @@ void GameObjectComponent::BombMoveComponent::UpdateReflected(float deltaTime)
 
 void GameObjectComponent::BombMoveComponent::Explode()
 {
-	if (state_ == State::Exploded)
+	if (state_ == State::Exploding || state_ == State::Exploded)
 	{
 		return;
 	}
 
-	state_ = State::Exploded;
 	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+	physics_->SetUseGravity(false); 
 	ParticleManager::GetInstance()->Play("bomber", owner_->GetPosition());
-	collider_->SetActive(false);
-	owner_->SetActive(false);
+	collider_->SetActive(false);		 
+	owner_->SetScale({0.0f, 0.0f, 0.0f}); 
+
+	// 爆発判定がなければ従来どおり即時消滅
+	if (!explosionCollider_)
+	{
+		state_ = State::Exploded;
+		owner_->SetActive(false);
+		return;
+	}
+
+	state_ = State::Exploding;
+	explosionElapsedSeconds_ = 0.0f;
+	explosionCollider_->SetSphere({owner_->GetPosition(), 0.0f});
+	explosionCollider_->SetActive(true);
 }
 
 void GameObjectComponent::BombMoveComponent::UpdateBlink(float remainRatio)
@@ -229,6 +273,14 @@ void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo
 	{
 		ResolveTerrainCollision(info);
 	}
+
+		if (otherLayer & CollisionLayer::PlayerBullet)
+	{
+		// 反射された弾に撃ち抜かれたら、その場で爆発演出を出して消滅する
+		Die();
+		return;
+	}
+	
 
 	if ((otherLayer & CollisionLayer::PlayerReflect) && info.other)
 	{
@@ -276,4 +328,46 @@ void GameObjectComponent::BombMoveComponent::ResolveTerrainCollision(const Colli
 		velocity.y = 0.0f;
 		physics_->SetExternalVelocity(velocity);
 	}
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateExploding(float deltaTime)
+{
+	explosionElapsedSeconds_ += deltaTime;
+	const float t = std::min(explosionElapsedSeconds_ / explosionDurationSeconds_, 1.0f);
+
+	// 経過に応じて球の判定半径を広げる
+	Sphere sphere = explosionCollider_->GetSphere();
+	sphere.radius = explosionMaxRadius_ * t;
+	explosionCollider_->SetSphere(sphere);
+
+	if (t >= 1.0f)
+	{
+		explosionCollider_->SetActive(false);
+		state_ = State::Exploded;
+		owner_->SetActive(false);
+	}
+}
+
+
+void GameObjectComponent::BombMoveComponent::Die()
+{
+	if (state_ == State::Exploded)
+	{
+		return;
+	}
+
+	state_ = State::Exploded;
+	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+
+	// 爆発演出のみ再生する（拡大する爆風判定は出さない）
+	ParticleManager::GetInstance()->Play("bomber", owner_->GetPosition());
+
+	// 判定と本体を無効化してから、フレーム末尾の破棄に回す
+	collider_->SetActive(false);
+	if (explosionCollider_)
+	{
+		explosionCollider_->SetActive(false);
+	}
+	owner_->SetActive(false);
+	owner_->Destroy();
 }

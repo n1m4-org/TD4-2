@@ -11,6 +11,7 @@ namespace GameObjectComponent
 	class ICollisionComponent;
 	class PhysicsComponent;
 	struct CollisionInfo;
+	class SphereColliderComponent;
 
 	/**
 	 * @brief ボムの待機、追跡、反射、爆発を制御する。
@@ -43,8 +44,10 @@ namespace GameObjectComponent
 		enum class State
 		{
 			Idle,
+			Ignition,
 			Chasing,
 			Reflected,
+			Exploding,
 			Exploded,
 		};
 
@@ -95,6 +98,15 @@ namespace GameObjectComponent
 		 */
 		void ResolveTerrainCollision(const CollisionInfo& info);
 
+		/**
+		 * @brief 爆発判定の球を時間経過で拡大し、終了後に本体を無効化する。
+		 * @param deltaTime 経過秒
+		 */
+		void UpdateExploding(float deltaTime);
+
+		/** @brief 反射された弾に撃たれた際の即死処理。爆発演出を出して自身を破棄する。 */
+		void Die();
+
 		// TestSceneが所有する。ボムより先に破棄されない前提。
 		GameObject* player_ = nullptr;
 		// owner自身。GameObjectがこのコンポーネントを所有する。
@@ -124,5 +136,16 @@ namespace GameObjectComponent
 		// 点滅速度（1フレームあたりの位相の進み）: 開始直後〜爆発直前
 		float blinkSpeedMin_ = 0.08f;
 		float blinkSpeedMax_ = 0.7f;
+
+
+		// ownerが所有する爆発判定用の球コライダー
+		SphereColliderComponent* explosionCollider_ = nullptr;
+
+		// 爆発判定の持続時間・最大半径・ダメージ
+		float explosionDurationSeconds_ = 0.4f;
+		float explosionMaxRadius_ = 6.0f;
+		int explosionDamage_ = 20;
+		// 爆発開始からの経過秒
+		float explosionElapsedSeconds_ = 0.0f;
 	};
 } // namespace GameObjectComponent
