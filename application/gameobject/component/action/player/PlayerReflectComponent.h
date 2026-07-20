@@ -46,6 +46,11 @@ namespace GameObjectComponent
 		 */
 		Vector3 GetReflectDirectionFrom(const Vector3& sourcePosition) const;
 
+		/**
+		 * @brief 反射成立時のリアクションとヒットストップを開始する。
+		 */
+		void NotifyReflectSucceeded();
+
 	private:
 		/**
 		 * @brief カーソル付近の敵を探し、入力時に行き先として保持する。
@@ -54,20 +59,26 @@ namespace GameObjectComponent
 		void UpdateLockOnTarget(bool isLockOnTriggered);
 
 		/**
-		 * @brief プレイヤー正面へ反射受付コライダーを配置する。
-		 * @param owner このコンポーネントを所有するプレイヤー
-		 */
-		void UpdateReflectCollider(GameObject* owner);
-
-		/**
 		 * @brief プレイヤーのY軸回転から水平な正面方向を取得する。
 		 * @param owner このコンポーネントを所有するプレイヤー
 		 * @return 正規化した正面方向
 		 */
 		Vector3 GetPlayerForward(const GameObject* owner) const;
 
-		// ownerが所有する。PlayerReflectComponentより先に破棄されない前提。
+		/**
+		 * @brief 手を振るアニメーションを更新する。
+		 * @param deltaTime ゲーム時間の経過秒
+		 */
+		void UpdateHandAnimation(float deltaTime);
+
+		// hand_が所有する。hand_はownerの子なので、このコンポーネントより後に破棄される。
 		OBBColliderComponent* collider_ = nullptr;
+		// ownerが所有する子オブジェクト。ownerと同じ期間だけ有効。
+		GameObject* hand_ = nullptr;
+		// 横振りの基準になる手のローカル位置
+		Vector3 handBasePosition_ = {};
+		// プレイヤーを中心とした横振り円弧の半径
+		float handArcRadius_ = 0.0f;
 		// CameraManagerが所有する。シーン中は有効な前提。
 		Camera* camera_ = nullptr;
 		// PlayerReflectComponentが所有するロックオン表示。
@@ -77,7 +88,26 @@ namespace GameObjectComponent
 
 		bool isReflecting_ = false;
 		float reflectTimer_ = 0.0f;
+		float activationAnimationTimer_ = 0.0f;
 		float lockOnRadiusNdc_ = 0.2f;
+		static constexpr float kDefaultActivationAnimationDuration = 0.28f;
+		static constexpr float kDefaultHitStopDuration = 0.08f;
+		static constexpr float kDefaultWindUpArcRadians = 0.8f;
+		static constexpr float kDefaultSwingArcRadians = -0.8f;
+		static constexpr float kDefaultHandRadialOffset = 0.5f;
+		static constexpr float kDefaultCameraShakeIntensity = 0.35f;
+		static constexpr float kDefaultCameraShakeDuration = 0.16f;
+		static constexpr float kDefaultCameraZoomFovOffset = -0.08f;
+		static constexpr float kDefaultCameraZoomDuration = 0.3f;
+		float activationAnimationDuration_ = kDefaultActivationAnimationDuration;
+		float hitStopDuration_ = kDefaultHitStopDuration;
+		float windUpArcRadians_ = kDefaultWindUpArcRadians;
+		float swingArcRadians_ = kDefaultSwingArcRadians;
+		float handRadialOffset_ = kDefaultHandRadialOffset;
+		float cameraShakeIntensity_ = kDefaultCameraShakeIntensity;
+		float cameraShakeDuration_ = kDefaultCameraShakeDuration;
+		float cameraZoomFovOffset_ = kDefaultCameraZoomFovOffset;
+		float cameraZoomDuration_ = kDefaultCameraZoomDuration;
 
 		bool hasLockOnTarget_ = false;
 		Vector3 lockOnTargetPosition_ = {};
