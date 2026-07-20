@@ -80,6 +80,9 @@ namespace GameObjectComponent
 	  // 移動速度
 	  float moveSpeed_ = 5.0f;
 
+	  // 移動速度倍率
+	  const float kMoveSpeedRate_ = 5.0f;
+
 	  // 回転速度
 	  float rotationSpeed_ = 60.0f;
 

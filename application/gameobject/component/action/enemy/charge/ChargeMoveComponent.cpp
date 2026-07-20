@@ -170,7 +170,7 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Bumpers | CollisionLayer::PlayerReflect);
 
 		// 弾自身のコールバックなので、ここでは弾の反射または破棄だけを行う。
-		collider->SetOnEnter([bullet](const CollisionInfo& info)
+		collider->SetOnEnter([bullet, this](const CollisionInfo& info)
 		{
 			// マスクのレイヤーに衝突した場合、弾を破壊する
 			if (!info.otherCollider)
@@ -191,9 +191,9 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 					return;
 				}
 
-				// 現在速度の大きさを保ったまま、反射時に確定した方向へ向け直す。
+				// 速度を早くして、反射時に確定した方向へ向け直す。
 				const Vector3 direction = reflect->GetReflectDirectionFrom(bullet->GetPosition());
-				const float speed = bulletPhysics->GetMovementVelocity().Length();
+				const float speed = bulletPhysics->GetMovementVelocity().Length() * kMoveSpeedRate_;
 				behavior->Reflect(bullet, direction, speed);
 				return;
 			}
