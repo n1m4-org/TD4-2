@@ -341,31 +341,49 @@ void TestScene::Initialize()
 		{
 			if (!info.otherCollider)
 				return;
-			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
-				return;
-			if (!targetObject_)
-				return;
 
-			// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
-			Vector3 pos = chargeEnemy_->GetPosition();
-			pos += info.normal * info.depth;
-			chargeEnemy_->SetPosition(pos);
+			uint32_t layer = info.otherCollider->GetCollisionLayer();
 
-			// 接地判定と速度リセット
-			auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
-			if (!physics)
-				return;
-
-			if (info.normal.y > 0.0f)
+			// Terrain に衝突した場合は押し戻しと接地判定を行う
+			if (layer & CollisionLayer::Terrain)
 			{
-				physics->SetGrounded(true);
-				Vector3 vel = physics->GetExternalVelocity();
-				if (vel.y < 0.0f)
+				// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
+				Vector3 pos = chargeEnemy_->GetPosition();
+				pos += info.normal * info.depth;
+				chargeEnemy_->SetPosition(pos);
+
+				// 接地判定と速度リセット
+				auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
+				if (physics)
 				{
-					vel.y = 0.0f;
-					physics->SetExternalVelocity(vel);
+					if (info.normal.y > 0.0f)
+					{
+						// 接地状態を設定
+						physics->SetGrounded(true);
+
+						Vector3 vel = physics->GetExternalVelocity();
+
+						// 下方向の速度をリセット
+						if (vel.y < 0.0f)
+						{
+							vel.y = 0.0f;
+							physics->SetExternalVelocity(vel);
+						}
+					}
 				}
 			}
+
+			// 弾が当たったらHPを減らす
+			if (layer & CollisionLayer::PlayerBullet)
+			{
+				auto status = chargeEnemy_->GetComponent<StatusComponent>();
+
+				if (status)
+				{
+					status->SetHp(status->GetHp() - 25);
+				}
+			}
+
 		};
 
 		// ホーミングテスト用キューブオブジェクトの作成

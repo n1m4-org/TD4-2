@@ -10,6 +10,7 @@ namespace GameObjectComponent
 
     // 前方宣言
 	class PhysicsComponent;
+	class StatusComponent;
 
   /// <summary>
   /// チャージ移動コンポーネント
@@ -69,6 +70,12 @@ namespace GameObjectComponent
 	  /// <param name="max">最大値</param>
 	  float Random(float min, float max);
 
+	  /// <summary>
+	  /// コンポーネント破棄時の処理
+	  /// </summary>
+	  /// <param name="owner"></param>
+	  void Destroy(GameObject* owner);
+
   private:
 
 	  // プレイヤーのポインタ
@@ -76,6 +83,8 @@ namespace GameObjectComponent
 
 	  // 物理
 	  PhysicsComponent* physics_ = nullptr;
+	  // ステータス
+	  StatusComponent* status_ = nullptr;
 
 	  // 移動速度
 	  float moveSpeed_ = 5.0f;
@@ -121,6 +130,14 @@ namespace GameObjectComponent
 		  Cooldown
 	  };
 	  State state_ = State::Move;
+
+	  // 死亡アニメーションフラグ
+	  bool isDeadAnimation_ = false;
+	  // 死亡アニメーション時間
+	  float deathTimer_ = 0.0f;
+	  // 死亡アニメーションの展開時間
+	  const float kExpandTime = 0.08f;
+	  const float kShrinkTime = 0.15f;
 
   };
 
