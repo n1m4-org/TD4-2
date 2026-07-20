@@ -1,38 +1,89 @@
 #include "BombMoveComponent.h"
-#include "../../common/PhysicsComponent.h"
+
+#include "application/collision/CollisionLayer.h"
+#include "application/gameobject/GameObjectTag.h"
+#include "application/gameobject/component/action/common/PhysicsComponent.h"
+#include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/base/GameObject.h"
+#include "engine/gameobject/component/base/ICollisionComponent.h"
 #include "engine/time/TimeManager.h"
 #include <cmath>
 
+namespace
+{
+constexpr float kDirectionEpsilonSq = 0.000001f;
+}
 
 GameObjectComponent::BombMoveComponent::BombMoveComponent(GameObject* player)
 	: player_(player)
 {
+	Register("chaseRange", &chaseRange_);
+	Register("chaseSpeed", &chaseSpeed_);
+	Register("chaseLifetimeSeconds", &chaseLifetimeSeconds_);
+	Register("reflectedSpeed", &reflectedSpeed_);
+	Register("reflectedLifetimeSeconds", &reflectedLifetimeSeconds_);
 }
-
 
 void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 {
-#pragma region 変数の初期化
-	// プレイヤーの情報がない場合は処理を中断
-	if (player_ == nullptr)
-		return;
-
-	// 爆発済みなら停止
-	if (hasExploded_)
+	if (!InitializeComponents(owner))
 	{
-		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 		return;
 	}
 
-#pragma endregion 変数の初期化
+	const float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+	// 行動を状態ごとに分け、追跡中と反射後の速度更新が混ざらないようにする。
+	switch (state_)
+	{
+	case State::Idle:
+		UpdateIdle(owner);
+		break;
+	case State::Chasing:
+		UpdateChasing(owner, deltaTime);
+		break;
+	case State::Reflected:
+		UpdateReflected(deltaTime);
+		break;
+	case State::Exploded:
+		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+		break;
+	}
+}
 
-	// フィジクスコンポーネントの取得
-	physics_ = owner->GetComponent<PhysicsComponent>().get();
+bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
+{
+	// 多重反射と爆発後の再利用を拒否し、状態遷移を一度だけ行う。
+	if (!owner_ || !physics_ || !collider_ ||
+		state_ == State::Reflected || state_ == State::Exploded ||
+		direction.LengthSquared() <= kDirectionEpsilonSq)
+	{
+		return false;
+	}
 
-	// プレイヤーの座標を更新
-	playerPosition_ = player_->GetPosition();
+	Vector3 normalizedDirection = direction;
+	normalizedDirection.y = 0.0f;
+	if (normalizedDirection.LengthSquared() <= kDirectionEpsilonSq)
+	{
+		return false;
+	}
+
+	normalizedDirection.NormalizeSelf();
+	reflectedVelocity_ = normalizedDirection * reflectedSpeed_;
+	remainingLifetimeSeconds_ = reflectedLifetimeSeconds_;
+	state_ = State::Reflected;
+
+	// 反射後はプレイヤー側の攻撃として敵へ当たるレイヤーに切り替える。
+	physics_->SetMovementVelocity(reflectedVelocity_);
+	collider_->SetCollisionLayer(CollisionLayer::PlayerBullet);
+	collider_->SetCollisionMask(
+		CollisionLayer::Enemy |
+		CollisionLayer::Terrain |
+		CollisionLayer::Bumpers);
+	owner_->SetTag(GameObjectTag::PlayerBullet);
+	return true;
+}
+
 
 	// 自分（ボム）からプレイヤーへのベクトルと距離
 	Vector3 toPlayer = playerPosition_ - owner->GetPosition();
@@ -40,17 +91,41 @@ void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 	toPlayer.NormalizeSelf();
 
 
-	// 索敵範囲内に入ったら追尾開始（＝点火）
-	if (!isDashing_ && distance <= chaseRange_)
+	if (physics_ && collider_)
+	{
+		return true;
+	}
+
+	owner_ = owner;
+	// 依存コンポーネントはownerが所有する。このコンポーネントは更新中だけ参照する。
+	physics_ = owner->GetComponent<PhysicsComponent>().get();
+	collider_ = owner->GetComponent<ICollisionComponent>().get();
+	if (!physics_ || !collider_)
 	{
 		isDashing_ = true;
 		dashDirection_ = toPlayer; 
+
 	}
 
-	if (isDashing_)
+	collider_->SetCollisionLayer(CollisionLayer::Enemy);
+	collider_->SetCollisionMask(
+		CollisionLayer::Player |
+		CollisionLayer::Terrain |
+		CollisionLayer::Bumpers |
+		CollisionLayer::PlayerReflect);
+	// コールバックではボム自身の状態と移動だけを変更する。
+	collider_->SetOnEnter([this](const CollisionInfo& info)
 	{
-		// 点火中はライフスパンを消費
-		--lifespan_;
+		HandleCollision(info);
+	});
+	collider_->SetOnStay([this](const CollisionInfo& info)
+	{
+		ResolveTerrainCollision(info);
+	});
+	collider_->SetOnExit([](const CollisionInfo&) {});
+	return true;
+}
+
 
 		if (lifespan_ <= 0.0f)
 		{
@@ -78,26 +153,64 @@ void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 		owner->SetColor(redOn ? Vector4{1.0f, 0.2f, 0.2f, 1.0f}
 							  : Vector4{1.0f, 1.0f, 1.0f, 1.0f});
 	}
-	// 索敵範囲外で突進中でない場合は待機
-	else if (!isDashing_ && !isReflected_)
+
+	Vector3 direction = player_->GetPosition() - owner->GetPosition();
+	direction.y = 0.0f;
+	if (direction.LengthSquared() <= kDirectionEpsilonSq)
 	{
-		// 索敵範囲外：待機
 		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+		return;
 	}
 
-	// リフレクト後の処理
-	if (isReflected_)
+	direction.NormalizeSelf();
+	physics_->SetMovementVelocity(direction * chaseSpeed_);
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateReflected(float deltaTime)
+{
+	remainingLifetimeSeconds_ -= deltaTime;
+	if (remainingLifetimeSeconds_ <= 0.0f)
 	{
-		// 一旦反対方向
-		physics_->SetMovementVelocity(reflectedVelocity_);
+		Explode();
+		return;
+	}
 
-		// ライフスパン消費
-		--reflectedLifespan_;
+	physics_->SetMovementVelocity(reflectedVelocity_);
+}
 
-		// 移動不可
-		isDashing_ = false;
+void GameObjectComponent::BombMoveComponent::Explode()
+{
+	if (state_ == State::Exploded)
+	{
+		return;
+	}
 
-		if (reflectedLifespan_ <= 0.0f)
+	state_ = State::Exploded;
+	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+	ParticleManager::GetInstance()->Play("bomber", owner_->GetPosition());
+	collider_->SetActive(false);
+	owner_->SetActive(false);
+}
+
+void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo& info)
+{
+	if (!info.otherCollider)
+	{
+		return;
+	}
+
+	const auto otherLayer = info.otherCollider->GetCollisionLayer();
+	if (otherLayer & CollisionLayer::Terrain)
+	{
+		ResolveTerrainCollision(info);
+	}
+
+	if ((otherLayer & CollisionLayer::PlayerReflect) && info.other)
+	{
+		// プレイヤーから行き先だけ取得し、ボム自身のReflect APIで状態を切り替える。
+		GameObject* player = info.other->GetParent();
+		auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr;
+		if (reflect)
 		{
 			// 寿命切れで爆発
 			Explode(owner);
