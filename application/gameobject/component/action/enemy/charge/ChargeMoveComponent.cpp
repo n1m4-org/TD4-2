@@ -235,11 +235,6 @@ void GameObjectComponent::ChargeMoveComponent::StrafeMove(GameObject* owner)
 
 	// 横方向
 	Vector3 side = {-toPlayer.z, 0.0f, toPlayer.x};
-	Vector3 movement = side;
-	movement += toPlayer * Random(-0.3f, 0.3f);
-
-	movement.NormalizeSelf();
-
 
 	// 左右移動
 	if (!moveRight_)
