@@ -1,9 +1,9 @@
 #include "BombMoveComponent.h"
 
 #include "application/collision/CollisionLayer.h"
-#include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/component/base/ICollisionComponent.h"
@@ -12,7 +12,7 @@
 
 namespace
 {
-constexpr float kDirectionEpsilonSq = 0.000001f;
+	constexpr float kDirectionEpsilonSq = 0.000001f;
 }
 
 GameObjectComponent::BombMoveComponent::BombMoveComponent(GameObject* player)
@@ -23,6 +23,7 @@ GameObjectComponent::BombMoveComponent::BombMoveComponent(GameObject* player)
 	Register("chaseLifetimeSeconds", &chaseLifetimeSeconds_);
 	Register("reflectedSpeed", &reflectedSpeed_);
 	Register("reflectedLifetimeSeconds", &reflectedLifetimeSeconds_);
+	Register("turnRate", &turnRate_);
 }
 
 void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
@@ -84,12 +85,12 @@ bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
 	return true;
 }
 
-
-	// 自分（ボム）からプレイヤーへのベクトルと距離
-	Vector3 toPlayer = playerPosition_ - owner->GetPosition();
-	float distance = toPlayer.Length();
-	toPlayer.NormalizeSelf();
-
+bool GameObjectComponent::BombMoveComponent::InitializeComponents(GameObject* owner)
+{
+	if (!owner || !player_)
+	{
+		return false;
+	}
 
 	if (physics_ && collider_)
 	{
@@ -102,9 +103,7 @@ bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
 	collider_ = owner->GetComponent<ICollisionComponent>().get();
 	if (!physics_ || !collider_)
 	{
-		isDashing_ = true;
-		dashDirection_ = toPlayer; 
-
+		return false;
 	}
 
 	collider_->SetCollisionLayer(CollisionLayer::Enemy);
@@ -126,32 +125,35 @@ bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
 	return true;
 }
 
+void GameObjectComponent::BombMoveComponent::UpdateIdle(GameObject* owner)
+{
+	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 
-		if (lifespan_ <= 0.0f)
-		{
-			// 寿命切れで爆発（1回だけ）
-			Explode(owner);
-			return;
-		}
-
-		// 進行方向を毎フレーム少しずつプレイヤー方向へ寄せる（ドリフト挙動）
-		dashDirection_ += (toPlayer - dashDirection_) * turnRate_;
-		dashDirection_.NormalizeSelf();
-		physics_->SetMovementVelocity(dashDirection_ * chaseSpeed_);
-	}
-	// 点火中・反射後は残り時間に応じて赤点滅（残りが少ないほど速く）
-	if (isDashing_ || isReflected_)
+	const Vector3 toPlayer = player_->GetPosition() - owner->GetPosition();
+	const float chaseRangeSq = chaseRange_ * chaseRange_;
+	if (toPlayer.LengthSquared() <= chaseRangeSq)
 	{
-		// 残り時間の割合（1→0）
-		float remain = (isReflected_ ? reflectedLifespan_ : lifespan_) / ignitionTime_;
+		state_ = State::Chasing;
+		remainingLifetimeSeconds_ = chaseLifetimeSeconds_;
 
-		// 残りが減るほど位相の進みを速くする
-		blinkPhase_ += blinkSpeedMin_ + (blinkSpeedMax_ - blinkSpeedMin_) * (1.0f - remain);
+		// 追尾開始時の方向で走り出す（ドリフト用）
+		Vector3 dir = toPlayer;
+		dir.y = 0.0f;
+		if (dir.LengthSquared() > kDirectionEpsilonSq)
+		{
+			dir.NormalizeSelf();
+			dashDirection_ = dir;
+		}
+	}
+}
 
-		// sinが正の間だけ赤くする（パキッと切り替わる点滅）
-		bool redOn = std::sin(blinkPhase_) > 0.0f;
-		owner->SetColor(redOn ? Vector4{1.0f, 0.2f, 0.2f, 1.0f}
-							  : Vector4{1.0f, 1.0f, 1.0f, 1.0f});
+void GameObjectComponent::BombMoveComponent::UpdateChasing(GameObject* owner, float deltaTime)
+{
+	remainingLifetimeSeconds_ -= deltaTime;
+	if (remainingLifetimeSeconds_ <= 0.0f)
+	{
+		Explode();
+		return;
 	}
 
 	Vector3 direction = player_->GetPosition() - owner->GetPosition();
@@ -161,9 +163,18 @@ bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
 		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 		return;
 	}
-
 	direction.NormalizeSelf();
-	physics_->SetMovementVelocity(direction * chaseSpeed_);
+
+	// 進行方向を毎フレーム少しずつプレイヤー方向へ寄せる（ドリフト挙動）
+	dashDirection_ += (direction - dashDirection_) * turnRate_;
+	dashDirection_.NormalizeSelf();
+	physics_->SetMovementVelocity(dashDirection_ * chaseSpeed_);
+
+	// 進行方向を正面に向かせる
+	owner->SetRotation({0.0f, std::atan2(dashDirection_.x, dashDirection_.z), 0.0f});
+
+	// 残り時間に応じて赤点滅
+	UpdateBlink(remainingLifetimeSeconds_ / chaseLifetimeSeconds_);
 }
 
 void GameObjectComponent::BombMoveComponent::UpdateReflected(float deltaTime)
@@ -176,6 +187,9 @@ void GameObjectComponent::BombMoveComponent::UpdateReflected(float deltaTime)
 	}
 
 	physics_->SetMovementVelocity(reflectedVelocity_);
+
+	// 反射後も残り時間に応じて赤点滅
+	UpdateBlink(remainingLifetimeSeconds_ / reflectedLifetimeSeconds_);
 }
 
 void GameObjectComponent::BombMoveComponent::Explode()
@@ -190,6 +204,17 @@ void GameObjectComponent::BombMoveComponent::Explode()
 	ParticleManager::GetInstance()->Play("bomber", owner_->GetPosition());
 	collider_->SetActive(false);
 	owner_->SetActive(false);
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateBlink(float remainRatio)
+{
+	// 残りが減るほど位相の進みを速くする
+	blinkPhase_ += blinkSpeedMin_ + (blinkSpeedMax_ - blinkSpeedMin_) * (1.0f - remainRatio);
+
+	// sinが正の間だけ赤くする（パキッと切り替わる点滅）
+	bool redOn = std::sin(blinkPhase_) > 0.0f;
+	owner_->SetColor(redOn ? Vector4{1.0f, 0.2f, 0.2f, 1.0f}
+						   : Vector4{1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo& info)
@@ -212,32 +237,43 @@ void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo
 		auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr;
 		if (reflect)
 		{
-			// 寿命切れで爆発
-			Explode(owner);
-			return;
+			if (Reflect(reflect->GetReflectDirectionFrom(owner_->GetPosition())))
+			{
+				reflect->NotifyReflectSucceeded();
+			}
 		}
-	}
-
-	// 寿命が尽きたら消す
-	if (lifespan_ <= 0.0f && !hasExploded_)
-	{
-		Explode(owner);
 		return;
 	}
 
-	// 進行方向を正面に向かせる（動いている時だけ）
-	Vector3 vel = physics_->GetMovementVelocity();
-	if (vel.x * vel.x + vel.z * vel.z > 0.0001f)
+	if (state_ == State::Reflected && (otherLayer & CollisionLayer::Enemy))
 	{
-		float yaw = std::atan2(vel.x, vel.z);
-		owner->SetRotation({0.0f, yaw, 0.0f});
+		// 反射されたボムが敵へ届いた時点で爆発させる。
+		Explode();
 	}
 }
 
-void GameObjectComponent::BombMoveComponent::Explode(GameObject* owner)
+void GameObjectComponent::BombMoveComponent::ResolveTerrainCollision(const CollisionInfo& info)
 {
-	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
-	ParticleManager::GetInstance()->Play("bomber", owner->GetPosition());
-	hasExploded_ = true;
-	owner->SetActive(false); 
+	if (!info.otherCollider ||
+		!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
+	{
+		return;
+	}
+
+	Vector3 position = owner_->GetPosition();
+	position += info.normal * info.depth;
+	owner_->SetPosition(position);
+
+	if (info.normal.y <= 0.0f)
+	{
+		return;
+	}
+
+	physics_->SetGrounded(true);
+	Vector3 velocity = physics_->GetExternalVelocity();
+	if (velocity.y < 0.0f)
+	{
+		velocity.y = 0.0f;
+		physics_->SetExternalVelocity(velocity);
+	}
 }

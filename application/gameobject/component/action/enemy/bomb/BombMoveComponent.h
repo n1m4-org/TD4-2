@@ -31,30 +31,12 @@ namespace GameObjectComponent
 		 */
 		void Update(GameObject* owner) override;
 
-		/// <summary>
-		/// 爆発処理
-		/// </summary>
-		void Explode(GameObject* owner);
-
-
-	public: // Setter / Getter
-		// 反射されたら
-		void OnReflected(const Vector3& direction, float speed)
-		{
-			// すでに反射済み、爆発済みならスルー
-			if (isReflected_ || hasExploded_)
-			{
-				return;
-			}
-			// 各種フラグを設定
-			isReflected_ = true;
-			isDashing_ = false;
-			reflectedDirection_ = direction.Normalize();
-			reflectedVelocity_ = reflectedDirection_ * speed;
-			reflectedLifespan_ = lifespan_; 
-		}
-
-		
+		/**
+		 * @brief ボムを指定方向へ反射する。
+		 * @param direction 反射方向
+		 * @return 反射を受け付けた場合はtrue
+		 */
+		bool Reflect(const Vector3& direction);
 
 	private:
 		/** @brief ボムの行動段階。反射後は通常の追跡へ戻さない。 */
@@ -96,6 +78,12 @@ namespace GameObjectComponent
 		void Explode();
 
 		/**
+		 * @brief 残り時間の割合に応じて赤点滅させる。
+		 * @param remainRatio 残り時間の割合（1.0=開始直後、0.0=爆発直前）
+		 */
+		void UpdateBlink(float remainRatio);
+
+		/**
 		 * @brief 衝突相手のレイヤーに応じて自身の状態を遷移させる。
 		 * @param info 衝突情報
 		 */
@@ -122,39 +110,19 @@ namespace GameObjectComponent
 
 		float chaseRange_ = 30.0f;
 		float chaseSpeed_ = 7.0f;
-
-
-		// 点火から爆発までの時間
-		const float ignitionTime_ = 60 * 7; // 7秒
-
-		// 爆発までの残り時間
-		float lifespan_ = ignitionTime_;
-
-		// 爆発済みかどうかのフラグ
-		bool hasExploded_ = false;
-
-		// リフレクト後のフラグ
-		bool isReflected_ = false;
-
-		// 爆発までの残り時間（リフレクト後） 60は仮
-		float reflectedLifespan_ = 60.0f;
-
-		// プレイヤー側から取得する反射後の方向と速度
-		Vector3 reflectedDirection_ = {0.0f, 0.0f, 0.0f};
-		Vector3 reflectedVelocity_ = {0.0f, 0.0f, 0.0f};
-
-		// 旋回の追従率
-		float turnRate_ = 0.04f;
-
-		// 経過率（0.0〜1.0）: 点火直後〜爆発直前
-		float blinkPhase_ = 0.0f;
-		// 点滅速度（1フレームあたりの位相の進み）: 点火直後〜爆発直前
-		float blinkSpeedMin_ = 0.08f;
-		float blinkSpeedMax_ = 0.7f;
-
 		float chaseLifetimeSeconds_ = 5.0f;
 		float reflectedSpeed_ = 10.0f;
 		float reflectedLifetimeSeconds_ = 1.0f;
 
+		// ドリフト用: 現在の進行方向
+		Vector3 dashDirection_ = {0.0f, 0.0f, 1.0f};
+		// 旋回の追従率（小さいほど曲がりにくく、ドリフトが大きくなる）
+		float turnRate_ = 0.04f;
+
+		// 赤点滅の位相（累積値）
+		float blinkPhase_ = 0.0f;
+		// 点滅速度（1フレームあたりの位相の進み）: 開始直後〜爆発直前
+		float blinkSpeedMin_ = 0.08f;
+		float blinkSpeedMax_ = 0.7f;
 	};
 } // namespace GameObjectComponent
