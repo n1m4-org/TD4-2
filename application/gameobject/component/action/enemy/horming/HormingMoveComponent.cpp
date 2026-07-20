@@ -1,4 +1,5 @@
 #include "HormingMoveComponent.h"
+#include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/gameobject/base/GameObject.h"
@@ -117,6 +118,14 @@ void HormingMoveComponent::FireBullet(GameObject* owner)
 			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect)
 			{
 				// 反射後の直線移動APIがないため、ホーミング弾は現状ここで消す。
+				if (info.other)
+				{
+					GameObject* player = info.other->GetParent();
+					if (auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr)
+					{
+						reflect->NotifyReflectSucceeded();
+					}
+				}
 				KillBullet(bulletObject);
 				return;
 			}

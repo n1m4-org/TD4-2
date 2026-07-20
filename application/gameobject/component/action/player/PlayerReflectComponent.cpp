@@ -1,8 +1,8 @@
 #include "PlayerReflectComponent.h"
 
 #include "application/collision/CollisionLayer.h"
-#include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "base/Camera.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/base/GameObject.h"
@@ -15,28 +15,39 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 
 namespace
 {
-constexpr float kReflectDurationSeconds = 0.2f;
-constexpr float kReflectColliderOffset = 4.5f;
-constexpr Vector3 kReflectColliderSize = {5.0f, 2.0f, 3.0f};
-constexpr float kDirectionEpsilonSq = 0.000001f;
-constexpr float kNdcMin = -1.0f;
-constexpr float kNdcMax = 1.0f;
-constexpr float kNdcToScreenScale = 0.5f;
-constexpr float kNearNdc = 0.0f;
-constexpr float kFarNdc = 1.0f;
-constexpr char kLockOnMarkerTexture[] = "./Resources/uvChecker.png";
-constexpr Vector2 kLockOnMarkerAnchor = {0.5f, 0.5f};
-constexpr Vector2 kLockOnMarkerSize = {64.0f, 64.0f};
-}
+	constexpr float kReflectDurationSeconds = 0.2f;
+	constexpr float kWindUpEndNormalized = 0.125f;
+	constexpr float kSwingEndNormalized = 0.3125f;
+	constexpr float kDirectionEpsilonSq = 0.000001f;
+	constexpr char kReflectHandName[] = "ReflectHand";
+	constexpr float kNdcMin = -1.0f;
+	constexpr float kNdcMax = 1.0f;
+	constexpr float kNdcToScreenScale = 0.5f;
+	constexpr float kNearNdc = 0.0f;
+	constexpr float kFarNdc = 1.0f;
+	constexpr char kLockOnMarkerTexture[] = "./Resources/uvChecker.png";
+	constexpr Vector2 kLockOnMarkerAnchor = {0.5f, 0.5f};
+	constexpr Vector2 kLockOnMarkerSize = {64.0f, 64.0f};
+} // namespace
 
 GameObjectComponent::PlayerReflectComponent::PlayerReflectComponent(
 	Camera* camera, SpriteCommon* spriteCommon)
 	: camera_(camera)
 {
 	Register("lockOnRadiusNdc", &lockOnRadiusNdc_);
+	Register("activationAnimationDuration", &activationAnimationDuration_);
+	Register("successReactionDuration", &successReactionDuration_);
+	Register("hitStopDuration", &hitStopDuration_);
+	Register("windUpArcRadians", &windUpArcRadians_);
+	Register("swingArcRadians", &swingArcRadians_);
+	Register("successRecoilArcRadians", &successRecoilArcRadians_);
+	Register("handRadialOffset", &handRadialOffset_);
+	Register("cameraShakeIntensity", &cameraShakeIntensity_);
+	Register("cameraShakeDuration", &cameraShakeDuration_);
 
 	if (spriteCommon)
 	{
@@ -54,10 +65,17 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 		return;
 	}
 
-	if (!collider_)
+	if (!hand_)
 	{
-		// ownerが所有する反射専用コライダーを初回だけ借りる。
-		collider_ = owner->GetComponent<OBBColliderComponent>().get();
+		hand_ = owner->GetChild(kReflectHandName);
+		if (hand_)
+		{
+			collider_ = hand_->GetComponent<OBBColliderComponent>().get();
+			handBasePosition_ = hand_->GetPosition();
+			handArcRadius_ = (std::max)(0.0f, std::sqrt(
+				handBasePosition_.x * handBasePosition_.x +
+				handBasePosition_.z * handBasePosition_.z) + handRadialOffset_);
+		}
 	}
 
 	if (!collider_)
@@ -68,37 +86,102 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 	auto input = owner->GetComponent<PlayerInputComponent>();
 	UpdateLockOnTarget(input && input->IsLockOnTriggered());
 	fallbackDirection_ = GetPlayerForward(owner);
+	const float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
 
 	if (input && input->IsReflectTriggered() && !isReflecting_)
 	{
 		isReflecting_ = true;
 		reflectTimer_ = kReflectDurationSeconds;
+		activationAnimationTimer_ = activationAnimationDuration_;
 
 		// 反射中にロックが切り替わっても行き先が変わらないよう、入力時点で固定する。
 		hasReflectTarget_ = hasLockOnTarget_;
 		reflectTargetPosition_ = lockOnTargetPosition_;
 
+		hand_->SetActive(true);
 		collider_->SetActive(true);
 		collider_->SetCollisionLayer(CollisionLayer::PlayerReflect);
-		UpdateReflectCollider(owner);
-		ParticleManager::GetInstance()->Play("reflect", collider_->GetOBB().center);
+		ParticleManager::GetInstance()->Play(
+			"reflect", MathUtils::GetTranslateFromMatrix(hand_->GetWorldMatrix()));
 	}
+
+	UpdateHandAnimation(deltaTime);
 
 	if (!isReflecting_)
 	{
 		return;
 	}
 
-	reflectTimer_ -= TimeManager::GetInstance().GetGameContext().deltaTime;
-	UpdateReflectCollider(owner);
-
+	reflectTimer_ -= deltaTime;
 	if (reflectTimer_ <= 0.0f)
 	{
 		isReflecting_ = false;
 		hasReflectTarget_ = false;
+		hand_->SetActive(false);
 		collider_->SetActive(false);
 		collider_->SetCollisionLayer(CollisionLayer::None);
 	}
+}
+
+
+void GameObjectComponent::PlayerReflectComponent::NotifyReflectSucceeded()
+{
+	successReactionTimer_ = successReactionDuration_;
+	TimeManager::GetInstance().StartHitStop(hitStopDuration_);
+	camera_->StartShake(cameraShakeIntensity_, cameraShakeDuration_);
+}
+
+void GameObjectComponent::PlayerReflectComponent::UpdateHandAnimation(float deltaTime)
+{
+	if (!hand_)
+	{
+		return;
+	}
+
+	Vector3 position = handBasePosition_;
+	Vector3 rotation = {};
+	float arcAngle = 0.0f;
+
+	if (activationAnimationTimer_ > 0.0f && activationAnimationDuration_ > 0.0f)
+	{
+		activationAnimationTimer_ -= deltaTime;
+		if (activationAnimationTimer_ < 0.0f)
+			activationAnimationTimer_ = 0.0f;
+		const float progress = std::clamp(1.0f - activationAnimationTimer_ / activationAnimationDuration_, 0.0f, 1.0f);
+		if (progress < kWindUpEndNormalized)
+		{
+			const float phase = progress / kWindUpEndNormalized;
+			arcAngle = windUpArcRadians_ * phase * phase;
+		}
+		else if (progress < kSwingEndNormalized)
+		{
+			const float phase = (progress - kWindUpEndNormalized) / (kSwingEndNormalized - kWindUpEndNormalized);
+			const float eased = 1.0f - (1.0f - phase) * (1.0f - phase);
+			arcAngle = windUpArcRadians_ + (swingArcRadians_ - windUpArcRadians_) * eased;
+		}
+		else
+		{
+			const float phase = (progress - kSwingEndNormalized) / (1.0f - kSwingEndNormalized);
+			const float remaining = 1.0f - phase * phase * (3.0f - 2.0f * phase);
+			arcAngle = swingArcRadians_ * remaining;
+		}
+	}
+
+	if (successReactionTimer_ > 0.0f && successReactionDuration_ > 0.0f)
+	{
+		successReactionTimer_ -= deltaTime;
+		if (successReactionTimer_ < 0.0f)
+			successReactionTimer_ = 0.0f;
+		const float progress = std::clamp(1.0f - successReactionTimer_ / successReactionDuration_, 0.0f, 1.0f);
+		const float impulse = std::sin(progress * std::numbers::pi_v<float>);
+		arcAngle += successRecoilArcRadians_ * impulse;
+	}
+
+	position.x = std::sin(arcAngle) * handArcRadius_;
+	position.z = std::cos(arcAngle) * handArcRadius_;
+	rotation.y = arcAngle;
+	hand_->SetPosition(position);
+	hand_->SetRotation(rotation);
 }
 
 void GameObjectComponent::PlayerReflectComponent::Draw2D()
@@ -221,19 +304,6 @@ void GameObjectComponent::PlayerReflectComponent::UpdateLockOnTarget(bool isLock
 		lockOnMarker_->SetPosition(markerPosition);
 		lockOnMarker_->Update();
 	}
-}
-
-void GameObjectComponent::PlayerReflectComponent::UpdateReflectCollider(GameObject* owner)
-{
-	// 行き先とは分離し、攻撃を受ける判定は常にプレイヤーの現在方向へ出す。
-	const Vector3 direction = GetPlayerForward(owner);
-	const float yaw = std::atan2(direction.x, direction.z);
-
-	OBB obb = collider_->GetOBB();
-	obb.center = owner->GetPosition() + (direction * kReflectColliderOffset);
-	obb.size = kReflectColliderSize;
-	obb.rotate = MakeRotateMatrix({0.0f, yaw, 0.0f});
-	collider_->SetOBB(obb);
 }
 
 Vector3 GameObjectComponent::PlayerReflectComponent::GetPlayerForward(const GameObject* owner) const

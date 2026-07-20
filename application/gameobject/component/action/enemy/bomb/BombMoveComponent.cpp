@@ -199,10 +199,14 @@ void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo
 	if ((otherLayer & CollisionLayer::PlayerReflect) && info.other)
 	{
 		// プレイヤーから行き先だけ取得し、ボム自身のReflect APIで状態を切り替える。
-		auto reflect = info.other->GetComponent<PlayerReflectComponent>();
+		GameObject* player = info.other->GetParent();
+		auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr;
 		if (reflect)
 		{
-			Reflect(reflect->GetReflectDirectionFrom(owner_->GetPosition()));
+			if (Reflect(reflect->GetReflectDirectionFrom(owner_->GetPosition())))
+			{
+				reflect->NotifyReflectSucceeded();
+			}
 		}
 		return;
 	}
