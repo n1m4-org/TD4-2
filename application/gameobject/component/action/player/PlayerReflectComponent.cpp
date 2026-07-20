@@ -10,18 +10,15 @@
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/input/Input.h"
 #include "engine/math/MathUtils.h"
+#include "math/Easing.h"
 #include "math/MatrixFunc.h"
 #include "time/TimeManager.h"
 
 #include <algorithm>
 #include <cmath>
-#include <numbers>
 
 namespace
 {
-	constexpr float kReflectDurationSeconds = 0.2f;
-	constexpr float kWindUpEndNormalized = 0.125f;
-	constexpr float kSwingEndNormalized = 0.3125f;
 	constexpr float kDirectionEpsilonSq = 0.000001f;
 	constexpr char kReflectHandName[] = "ReflectHand";
 	constexpr float kNdcMin = -1.0f;
@@ -40,14 +37,14 @@ GameObjectComponent::PlayerReflectComponent::PlayerReflectComponent(
 {
 	Register("lockOnRadiusNdc", &lockOnRadiusNdc_);
 	Register("activationAnimationDuration", &activationAnimationDuration_);
-	Register("successReactionDuration", &successReactionDuration_);
 	Register("hitStopDuration", &hitStopDuration_);
 	Register("windUpArcRadians", &windUpArcRadians_);
 	Register("swingArcRadians", &swingArcRadians_);
-	Register("successRecoilArcRadians", &successRecoilArcRadians_);
 	Register("handRadialOffset", &handRadialOffset_);
 	Register("cameraShakeIntensity", &cameraShakeIntensity_);
 	Register("cameraShakeDuration", &cameraShakeDuration_);
+	Register("cameraZoomFovOffset", &cameraZoomFovOffset_);
+	Register("cameraZoomDuration", &cameraZoomDuration_);
 
 	if (spriteCommon)
 	{
@@ -91,7 +88,7 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 	if (input && input->IsReflectTriggered() && !isReflecting_)
 	{
 		isReflecting_ = true;
-		reflectTimer_ = kReflectDurationSeconds;
+		reflectTimer_ = activationAnimationDuration_;
 		activationAnimationTimer_ = activationAnimationDuration_;
 
 		// 反射中にロックが切り替わっても行き先が変わらないよう、入力時点で固定する。
@@ -126,9 +123,9 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 
 void GameObjectComponent::PlayerReflectComponent::NotifyReflectSucceeded()
 {
-	successReactionTimer_ = successReactionDuration_;
 	TimeManager::GetInstance().StartHitStop(hitStopDuration_);
 	camera_->StartShake(cameraShakeIntensity_, cameraShakeDuration_);
+	camera_->StartZoom(cameraZoomFovOffset_, cameraZoomDuration_);
 }
 
 void GameObjectComponent::PlayerReflectComponent::UpdateHandAnimation(float deltaTime)
@@ -138,45 +135,21 @@ void GameObjectComponent::PlayerReflectComponent::UpdateHandAnimation(float delt
 		return;
 	}
 
+	if (!isReflecting_)
+	{
+		return;
+	}
+
+	activationAnimationTimer_ = (std::max)(0.0f, activationAnimationTimer_ - deltaTime);
+	const float progress = activationAnimationDuration_ > 0.0f
+		? std::clamp(1.0f - activationAnimationTimer_ / activationAnimationDuration_, 0.0f, 1.0f)
+		: 1.0f;
+	const float eased = EaseInOutBack(progress);
+	const float arcAngle =
+		windUpArcRadians_ + (swingArcRadians_ - windUpArcRadians_) * eased;
+
 	Vector3 position = handBasePosition_;
 	Vector3 rotation = {};
-	float arcAngle = 0.0f;
-
-	if (activationAnimationTimer_ > 0.0f && activationAnimationDuration_ > 0.0f)
-	{
-		activationAnimationTimer_ -= deltaTime;
-		if (activationAnimationTimer_ < 0.0f)
-			activationAnimationTimer_ = 0.0f;
-		const float progress = std::clamp(1.0f - activationAnimationTimer_ / activationAnimationDuration_, 0.0f, 1.0f);
-		if (progress < kWindUpEndNormalized)
-		{
-			const float phase = progress / kWindUpEndNormalized;
-			arcAngle = windUpArcRadians_ * phase * phase;
-		}
-		else if (progress < kSwingEndNormalized)
-		{
-			const float phase = (progress - kWindUpEndNormalized) / (kSwingEndNormalized - kWindUpEndNormalized);
-			const float eased = 1.0f - (1.0f - phase) * (1.0f - phase);
-			arcAngle = windUpArcRadians_ + (swingArcRadians_ - windUpArcRadians_) * eased;
-		}
-		else
-		{
-			const float phase = (progress - kSwingEndNormalized) / (1.0f - kSwingEndNormalized);
-			const float remaining = 1.0f - phase * phase * (3.0f - 2.0f * phase);
-			arcAngle = swingArcRadians_ * remaining;
-		}
-	}
-
-	if (successReactionTimer_ > 0.0f && successReactionDuration_ > 0.0f)
-	{
-		successReactionTimer_ -= deltaTime;
-		if (successReactionTimer_ < 0.0f)
-			successReactionTimer_ = 0.0f;
-		const float progress = std::clamp(1.0f - successReactionTimer_ / successReactionDuration_, 0.0f, 1.0f);
-		const float impulse = std::sin(progress * std::numbers::pi_v<float>);
-		arcAngle += successRecoilArcRadians_ * impulse;
-	}
-
 	position.x = std::sin(arcAngle) * handArcRadius_;
 	position.z = std::cos(arcAngle) * handArcRadius_;
 	rotation.y = arcAngle;
