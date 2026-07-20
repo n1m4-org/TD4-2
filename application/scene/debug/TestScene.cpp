@@ -122,6 +122,7 @@ void TestScene::Initialize()
 			auto reflectComp = player_->GetComponent<PlayerReflectComponent>();
 			if (reflectComp)
 			{
+				ParticleManager::GetInstance()->Play("reflect", info.otherCollider->GetOwner()->GetPosition());
 				reflectComp->NotifyReflectSucceeded();
 			}
 		}

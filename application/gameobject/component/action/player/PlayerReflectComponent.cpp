@@ -1,7 +1,6 @@
 #include "PlayerReflectComponent.h"
 
 #include "application/collision/CollisionLayer.h"
-#include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "base/Camera.h"
@@ -71,25 +70,9 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 			collider_ = hand_->GetComponent<OBBColliderComponent>().get();
 			handBasePosition_ = hand_->GetPosition();
 			handArcRadius_ = (std::max)(0.0f, std::sqrt(
-				handBasePosition_.x * handBasePosition_.x +
-				handBasePosition_.z * handBasePosition_.z) + handRadialOffset_);
-
-			if (collider_)
-			{
-				collider_->SetOnEnter([this](const CollisionInfo& info)
-				{
-					if (!info.otherCollider)
-					{
-						return;
-					}
-
-					const uint32_t targetLayers = CollisionLayer::EnemyBullet | CollisionLayer::Enemy | CollisionLayer::PlayerBullet;
-					if (info.otherCollider->GetCollisionLayer() & targetLayers)
-					{
-						NotifyReflectSucceeded();
-					}
-				});
-			}
+												  handBasePosition_.x * handBasePosition_.x +
+												  handBasePosition_.z * handBasePosition_.z) +
+												  handRadialOffset_);
 		}
 	}
 
@@ -116,8 +99,6 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 		hand_->SetActive(true);
 		collider_->SetActive(true);
 		collider_->SetCollisionLayer(CollisionLayer::PlayerReflect);
-		ParticleManager::GetInstance()->Play(
-			"reflect", MathUtils::GetTranslateFromMatrix(hand_->GetWorldMatrix()));
 	}
 
 	UpdateHandAnimation(deltaTime);
@@ -160,8 +141,8 @@ void GameObjectComponent::PlayerReflectComponent::UpdateHandAnimation(float delt
 
 	activationAnimationTimer_ = (std::max)(0.0f, activationAnimationTimer_ - deltaTime);
 	const float progress = activationAnimationDuration_ > 0.0f
-		? std::clamp(1.0f - activationAnimationTimer_ / activationAnimationDuration_, 0.0f, 1.0f)
-		: 1.0f;
+							   ? std::clamp(1.0f - activationAnimationTimer_ / activationAnimationDuration_, 0.0f, 1.0f)
+							   : 1.0f;
 	const float eased = EaseInOutBack(progress);
 	const float arcAngle =
 		windUpArcRadians_ + (swingArcRadians_ - windUpArcRadians_) * eased;
