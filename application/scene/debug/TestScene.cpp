@@ -336,7 +336,7 @@ void TestScene::Initialize()
 	bombEnemy_ = std::make_unique<GameObject>("BombEnemy");
 	bombEnemy_->SetName("BombEnemy");
 	bombEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-	bombEnemy_->SetModel("cube");
+	bombEnemy_->SetModel("bombenemy");
 	bombEnemy_->SetPosition({10.0f, 2.0f, 0.0f});
 	bombEnemy_->SetScale({2.0f, 2.0f, 2.0f});
 

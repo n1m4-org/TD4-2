@@ -20,6 +20,11 @@ namespace GameObjectComponent
 		// 更新処理
 		void Update(GameObject* owner) override;
 
+		/// <summary>
+		/// 爆発処理
+		/// </summary>
+		void Explode(GameObject* owner);
+
 
 	public: // Setter / Getter
 		// 反射されたら
@@ -38,7 +43,7 @@ namespace GameObjectComponent
 			reflectedLifespan_ = lifespan_; 
 		}
 
-
+		
 	private:
 		// プレイヤーのポインタを保持
 		GameObject* player_ = nullptr;
@@ -62,15 +67,13 @@ namespace GameObjectComponent
 		float chaseSpeed_ = 7.0f;
 
 		// 点火から爆発までの時間
-		const float ignitionTime_ = 300.0f;
-
+		const float ignitionTime_ = 60 * 7; // 7秒
 
 		// 爆発までの残り時間
 		float lifespan_ = ignitionTime_;
 
 		// 爆発済みかどうかのフラグ
 		bool hasExploded_ = false;
-
 
 		// リフレクト後のフラグ
 		bool isReflected_ = false;
@@ -81,6 +84,15 @@ namespace GameObjectComponent
 		// プレイヤー側から取得する反射後の方向と速度
 		Vector3 reflectedDirection_ = {0.0f, 0.0f, 0.0f};
 		Vector3 reflectedVelocity_ = {0.0f, 0.0f, 0.0f};
+
+		// 旋回の追従率
+		float turnRate_ = 0.04f;
+
+		// 経過率（0.0〜1.0）: 点火直後〜爆発直前
+		float blinkPhase_ = 0.0f;
+		// 点滅速度（1フレームあたりの位相の進み）: 点火直後〜爆発直前
+		float blinkSpeedMin_ = 0.08f;
+		float blinkSpeedMax_ = 0.7f;
 	};
 
 } // namespace GameObjectComponent
