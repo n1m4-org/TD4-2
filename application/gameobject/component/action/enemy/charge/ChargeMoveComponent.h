@@ -98,9 +98,11 @@ namespace GameObjectComponent
 	   // 左右移動のタイマー
 	  float strafeTimer_ = 0.0f;
 	  // 左右移動の切り替え時間
-	  float changeTime_ = 1.0f;
+	  float changeTime_ = 0.5f;
 	  // 左右移動フラグ
 	  bool moveRight_ = true;
+	  // 左右移動速度
+	  float currentStrafeSpeed_ = 5.0f;
 
 	  // 攻撃フラグ
 	  bool isAttacking_ = false;

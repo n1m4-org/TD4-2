@@ -220,9 +220,10 @@ void GameObjectComponent::ChargeMoveComponent::StrafeMove(GameObject* owner)
 
 	if (strafeTimer_ >= changeTime_)
 	{
-		moveRight_ = !moveRight_;
+		moveRight_ = Random(0, 1) > 0.3f;
 
 		changeTime_ = Random(1.0f, 2.5f);
+		currentStrafeSpeed_ = Random(4.5f, 6.5f);
 
 		strafeTimer_ = 0.0f;
 	}
@@ -234,6 +235,11 @@ void GameObjectComponent::ChargeMoveComponent::StrafeMove(GameObject* owner)
 
 	// 横方向
 	Vector3 side = {-toPlayer.z, 0.0f, toPlayer.x};
+	Vector3 movement = side;
+	movement += toPlayer * Random(-0.3f, 0.3f);
+
+	movement.NormalizeSelf();
+
 
 	// 左右移動
 	if (!moveRight_)
@@ -241,7 +247,8 @@ void GameObjectComponent::ChargeMoveComponent::StrafeMove(GameObject* owner)
 		side *= -1.0f;
 	}
 
-	owner->SetPosition(owner->GetPosition() + side * moveSpeed_ * TimeManager::GetInstance().GetGameContext().deltaTime);
+	owner->SetRotation(Vector3{0.0f, atan2f(toPlayer.x, toPlayer.z), 0.0f});
+	owner->SetPosition(owner->GetPosition() + side * currentStrafeSpeed_ * TimeManager::GetInstance().GetGameContext().deltaTime);
 }
 
 float GameObjectComponent::ChargeMoveComponent::Random(float min, float max)
