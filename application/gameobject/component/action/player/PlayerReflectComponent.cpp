@@ -73,6 +73,23 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 			handArcRadius_ = (std::max)(0.0f, std::sqrt(
 				handBasePosition_.x * handBasePosition_.x +
 				handBasePosition_.z * handBasePosition_.z) + handRadialOffset_);
+
+			if (collider_)
+			{
+				collider_->SetOnEnter([this](const CollisionInfo& info)
+				{
+					if (!info.otherCollider)
+					{
+						return;
+					}
+
+					const uint32_t targetLayers = CollisionLayer::EnemyBullet | CollisionLayer::Enemy | CollisionLayer::PlayerBullet;
+					if (info.otherCollider->GetCollisionLayer() & targetLayers)
+					{
+						NotifyReflectSucceeded();
+					}
+				});
+			}
 		}
 	}
 

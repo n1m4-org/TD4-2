@@ -1,6 +1,5 @@
 #include "TestScene.h"
 #include "application/collision/CollisionLayer.h"
-#include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
@@ -10,6 +9,7 @@
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
@@ -74,6 +74,7 @@ void TestScene::Initialize()
 	// パーティクルのロード
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
+	ParticleManager::GetInstance()->Load("bullet_hit", "Resources/json/particle/hit.json");
 
 	// 1. テスト用キューブオブジェクトの作成
 	player_ = std::make_unique<GameObject>(GameObjectTag::Player);
@@ -106,9 +107,26 @@ void TestScene::Initialize()
 	reflectHand->SetPosition(kReflectHandLocalPosition);
 	reflectHand->SetScale(kReflectHandLocalScale);
 	auto reflectCollider = std::make_unique<OBBColliderComponent>(reflectHand.get());
-	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
+	reflectCollider->SetActive(false); // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
+	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
+	{
+		if (!info.otherCollider)
+		{
+			return;
+		}
+
+		if (player_)
+		{
+			auto reflectComp = player_->GetComponent<PlayerReflectComponent>();
+			if (reflectComp)
+			{
+				reflectComp->NotifyReflectSucceeded();
+			}
+		}
+	});
+
 	reflectHand->AddComponent("ReflectCollider", std::move(reflectCollider));
 	player_->AddChild("ReflectHand", std::move(reflectHand));
 
@@ -183,7 +201,7 @@ void TestScene::Initialize()
 
 	// こいつに追従カメラを追従させる
 	topDownCamera_->SetPitch(1.2f);
-	topDownCamera_->SetOffset({ 0.0f,0.0f,-40.0f });
+	topDownCamera_->SetOffset({0.0f, 0.0f, -40.0f});
 	topDownCamera_->Start(105.0f, &player_->GetPosition());
 	// マネージャーに登録
 	GameObjectManager::GetInstance()->Register(player_.get());

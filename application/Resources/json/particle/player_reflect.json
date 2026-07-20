@@ -16,27 +16,35 @@
             "minMoveDistance": 0.05000000074505806,
             "modules": [
                 {
-                    "count": 10,
+                    "count": 100,
                     "delay": 0.0,
-                    "interval": 0.05999999865889549,
+                    "interval": 0.0,
                     "loops": 1,
                     "type": "SpawnBurst"
                 },
                 {
-                    "max": 0.30000001192092896,
-                    "min": 0.30000001192092896,
-                    "type": "InitialLifetime"
+                    "max": {
+                        "x": 8.0,
+                        "y": 6.0,
+                        "z": 8.0
+                    },
+                    "min": {
+                        "x": -8.0,
+                        "y": 0.0,
+                        "z": -8.0
+                    },
+                    "type": "InitialVelocity"
                 },
                 {
-                    "easingType": 0,
+                    "easingType": 2,
                     "end": {
-                        "x": 2.0,
-                        "y": 2.0,
-                        "z": 1.0
+                        "x": 0.029999999329447746,
+                        "y": 0.029999999329447746,
+                        "z": 0.0
                     },
                     "start": {
-                        "x": 0.0,
-                        "y": 0.0,
+                        "x": 0.029999999329447746,
+                        "y": 0.029999999329447746,
                         "z": 1.0
                     },
                     "type": "ScaleOverLifetime"
@@ -45,18 +53,21 @@
                     "easingType": 0,
                     "end": {
                         "a": 0.0,
-                        "b": 0.96875,
-                        "g": 0.4526727795600891,
-                        "r": 0.2551618814468384
+                        "b": 0.12694163620471954,
+                        "g": 0.12694163620471954,
+                        "r": 0.6788617968559265
                     },
                     "start": {
                         "a": 1.0,
-                        "b": 1.0,
-                        "g": 0.0,
-                        "r": 0.017857074737548828
+                        "b": 0.0,
+                        "g": 0.7317073345184326,
+                        "r": 1.0
                     },
                     "type": "ColorFade",
                     "useInitialColor": false
+                },
+                {
+                    "type": "FaceVelocity"
                 }
             ],
             "name": "e1",
@@ -66,8 +77,8 @@
                 "z": 0.0
             },
             "renderer": {
-                "billboard": true,
-                "blendMode": 1,
+                "billboard": false,
+                "blendMode": 0,
                 "primitiveOptions": {
                     "cubeFaceVisible": [
                         true,
@@ -83,7 +94,7 @@
                         "z": 1.0
                     },
                     "doubleSided": false,
-                    "innerRadius": 0.0,
+                    "innerRadius": 0.5,
                     "outerRadius": 1.0,
                     "points": 5,
                     "rings": 8,
@@ -92,14 +103,14 @@
                     "turns": 2.0,
                     "withCaps": true
                 },
-                "primitiveType": 1,
+                "primitiveType": 9,
                 "scale": 1.0,
-                "texture": "resources/gradation.png",
+                "texture": "resources/white1x1.png",
                 "tintColor": {
                     "a": 1.0,
-                    "b": 0.9776785969734192,
-                    "g": 0.9776785969734192,
-                    "r": 0.9776785969734192
+                    "b": 1.0,
+                    "g": 1.0,
+                    "r": 1.0
                 },
                 "type": "Mesh"
             },
@@ -129,55 +140,30 @@
                     "type": "SpawnBurst"
                 },
                 {
-                    "max": 0.30000001192092896,
-                    "min": 0.30000001192092896,
+                    "max": 0.5,
+                    "min": 0.5,
                     "type": "InitialLifetime"
-                },
-                {
-                    "maxAngle": 360.0,
-                    "maxAngle_v3": {
-                        "x": 360.0,
-                        "y": 360.0,
-                        "z": 360.0
-                    },
-                    "minAngle": 0.0,
-                    "minAngle_v3": {
-                        "x": 0.0,
-                        "y": 0.0,
-                        "z": 0.0
-                    },
-                    "type": "InitialRotation"
                 },
                 {
                     "easingType": 0,
                     "end": {
-                        "x": 0.05000000074505806,
-                        "y": 2.0,
-                        "z": 0.0
+                        "x": 5.0,
+                        "y": 5.0,
+                        "z": 5.0
                     },
                     "start": {
-                        "x": 0.05000000074505806,
-                        "y": 0.0,
-                        "z": 0.0
+                        "x": 0.30000001192092896,
+                        "y": 0.30000001192092896,
+                        "z": 0.30000001192092896
                     },
                     "type": "ScaleOverLifetime"
                 },
                 {
-                    "easingType": 0,
-                    "end": {
-                        "a": 0.0,
-                        "b": 0.9196428656578064,
-                        "g": 0.7108097076416016,
-                        "r": 0.05337214469909668
-                    },
-                    "start": {
-                        "a": 1.0,
-                        "b": 1.0,
-                        "g": 0.8392856121063232,
-                        "r": 0.0
-                    },
-                    "type": "ColorFade",
-                    "useInitialColor": false
+                    "easeIn": false,
+                    "easeOut": true,
+                    "endAlpha": 0.0,
+                    "startAlpha": 1.0,
+                    "type": "AlphaFade"
                 }
             ],
             "name": "e2",
@@ -188,7 +174,7 @@
             },
             "renderer": {
                 "billboard": true,
-                "blendMode": 1,
+                "blendMode": 0,
                 "primitiveOptions": {
                     "cubeFaceVisible": [
                         true,
@@ -204,8 +190,8 @@
                         "z": 1.0
                     },
                     "doubleSided": false,
-                    "innerRadius": 0.5,
-                    "outerRadius": 1.0,
+                    "innerRadius": 0.0,
+                    "outerRadius": 1.1699999570846558,
                     "points": 5,
                     "rings": 8,
                     "segments": 16,
@@ -213,14 +199,14 @@
                     "turns": 2.0,
                     "withCaps": true
                 },
-                "primitiveType": 3,
+                "primitiveType": 1,
                 "scale": 1.0,
-                "texture": "resources/white1x1.png",
+                "texture": "resources/gradation.png",
                 "tintColor": {
                     "a": 1.0,
-                    "b": 1.0,
-                    "g": 1.0,
-                    "r": 1.0
+                    "b": 0.7886178493499756,
+                    "g": 0.6610127687454224,
+                    "r": 0.1346420794725418
                 },
                 "type": "Mesh"
             },
