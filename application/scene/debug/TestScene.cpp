@@ -385,6 +385,7 @@ void TestScene::Initialize()
 			if (!info.otherCollider)
 			{
 				return;
+			}
 
 			uint32_t layer = info.otherCollider->GetCollisionLayer();
 
@@ -415,26 +416,26 @@ void TestScene::Initialize()
 						}
 					}
 				}
-			
 
-			// 弾が当たったらHPを減らす
-			if (layer & CollisionLayer::PlayerBullet)
-			{
-				auto status = chargeEnemy_->GetComponent<StatusComponent>();
 
-				if (status)
-        {
-					status->SetHp(status->GetHp() - 1);
+				// 弾が当たったらHPを減らす
+				if (layer & CollisionLayer::PlayerBullet)
+				{
+					auto status = chargeEnemy_->GetComponent<StatusComponent>();
 
-					// 攻撃を食らったらシェイクする
-					auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
-					if (move && status->GetHp() > 0)
+					if (status)
 					{
-						move->StartShake();
+						status->SetHp(status->GetHp() - 1);
+
+						// 攻撃を食らったらシェイクする
+						auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
+						if (move && status->GetHp() > 0)
+						{
+							move->StartShake();
+						}
 					}
 				}
 			}
-
 		};
 
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
