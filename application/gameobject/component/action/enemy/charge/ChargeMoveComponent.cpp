@@ -3,13 +3,14 @@
 #include "../../common/PhysicsComponent.h"
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
+#include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
-
 #include "../bullet/BulletBehaviorComponent.h"
+#include "effects/particle/ParticleManager.h"
 
 GameObjectComponent::ChargeMoveComponent::ChargeMoveComponent(GameObject* _player)
 	: player_(_player)
@@ -104,7 +105,9 @@ void GameObjectComponent::ChargeMoveComponent::Charge(GameObject* owner)
 			state_ = State::Fire;
 		}
 		// 確認用回転させる
-		owner->SetRotation(owner->GetRotation() + Vector3{0.0f, 1.0f, 0.0f});
+		Vector3 rotation = owner->GetRotation();
+		rotation.y += rotationSpeed_ * TimeManager::GetInstance().GetGameContext().deltaTime;
+		owner->SetRotation(rotation);
 	}
 }
 
@@ -113,14 +116,15 @@ void GameObjectComponent::ChargeMoveComponent::Cooldown(GameObject* owner)
 	// クールタイム進行
 	coolTime_ += TimeManager::GetInstance().GetGameContext().deltaTime;
 
+	StrafeMove(owner);
+
 	// クールタイムが一定時間を超えたら攻撃状態を解除
 	if (coolTime_ >= kCoolTime)
 	{
 		isAttacking_ = false;
 		coolTime_ = 0.0f;
 
-		// 確認用のサイズを元に戻す
-		owner->SetScale(Vector3{2.0f, 2.0f, 2.0f});
+
 		state_ = State::Move;
 	}
 }
@@ -151,8 +155,8 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 
 	// 挙動のコンポーネント
 	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(4.0f));
-	
-	//　物理コンポーネントの追加
+
+	// 　物理コンポーネントの追加
 	auto physics = std::make_unique<PhysicsComponent>(bullet);
 	physics->SetUseGravity(false);
 	physics->SetMovementVelocity(bulletDirection_);
@@ -165,11 +169,32 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 		collider->SetCollisionLayer(CollisionLayer::EnemyBullet);
 		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Bumpers | CollisionLayer::PlayerReflect);
 
-		collider->SetOnEnter([this, bullet](const CollisionInfo& info)
+		// 弾自身のコールバックなので、ここでは弾の反射または破棄だけを行う。
+		collider->SetOnEnter([bullet, this](const CollisionInfo& info)
 		{
 			// マスクのレイヤーに衝突した場合、弾を破壊する
 			if (!info.otherCollider)
 			{
+				return;
+			}
+
+			if (info.other &&
+				(info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect))
+			{
+				// 行き先はプレイヤーから取得し、速度とレイヤー変更は弾自身のAPIへ任せる。
+				GameObject* player = info.other->GetParent();
+				auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr;
+				auto behavior = bullet->GetComponent<BulletBehaviorComponent>();
+				auto bulletPhysics = bullet->GetComponent<PhysicsComponent>();
+				if (!reflect || !behavior || !bulletPhysics)
+				{
+					return;
+				}
+
+				// 速度を早くして、反射時に確定した方向へ向け直す。
+				const Vector3 direction = reflect->GetReflectDirectionFrom(bullet->GetPosition());
+				const float speed = bulletPhysics->GetMovementVelocity().Length() * kMoveSpeedRate_;
+				behavior->Reflect(bullet, direction, speed);
 				return;
 			}
 
@@ -178,10 +203,52 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 				info.otherCollider->GetCollisionLayer() == CollisionLayer::Enemy ||
 				info.otherCollider->GetCollisionLayer() == CollisionLayer::Bumpers)
 			{
+				ParticleManager::GetInstance()->Play("bullet_hit", bullet->GetPosition());
 				bullet->Destroy();
 			}
 		});
-		collider->SetOnStay([this](const CollisionInfo& info) {});
-		collider->SetOnExit([this](const CollisionInfo& info) {});
+		collider->SetOnStay([](const CollisionInfo&) {});
+		collider->SetOnExit([](const CollisionInfo&) {});
 	}
+}
+
+void GameObjectComponent::ChargeMoveComponent::StrafeMove(GameObject* owner)
+{
+	// タイマー更新
+	strafeTimer_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	// 確認用のサイズを元に戻す
+	owner->SetScale(Vector3{2.0f, 2.0f, 2.0f});
+
+	if (strafeTimer_ >= changeTime_)
+	{
+		moveRight_ = Random(0, 1) > 0.3f;
+
+		changeTime_ = Random(1.0f, 2.5f);
+		currentStrafeSpeed_ = Random(4.5f, 6.5f);
+
+		strafeTimer_ = 0.0f;
+	}
+
+	// プレイヤーへの方向
+	Vector3 toPlayer = player_->GetPosition() - owner->GetPosition();
+	float distance = toPlayer.Length();
+	toPlayer.NormalizeSelf();
+
+	// 横方向
+	Vector3 side = {-toPlayer.z, 0.0f, toPlayer.x};
+
+	// 左右移動
+	if (!moveRight_)
+	{
+		side *= -1.0f;
+	}
+
+	owner->SetRotation(Vector3{0.0f, atan2f(toPlayer.x, toPlayer.z), 0.0f});
+	owner->SetPosition(owner->GetPosition() + side * currentStrafeSpeed_ * TimeManager::GetInstance().GetGameContext().deltaTime);
+}
+
+float GameObjectComponent::ChargeMoveComponent::Random(float min, float max)
+{
+	return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
 }

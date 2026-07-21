@@ -5,9 +5,11 @@
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
+#include "gameobject/component/collision/CollisionManager.h"
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
+#include "time/TimeManager.h"
 
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
@@ -24,6 +26,7 @@ namespace
 void WaveScene::Initialize()
 {
 	GameObjectManager::GetInstance()->Initialize();
+	CollisionManager::GetInstance()->Initialize();
 
 	// ライトの調整(TestSceneと同様)
 	auto lightManager = sceneManager_->GetLightManager();
@@ -62,7 +65,7 @@ void WaveScene::Initialize()
 	GameObjectManager::GetInstance()->Register(groundObject_.get());
 
 	waveSystem_ = std::make_unique<WaveSystem>();
-	waveSystem_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	waveSystem_->Initialize(sceneManager_->GetSpriteCommon(), activeCamera);
 
 #ifdef USE_IMGUI
 	DebugUIManager::GetInstance()->RegisterDebugUI(this, "Wave Scene", [this]() { this->DrawImGui(); }, DebugUIArea::Inspector);
@@ -74,6 +77,7 @@ void WaveScene::Initialize()
 void WaveScene::Finalize()
 {
 	GameObjectManager::GetInstance()->Finalize();
+	CollisionManager::GetInstance()->Finalize();
 
 	groundObject_.reset();
 
@@ -107,8 +111,12 @@ void WaveScene::DrawGBuffer()
 
 void WaveScene::OnUpdatePlaying()
 {
-	waveSystem_->Update(1.0f / 60.0f);
+	CollisionManager::GetInstance()->UpdatePreviousPositions();
+
+	waveSystem_->Update(TimeManager::GetInstance().GetGameContext().deltaTime);
+
 	GameObjectManager::GetInstance()->Update();
+	CollisionManager::GetInstance()->CheckCollisions();
 }
 
 #ifdef USE_IMGUI

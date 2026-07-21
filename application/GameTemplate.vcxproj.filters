@@ -63,6 +63,12 @@
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\common\UIComponent.cpp">
+      <Filter>gameobject\component\action\common</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.cpp">
+      <Filter>gameobject\component\action\enemy</Filter>
+    </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\bomb</Filter>
     </ClCompile>
@@ -121,16 +127,26 @@
     <ClCompile Include="Waves\SpawnCommand.cpp" />
     <ClCompile Include="Waves\WaveData.cpp" />
     <ClCompile Include="Waves\EnemySpawner.cpp" />
+    <ClCompile Include="Waves\EnemyFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="collision\CollisionLayer.h">
       <Filter>collision</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\GameObjectTag.h">
+      <Filter>gameobject</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\PhysicsComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
       <Filter>gameobject\component\action\common</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\common\UIComponent.h">
+      <Filter>gameobject\component\action\common</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.h">
+      <Filter>gameobject\component\action\enemy</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\bomb\BombMoveComponent.h">
       <Filter>gameobject\component\action\enemy\bomb</Filter>
@@ -186,6 +202,7 @@
     <ClInclude Include="Waves\SpawnCommand.h" />
     <ClInclude Include="Waves\WaveData.h" />
     <ClInclude Include="Waves\EnemySpawner.h" />
+    <ClInclude Include="Waves\EnemyFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">

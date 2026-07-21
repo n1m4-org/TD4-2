@@ -25,7 +25,10 @@ class WaveSystem
 	bool started_ = false;
 
 public:
-	void Initialize(Object3dCommon* object3dCommon, LightManager* lightManager);
+	void Initialize(SpriteCommon* spriteCommon, Camera* camera);
+
+	// 追跡対象を設定する(未実装のシーンではnullptrのまま)
+	void SetPlayer(GameObject* player) { spawner_.SetPlayer(player); }
 
 	// ImGuiの「Start」ボタン等から呼ぶ。最初のWaveのスポーンを開始する
 	void Start();

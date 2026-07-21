@@ -1,93 +1,407 @@
 #include "BombMoveComponent.h"
-#include "../../common/PhysicsComponent.h"
+
+#include "application/collision/CollisionLayer.h"
+#include "application/gameobject/component/action/common/PhysicsComponent.h"
+#include "application/gameobject/component/action/player/PlayerReflectComponent.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/base/GameObject.h"
+#include "engine/gameobject/component/base/ICollisionComponent.h"
 #include "engine/time/TimeManager.h"
+#include "application/gameobject/component/action/common/StatusComponent.h"
+#include "engine/gameobject/component/collision/SphereColliderComponent.h"
+#include <algorithm>
+#include <cmath>
 
+namespace
+{
+	constexpr float kDirectionEpsilonSq = 0.000001f;
+}
 
 GameObjectComponent::BombMoveComponent::BombMoveComponent(GameObject* player)
 	: player_(player)
 {
-}
+	Register("chaseRange", &chaseRange_);
+	Register("chaseSpeed", &chaseSpeed_);
+	Register("chaseLifetimeSeconds", &chaseLifetimeSeconds_);
+	Register("reflectedSpeed", &reflectedSpeed_);
+	Register("reflectedLifetimeSeconds", &reflectedLifetimeSeconds_);
+	Register("turnRate", &turnRate_);
+	Register("ignitionDurationSeconds", &ignitionDurationSeconds_);
 
+}
 
 void GameObjectComponent::BombMoveComponent::Update(GameObject* owner)
 {
-#pragma region 変数の初期化
-	// プレイヤーの情報がない場合は処理を中断
-	if (player_ == nullptr)
-		return;
-
-	// 爆発済みなら停止
-	if (hasExploded_)
+	if (!InitializeComponents(owner))
 	{
-		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 		return;
 	}
 
-#pragma endregion 変数の初期化
+	const float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+	// 行動を状態ごとに分け、追跡中と反射後の速度更新が混ざらないようにする。
+	switch (state_)
+	{
+	case State::Idle:
+		UpdateIdle(owner);
+		break;
+	case State::Ignition:
+		UpdateIgnition(deltaTime);
+		break;
+	case State::Chasing:
+		UpdateChasing(owner, deltaTime);
+		break;
+	case State::Reflected:
+		UpdateReflected(deltaTime);
+		break;
+	case State::Exploding:
+		UpdateExploding(deltaTime);
+		break;
+	case State::Exploded:
+		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+		break;
+	}
+}
 
-	// フィジクスコンポーネントの取得
+bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
+{
+	// 多重反射と爆発後の再利用を拒否し、状態遷移を一度だけ行う。
+	if (!owner_ || !physics_ || !collider_ ||
+		state_ == State::Reflected || state_ == State::Exploded ||
+		direction.LengthSquared() <= kDirectionEpsilonSq)
+	{
+		return false;
+	}
+
+	Vector3 normalizedDirection = direction;
+	normalizedDirection.y = 0.0f;
+	if (normalizedDirection.LengthSquared() <= kDirectionEpsilonSq)
+	{
+		return false;
+	}
+
+	normalizedDirection.NormalizeSelf();
+	reflectedVelocity_ = normalizedDirection * reflectedSpeed_;
+	remainingLifetimeSeconds_ = reflectedLifetimeSeconds_;
+	state_ = State::Reflected;
+
+	// 反射後はプレイヤー側の攻撃として敵へ当たるレイヤーに切り替える。
+	physics_->SetMovementVelocity(reflectedVelocity_);
+	physics_->SetUseGravity(false);
+	collider_->SetCollisionLayer(CollisionLayer::PlayerBullet);
+	collider_->SetCollisionMask(
+		CollisionLayer::Player|
+		CollisionLayer::PlayerBullet|
+		CollisionLayer::Enemy |
+		CollisionLayer::Terrain |
+		CollisionLayer::Bumpers);
+	owner_->SetTag(GameObjectTag::PlayerBullet);
+	return true;
+}
+
+bool GameObjectComponent::BombMoveComponent::InitializeComponents(GameObject* owner)
+{
+	if (!owner || !player_)
+	{
+		return false;
+	}
+
+	if (physics_ && collider_)
+	{
+		return true;
+	}
+
+	owner_ = owner;
+	// 依存コンポーネントはownerが所有する。このコンポーネントは更新中だけ参照する。
 	physics_ = owner->GetComponent<PhysicsComponent>().get();
-
-	// プレイヤーの座標を更新
-	playerPosition_ = player_->GetPosition();
-
-	// 自分（ボム）からプレイヤーへのベクトルと距離
-	Vector3 toPlayer = Vector3::Normalize(playerPosition_ - owner->GetPosition());
-	float distance = toPlayer.Length();
-
-
-	// 索敵範囲内に入ったら追尾開始（＝点火）
-	if (!isDashing_ && distance <= chaseRange_)
+	collider_ = owner->GetComponent<ICollisionComponent>().get();
+	if (!physics_ || !collider_)
 	{
-		isDashing_ = true;
+		return false;
 	}
 
-	if (isDashing_)
+	collider_->SetCollisionLayer(CollisionLayer::Enemy);
+	collider_->SetCollisionMask(
+		CollisionLayer::Player |
+		CollisionLayer::Terrain |
+		CollisionLayer::Bumpers |
+		CollisionLayer::PlayerBullet |
+		CollisionLayer::PlayerReflect);
+	// コールバックではボム自身の状態と移動だけを変更する。
+	collider_->SetOnEnter([this](const CollisionInfo& info)
 	{
-		// 点火中はライフスパンを消費
-		--lifespan_;
+		HandleCollision(info);
+	});
+	collider_->SetOnStay([this](const CollisionInfo& info)
+	{
+		ResolveTerrainCollision(info);
+	});
+	collider_->SetOnExit([](const CollisionInfo&) {});
 
-		if (lifespan_ <= 0.0f)
+	// 爆発判定用の球コライダー
+	explosionCollider_ = owner->GetComponent<SphereColliderComponent>("ExplosionCollider").get();
+	if (explosionCollider_)
+	{
+		explosionCollider_->SetActive(false);
+		explosionCollider_->SetCollisionLayer(CollisionLayer::Enemy);
+		explosionCollider_->SetCollisionMask(CollisionLayer::Player);
+		explosionCollider_->SetOnEnter([this](const CollisionInfo& info)
 		{
-			// 寿命切れで爆発（1回だけ）
-			physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
-			ParticleManager::GetInstance()->Play("bomber", owner->GetPosition());
-			hasExploded_ = true;
-			return;
-		}
-
-		// 点火中も毎フレーム方向を更新して追尾し続ける
-		physics_->SetMovementVelocity(toPlayer.Normalize() * chaseSpeed_);
+			// 爆風に触れたプレイヤーへダメージを与える
+			if (!info.other)
+			{
+				return;
+			}
+			if (auto status = info.other->GetComponent<StatusComponent>())
+			{
+				status->ApplyDamage(explosionDamage_);
+			}
+		});
 	}
-	// 索敵範囲外で突進中でない場合は待機
-	else if (!isDashing_ && !isReflected_)
+	return true;
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateIdle(GameObject* owner)
+{
+	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+
+	const Vector3 toPlayer = player_->GetPosition() - owner->GetPosition();
+	const float chaseRangeSq = chaseRange_ * chaseRange_;
+	if (toPlayer.LengthSquared() <= chaseRangeSq)
 	{
-		// 索敵範囲外：待機
+		// まず着火モーションを挟む
+		state_ = State::Ignition; 
+		ignitionElapsedSeconds_ = 0.0f;
+		baseScale_ = owner->GetScale();
+
+		// 追尾開始時の方向で走り出す（ドリフト用）
+		Vector3 dir = toPlayer;
+		dir.y = 0.0f;
+		if (dir.LengthSquared() > kDirectionEpsilonSq)
+		{
+			dir.NormalizeSelf();
+			dashDirection_ = dir;
+		}
+	}
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateChasing(GameObject* owner, float deltaTime)
+{
+	remainingLifetimeSeconds_ -= deltaTime;
+	if (remainingLifetimeSeconds_ <= 0.0f)
+	{
+		Explode();
+		return;
+	}
+
+	Vector3 direction = player_->GetPosition() - owner->GetPosition();
+	direction.y = 0.0f;
+	if (direction.LengthSquared() <= kDirectionEpsilonSq)
+	{
 		physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+		return;
+	}
+	direction.NormalizeSelf();
+
+	// 進行方向を毎フレーム少しずつプレイヤー方向へ寄せる（ドリフト挙動）
+	dashDirection_ += (direction - dashDirection_) * turnRate_;
+	dashDirection_.NormalizeSelf();
+	physics_->SetMovementVelocity(dashDirection_ * chaseSpeed_);
+
+	// 進行方向を正面に向かせる
+	owner->SetRotation({0.0f, std::atan2(dashDirection_.x, dashDirection_.z), 0.0f});
+
+	// 残り時間に応じて赤点滅
+	UpdateBlink(remainingLifetimeSeconds_ / chaseLifetimeSeconds_);
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateReflected(float deltaTime)
+{
+	remainingLifetimeSeconds_ -= deltaTime;
+	if (remainingLifetimeSeconds_ <= 0.0f)
+	{
+		Explode();
+		return;
 	}
 
-	// リフレクト後の処理
-	if (isReflected_)
+	physics_->SetMovementVelocity(reflectedVelocity_);
+
+	// 反射後も残り時間に応じて赤点滅
+	UpdateBlink(remainingLifetimeSeconds_ / reflectedLifetimeSeconds_);
+}
+
+void GameObjectComponent::BombMoveComponent::Explode()
+{
+	if (state_ == State::Exploding || state_ == State::Exploded)
 	{
-		// 一旦反対方向
-		physics_->SetMovementVelocity(reflectedVelocity_);
+		return;
+	}
 
-		// ライフスパン消費
-		--reflectedLifespan_;
+	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+	physics_->SetUseGravity(false); 
+	ParticleManager::GetInstance()->Play("bomber", owner_->GetPosition());
+	collider_->SetActive(false);		 
+	owner_->SetScale({0.0f, 0.0f, 0.0f}); 
 
-		// 移動不可
-		isDashing_ = false;
+	// 爆発判定がなければ従来どおり即時消滅
+	if (!explosionCollider_)
+	{
+		state_ = State::Exploded;
+		owner_->SetActive(false);
+		return;
+	}
 
-		if (reflectedLifespan_ <= 0.0f)
+	state_ = State::Exploding;
+	explosionElapsedSeconds_ = 0.0f;
+	explosionCollider_->SetSphere({owner_->GetPosition(), 0.0f});
+	explosionCollider_->SetActive(true);
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateBlink(float remainRatio)
+{
+	// 残りが減るほど位相の進みを速くする
+	blinkPhase_ += blinkSpeedMin_ + (blinkSpeedMax_ - blinkSpeedMin_) * (1.0f - remainRatio);
+
+	// sinが正の間だけ赤くする（パキッと切り替わる点滅）
+	bool redOn = std::sin(blinkPhase_) > 0.0f;
+	owner_->SetColor(redOn ? Vector4{1.0f, 0.2f, 0.2f, 1.0f}
+						   : Vector4{1.0f, 1.0f, 1.0f, 1.0f});
+}
+
+void GameObjectComponent::BombMoveComponent::HandleCollision(const CollisionInfo& info)
+{
+	if (!info.otherCollider)
+	{
+		return;
+	}
+
+	const auto otherLayer = info.otherCollider->GetCollisionLayer();
+	if (otherLayer & CollisionLayer::Terrain)
+	{
+		ResolveTerrainCollision(info);
+	}
+
+		if (otherLayer & CollisionLayer::PlayerBullet)
+	{
+		// 反射された弾に撃ち抜かれたら、その場で爆発演出を出して消滅する
+		Die();
+		return;
+	}
+	
+
+	if ((otherLayer & CollisionLayer::PlayerReflect) && info.other)
+	{
+		// プレイヤーから行き先だけ取得し、ボム自身のReflect APIで状態を切り替える。
+		GameObject* player = info.other->GetParent();
+		auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr;
+		if (reflect)
 		{
-			// 寿命切れで爆発
-			physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
-			ParticleManager::GetInstance()->Play("bomber", owner->GetPosition());
-			hasExploded_ = true;
-			return;
+			Reflect(reflect->GetReflectDirectionFrom(owner_->GetPosition()));
 		}
+		return;
+	}
 
+	if (state_ == State::Reflected && (otherLayer & CollisionLayer::Enemy))
+	{
+		// 反射されたボムが敵へ届いた時点で爆発させる。
+		Explode();
+	}
+}
+
+void GameObjectComponent::BombMoveComponent::ResolveTerrainCollision(const CollisionInfo& info)
+{
+	if (!info.otherCollider ||
+		!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
+	{
+		return;
+	}
+
+	Vector3 position = owner_->GetPosition();
+	position += info.normal * info.depth;
+	owner_->SetPosition(position);
+
+	if (info.normal.y <= 0.0f)
+	{
+		return;
+	}
+
+	physics_->SetGrounded(true);
+	Vector3 velocity = physics_->GetExternalVelocity();
+	if (velocity.y < 0.0f)
+	{
+		velocity.y = 0.0f;
+		physics_->SetExternalVelocity(velocity);
+	}
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateExploding(float deltaTime)
+{
+	explosionElapsedSeconds_ += deltaTime;
+	const float t = std::min(explosionElapsedSeconds_ / explosionDurationSeconds_, 1.0f);
+
+	// 経過に応じて球の判定半径を広げる
+	Sphere sphere = explosionCollider_->GetSphere();
+	sphere.radius = explosionMaxRadius_ * t;
+	explosionCollider_->SetSphere(sphere);
+
+	if (t >= 1.0f)
+	{
+		explosionCollider_->SetActive(false);
+		state_ = State::Exploded;
+		owner_->SetActive(false);
+	}
+}
+
+
+void GameObjectComponent::BombMoveComponent::Die()
+{
+	if (state_ == State::Exploded)
+	{
+		return;
+	}
+
+	state_ = State::Exploded;
+	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+
+	// 爆発演出のみ再生する（拡大する爆風判定は出さない）
+	ParticleManager::GetInstance()->Play("bomber", owner_->GetPosition());
+
+	// 判定と本体を無効化してから、フレーム末尾の破棄に回す
+	collider_->SetActive(false);
+	if (explosionCollider_)
+	{
+		explosionCollider_->SetActive(false);
+	}
+	owner_->SetActive(false);
+	owner_->Destroy();
+}
+
+void GameObjectComponent::BombMoveComponent::UpdateIgnition(float deltaTime)
+{
+	ignitionElapsedSeconds_ += deltaTime;
+	const float t = std::min(ignitionElapsedSeconds_ / ignitionDurationSeconds_, 1.0f);
+
+	// その場で停止したまま演出する
+	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+
+	// ぐっと縦に潰れて横に膨らむ（0→最大→0 と戻るカーブ）
+	const float p = std::sin(t * 3.14159265f);
+	Vector3 scale = baseScale_;
+	scale.y *= 1.0f - 0.35f * p;
+	scale.x *= 1.0f + 0.25f * p;
+	scale.z *= 1.0f + 0.25f * p;
+	owner_->SetScale(scale);
+
+	// 終盤ほど収まる小刻みな震え（Y軸回転を揺らす）
+	const float baseYaw = std::atan2(dashDirection_.x, dashDirection_.z);
+	const float wobble = std::sin(ignitionElapsedSeconds_ * 60.0f) * 0.12f * (1.0f - t);
+	owner_->SetRotation({0.0f, baseYaw + wobble, 0.0f});
+
+	// モーション終了 → スケールを戻して追跡開始
+	if (t >= 1.0f)
+	{
+		owner_->SetScale(baseScale_);
+		state_ = State::Chasing;
+		remainingLifetimeSeconds_ = chaseLifetimeSeconds_;
 	}
 }

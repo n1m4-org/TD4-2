@@ -7,7 +7,7 @@
 
 #include "base/Logger.h"
 
-void WaveSystem::Initialize(Object3dCommon* object3dCommon, LightManager* lightManager)
+void WaveSystem::Initialize(SpriteCommon* spriteCommon, Camera* camera)
 {
 	waves_.clear();
 	current_ = 0;
@@ -15,7 +15,7 @@ void WaveSystem::Initialize(Object3dCommon* object3dCommon, LightManager* lightM
 	intervalTimer_ = 0.0f;
 	started_ = false;
 
-	spawner_.Initialize(object3dCommon, lightManager);
+	spawner_.Initialize(spriteCommon, camera);
 
 	Load();
 }

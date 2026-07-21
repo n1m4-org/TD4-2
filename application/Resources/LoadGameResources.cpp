@@ -44,6 +44,7 @@ void MyGame::LoadModels()
 	ModelManager::GetInstance()->LoadModel("cube");
 	ModelManager::GetInstance()->LoadModel("skydome");
 	ModelManager::GetInstance()->LoadModel("plane", ".gltf");
+	ModelManager::GetInstance()->LoadModel("bombenemy");
 
 	// ====================
 	// ゲーム固有のリソース	

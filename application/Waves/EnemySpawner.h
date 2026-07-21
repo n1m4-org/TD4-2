@@ -1,25 +1,30 @@
 #pragma once
+#include "EnemyFactory.h"
 #include "SpawnCommand.h"
 
 class Object3dCommon;
 class LightManager;
+class SpriteCommon;
+class Camera;
 class GameObject;
 
 /**
- * @brief SpawnCommandから実際のGameObject(敵)を生成するクラス
+ * @brief SpawnCommandを受け取り、EnemyFactoryへ生成を委譲するクラス
  */
 class EnemySpawner
 {
 public:
-	void Initialize(Object3dCommon* object3dCommon, LightManager* lightManager);
+	void Initialize(SpriteCommon* spriteCommon, Camera* camera);
+
+	// 追跡対象を設定する(未実装のシーンではnullptrのまま)
+	void SetPlayer(GameObject* player) { player_ = player; }
 
 	/**
-	 * @brief SpawnCommandに従って敵を生成する
 	 * @return 生成されたGameObject(GameObjectManagerが所有。失敗時はnullptr)
 	 */
-	GameObject* Spawn(const SpawnCommand& command) const;
+	GameObject* Spawn(const SpawnCommand& command);
 
 private:
-	Object3dCommon* object3dCommon_ = nullptr;
-	LightManager* lightManager_ = nullptr;
+	EnemyFactory factory_;
+	GameObject* player_ = nullptr;
 };
