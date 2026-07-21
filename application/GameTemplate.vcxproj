@@ -128,6 +128,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\common\PhysicsComponent.cpp" />
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp" />
+    <ClCompile Include="gameobject\component\action\common\UIComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\dash\DashMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerMoveComponent.cpp" />
@@ -153,6 +154,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="collision\CollisionLayer.h" />
     <ClInclude Include="gameobject\component\action\common\PhysicsComponent.h" />
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h" />
+    <ClInclude Include="gameobject\component\action\common\UIComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\dash\DashMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerMoveComponent.h" />
