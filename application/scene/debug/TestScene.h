@@ -13,7 +13,6 @@ class TestScene : public BaseScene
 {
 public:
 	void Initialize() override;
-	void Finalize() override;
 	void Draw3D() override;
 	void Draw2D() override;
 	void DrawShadow() override;
@@ -24,7 +23,8 @@ public:
 #endif
 
 protected:
-	void OnUpdatePlaying() override;
+	void CommonUpdate() override;
+	void OnFinalize() override;
 
 private:
 	/**

@@ -15,6 +15,7 @@
 #include "audio/Audio.h"
 // scene
 #include "engine/scene/manager/SceneManager.h"
+#include "engine/scene/factory/SceneFactory.h"
 // input
 #include "input/Input.h"
 // graphics / manager
@@ -26,14 +27,40 @@
 #include "manager/editor/DebugUIManager.h"
 #endif
 
+namespace
+{
+    /**
+     * @brief タイトルシーンのプレイステート
+     */
+    class TitlePlayingState : public ISceneState
+    {
+    public:
+        explicit TitlePlayingState(TitleScene* scene) : scene_(scene) {}
+
+        const std::string& GetName() const override
+        {
+            static const std::string name = "Title";
+            return name;
+        }
+
+    private:
+        TitleScene* scene_;
+    };
+}
+
+REGISTER_SCENE(TitleScene);
+
 void TitleScene::Initialize()
 {
 #ifdef USE_IMGUI
     DebugUIManager::GetInstance()->RegisterDebugUI(this, "Title Scene", [this]() { this->DrawImGui(); }, DebugUIArea::Hierarchy);
 #endif
+
+    RegisterState("Playing", std::make_unique<TitlePlayingState>(this));
+    ChangeState("Playing");
 }
 
-void TitleScene::Finalize()
+void TitleScene::OnFinalize()
 {
 #ifdef USE_IMGUI
     if (DebugUIManager::HasInstance()) {

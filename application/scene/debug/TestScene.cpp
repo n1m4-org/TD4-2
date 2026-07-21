@@ -23,8 +23,11 @@
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
+#include "engine/scene/factory/SceneFactory.h"
 
 using namespace GameObjectComponent;
+
+REGISTER_SCENE(TestScene);
 
 void TestScene::Initialize()
 {
@@ -424,8 +427,6 @@ void TestScene::Initialize()
 	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
-
-	StartState(SceneState::Playing);
 }
 
 void TestScene::InitializeBombEnemy()
@@ -454,7 +455,7 @@ void TestScene::InitializeBombEnemy()
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 }
 
-void TestScene::Finalize()
+void TestScene::OnFinalize()
 {
 	// 登録されたオブジェクトの登録解除とクリア
 	GameObjectManager::GetInstance()->Finalize();
@@ -476,7 +477,7 @@ void TestScene::Finalize()
 	topDownCamera_.reset();
 }
 
-void TestScene::OnUpdatePlaying()
+void TestScene::CommonUpdate()
 {
 	static bool isDebugCameraActive = false;
 

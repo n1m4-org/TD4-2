@@ -18,11 +18,6 @@ public:
     void Initialize() override;
     
     /**
-     * @brief 終了処理。
-     */
-    void Finalize() override;
-    
-    /**
      * @brief 3D描画。
      */
     void Draw3D() override;
@@ -36,6 +31,9 @@ public:
      * @brief ImGuiデバッグUI。
      */
     void DrawImGui() override;
+
+protected:
+    void OnFinalize() override;
 
 private:
 
