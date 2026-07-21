@@ -470,11 +470,6 @@ void TestScene::OnFinalize()
 		DebugUIManager::GetInstance()->UnregisterDebugUI(this);
 	}
 #endif
-	player_.reset();
-	groundObject_.reset();
-	targetObject_.reset();
-	debugCamera_.reset();
-	topDownCamera_.reset();
 }
 
 void TestScene::CommonUpdate()
