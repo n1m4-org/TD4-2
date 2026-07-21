@@ -1,8 +1,8 @@
 #include "TestScene.h"
 #include "application/collision/CollisionLayer.h"
-#include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
+#include "application/gameobject/component/action/common/UIComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
@@ -10,6 +10,7 @@
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
+#include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
@@ -74,6 +75,7 @@ void TestScene::Initialize()
 	// パーティクルのロード
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
+	ParticleManager::GetInstance()->Load("bullet_hit", "Resources/json/particle/hit.json");
 
 	// 1. テスト用キューブオブジェクトの作成
 	player_ = std::make_unique<GameObject>(GameObjectTag::Player);
@@ -97,6 +99,14 @@ void TestScene::Initialize()
 			sceneManager_->GetCameraManager()->GetActiveCamera(),
 			sceneManager_->GetSpriteCommon()));
 	player_->AddComponent("SlowMotion", std::make_unique<PlayerSlowMotionComponent>(sceneManager_->GetLightManager()));
+	player_->AddComponent(
+		"UI",
+		std::make_unique<UIComponent>(
+			player_.get(),
+			sceneManager_->GetSpriteCommon(),
+			sceneManager_->GetCameraManager()->GetActiveCamera(),
+			Vector3(0.0f, 6.0f, 0.0f) // プレイヤーの頭上少し上
+		));
 
 	// 円弧の基準位置として、プレイヤーの少し前へ反射判定を配置する。
 	auto reflectHand = std::make_unique<GameObject>(GameObjectTag::Player);
@@ -106,9 +116,27 @@ void TestScene::Initialize()
 	reflectHand->SetPosition(kReflectHandLocalPosition);
 	reflectHand->SetScale(kReflectHandLocalScale);
 	auto reflectCollider = std::make_unique<OBBColliderComponent>(reflectHand.get());
-	reflectCollider->SetActive(false);			   // 初期状態は非アクティブ（反射発動時のみ有効化）
+	reflectCollider->SetActive(false); // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
+	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
+	{
+		if (!info.otherCollider)
+		{
+			return;
+		}
+
+		if (player_)
+		{
+			auto reflectComp = player_->GetComponent<PlayerReflectComponent>();
+			if (reflectComp)
+			{
+				ParticleManager::GetInstance()->Play("reflect", info.otherCollider->GetOwner()->GetPosition());
+				reflectComp->NotifyReflectSucceeded();
+			}
+		}
+	});
+
 	reflectHand->AddComponent("ReflectCollider", std::move(reflectCollider));
 	player_->AddChild("ReflectHand", std::move(reflectHand));
 
@@ -169,7 +197,7 @@ void TestScene::Initialize()
 				auto status = player_->GetComponent<StatusComponent>();
 				if (status)
 				{
-					status->SetHp(status->GetHp());
+					status->SetHp(status->GetHp() - 10);
 				}
 			}
 		});
@@ -183,7 +211,7 @@ void TestScene::Initialize()
 
 	// こいつに追従カメラを追従させる
 	topDownCamera_->SetPitch(1.2f);
-	topDownCamera_->SetOffset({ 0.0f,0.0f,-40.0f });
+	topDownCamera_->SetOffset({0.0f, 0.0f, -40.0f});
 	topDownCamera_->Start(105.0f, &player_->GetPosition());
 	// マネージャーに登録
 	GameObjectManager::GetInstance()->Register(player_.get());
@@ -329,6 +357,14 @@ void TestScene::Initialize()
 	chargeEnemy_->AddComponent("Move", std::make_unique<ChargeMoveComponent>(player_.get()));
 	chargeEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(chargeEnemy_.get()));
 	chargeEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(chargeEnemy_.get()));
+	chargeEnemy_->AddComponent(
+		"UI",
+		std::make_unique<UIComponent>(
+			chargeEnemy_.get(),
+			sceneManager_->GetSpriteCommon(),
+			sceneManager_->GetCameraManager()->GetActiveCamera(),
+			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
+		));
 
 	// AABBコライダーの追加
 	chargeEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(chargeEnemy_.get()));
@@ -473,7 +509,16 @@ void TestScene::InitializeBombEnemy()
 	bombEnemy_->AddComponent("Move", std::make_unique<BombMoveComponent>(player_.get()));
 	bombEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(bombEnemy_.get()));
 	bombEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent(
+		"UI",
+		std::make_unique<UIComponent>(
+			bombEnemy_.get(),
+			sceneManager_->GetSpriteCommon(),
+			sceneManager_->GetCameraManager()->GetActiveCamera(),
+			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
+		));
 	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent("ExplosionCollider", std::make_unique<SphereColliderComponent>(bombEnemy_.get()));
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 }

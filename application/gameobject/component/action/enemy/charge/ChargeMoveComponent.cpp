@@ -9,8 +9,8 @@
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
-
 #include "../bullet/BulletBehaviorComponent.h"
+#include "effects/particle/ParticleManager.h"
 
 GameObjectComponent::ChargeMoveComponent::ChargeMoveComponent(GameObject* _player)
 	: player_(_player)
@@ -124,7 +124,7 @@ void GameObjectComponent::ChargeMoveComponent::Cooldown(GameObject* owner)
 		isAttacking_ = false;
 		coolTime_ = 0.0f;
 
-		
+
 		state_ = State::Move;
 	}
 }
@@ -155,8 +155,8 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 
 	// 挙動のコンポーネント
 	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(4.0f));
-	
-	//　物理コンポーネントの追加
+
+	// 　物理コンポーネントの追加
 	auto physics = std::make_unique<PhysicsComponent>(bullet);
 	physics->SetUseGravity(false);
 	physics->SetMovementVelocity(bulletDirection_);
@@ -170,7 +170,7 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::Bumpers | CollisionLayer::PlayerReflect);
 
 		// 弾自身のコールバックなので、ここでは弾の反射または破棄だけを行う。
-		collider->SetOnEnter([bullet](const CollisionInfo& info)
+		collider->SetOnEnter([bullet, this](const CollisionInfo& info)
 		{
 			// マスクのレイヤーに衝突した場合、弾を破壊する
 			if (!info.otherCollider)
@@ -191,13 +191,10 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 					return;
 				}
 
-				// 現在速度の大きさを保ったまま、反射時に確定した方向へ向け直す。
+				// 速度を早くして、反射時に確定した方向へ向け直す。
 				const Vector3 direction = reflect->GetReflectDirectionFrom(bullet->GetPosition());
-				const float speed = bulletPhysics->GetMovementVelocity().Length();
-				if (behavior->Reflect(bullet, direction, speed))
-				{
-					reflect->NotifyReflectSucceeded();
-				}
+				const float speed = bulletPhysics->GetMovementVelocity().Length() * kMoveSpeedRate_;
+				behavior->Reflect(bullet, direction, speed);
 				return;
 			}
 
@@ -206,6 +203,7 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 				info.otherCollider->GetCollisionLayer() == CollisionLayer::Enemy ||
 				info.otherCollider->GetCollisionLayer() == CollisionLayer::Bumpers)
 			{
+				ParticleManager::GetInstance()->Play("bullet_hit", bullet->GetPosition());
 				bullet->Destroy();
 			}
 		});
