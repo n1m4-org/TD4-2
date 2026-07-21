@@ -423,6 +423,7 @@ void TestScene::InitializeBombEnemy()
 	bombEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(bombEnemy_.get()));
 	bombEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(bombEnemy_.get()));
 	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent("ExplosionCollider", std::make_unique<SphereColliderComponent>(bombEnemy_.get()));
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 }
