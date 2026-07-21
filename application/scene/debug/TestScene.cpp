@@ -366,6 +366,10 @@ void TestScene::Initialize()
 			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
 		));
 
+	// HPを設定
+	auto status = chargeEnemy_->GetComponent<StatusComponent>();
+	status->SetHp(5);
+
 	// AABBコライダーの追加
 	chargeEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(chargeEnemy_.get()));
 	if (auto collider = chargeEnemy_->GetComponent<AABBColliderComponent>())
@@ -383,37 +387,53 @@ void TestScene::Initialize()
 				return;
 			}
 
-			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
+			uint32_t layer = info.otherCollider->GetCollisionLayer();
+
+			// Terrain に衝突した場合は押し戻しと接地判定を行う
+			if (layer & CollisionLayer::Terrain)
 			{
-				return;
-			}
+				// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
+				Vector3 pos = chargeEnemy_->GetPosition();
+				pos += info.normal * info.depth;
+				chargeEnemy_->SetPosition(pos);
 
-			// ここは targetObject_ ではなく chargeEnemy_ を見る
-			if (!chargeEnemy_)
-			{
-				return;
-			}
-
-			// 衝突情報から押し戻し
-			Vector3 pos = chargeEnemy_->GetPosition();
-			pos += info.normal * info.depth;
-			chargeEnemy_->SetPosition(pos);
-
-			auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
-			if (!physics)
-			{
-				return;
-			}
-
-			if (info.normal.y > 0.0f)
-			{
-				physics->SetGrounded(true);
-
-				Vector3 vel = physics->GetExternalVelocity();
-				if (vel.y < 0.0f)
+				// 接地判定と速度リセット
+				auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
+				if (physics)
 				{
-					vel.y = 0.0f;
-					physics->SetExternalVelocity(vel);
+					if (info.normal.y > 0.0f)
+					{
+						// 接地状態を設定
+						physics->SetGrounded(true);
+
+						Vector3 vel = physics->GetExternalVelocity();
+
+						// 下方向の速度をリセット
+						if (vel.y < 0.0f)
+						{
+							vel.y = 0.0f;
+							physics->SetExternalVelocity(vel);
+						}
+					}
+				}
+
+
+				// 弾が当たったらHPを減らす
+				if (layer & CollisionLayer::PlayerBullet)
+				{
+					auto status = chargeEnemy_->GetComponent<StatusComponent>();
+
+					if (status)
+					{
+						status->SetHp(status->GetHp() - 1);
+
+						// 攻撃を食らったらシェイクする
+						auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
+						if (move && status->GetHp() > 0)
+						{
+							move->StartShake();
+						}
+					}
 				}
 			}
 		};
