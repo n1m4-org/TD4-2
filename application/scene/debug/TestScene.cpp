@@ -2,6 +2,7 @@
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
+#include "application/gameobject/component/action/common/UIComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
@@ -98,6 +99,14 @@ void TestScene::Initialize()
 			sceneManager_->GetCameraManager()->GetActiveCamera(),
 			sceneManager_->GetSpriteCommon()));
 	player_->AddComponent("SlowMotion", std::make_unique<PlayerSlowMotionComponent>(sceneManager_->GetLightManager()));
+	player_->AddComponent(
+		"UI",
+		std::make_unique<UIComponent>(
+			player_.get(),
+			sceneManager_->GetSpriteCommon(),
+			sceneManager_->GetCameraManager()->GetActiveCamera(),
+			Vector3(0.0f, 6.0f, 0.0f) // プレイヤーの頭上少し上
+		));
 
 	// 円弧の基準位置として、プレイヤーの少し前へ反射判定を配置する。
 	auto reflectHand = std::make_unique<GameObject>(GameObjectTag::Player);
@@ -188,7 +197,7 @@ void TestScene::Initialize()
 				auto status = player_->GetComponent<StatusComponent>();
 				if (status)
 				{
-					status->SetHp(status->GetHp());
+					status->SetHp(status->GetHp() - 10);
 				}
 			}
 		});
@@ -348,6 +357,14 @@ void TestScene::Initialize()
 	chargeEnemy_->AddComponent("Move", std::make_unique<ChargeMoveComponent>(player_.get()));
 	chargeEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(chargeEnemy_.get()));
 	chargeEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(chargeEnemy_.get()));
+	chargeEnemy_->AddComponent(
+		"UI",
+		std::make_unique<UIComponent>(
+			chargeEnemy_.get(),
+			sceneManager_->GetSpriteCommon(),
+			sceneManager_->GetCameraManager()->GetActiveCamera(),
+			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
+		));
 
 	// AABBコライダーの追加
 	chargeEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(chargeEnemy_.get()));
@@ -422,6 +439,14 @@ void TestScene::InitializeBombEnemy()
 	bombEnemy_->AddComponent("Move", std::make_unique<BombMoveComponent>(player_.get()));
 	bombEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(bombEnemy_.get()));
 	bombEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(bombEnemy_.get()));
+	bombEnemy_->AddComponent(
+		"UI",
+		std::make_unique<UIComponent>(
+			bombEnemy_.get(),
+			sceneManager_->GetSpriteCommon(),
+			sceneManager_->GetCameraManager()->GetActiveCamera(),
+			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
+		));
 	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
