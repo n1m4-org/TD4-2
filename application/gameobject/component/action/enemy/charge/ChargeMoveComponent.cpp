@@ -111,6 +111,8 @@ void GameObjectComponent::ChargeMoveComponent::Move(GameObject* owner)
 	{
 		isChargeStart_ = true;
 		chargeTime_ = 0.0f;
+		// チャージ開始位置を記録
+		chargeStartPosition_ = owner->GetPosition();
 
 		state_ = State::Charge;
 	}
@@ -123,6 +125,29 @@ void GameObjectComponent::ChargeMoveComponent::Charge(GameObject* owner)
 	{
 		// チャージ時間を加算
 		chargeTime_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+
+		float t = chargeTime_ / kChargeTime;
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		// チャージ開始位置からプレイヤーへの方向を計算
+		Vector3 toPlayer = player_->GetPosition() - chargeStartPosition_;
+		toPlayer.NormalizeSelf();
+
+		// 徐々に後退
+		float back = MathUtils::Lerp(0.0f,maxBackDistance_,EaseInQuad(t));
+
+		// 後半プルプル
+		if (t >= 0.7f)
+		{
+			float power = (t - 0.7f) / 0.3f;
+
+			Vector3 side{-toPlayer.z, 0, toPlayer.x};
+
+			float shake = sinf(chargeTime_ * 80.0f) * shakePower_ * power;
+
+			shakeOffset = side * shake;
+		}
+
 		// チャージ時間が一定時間を超えたら攻撃状態に移行
 		if (chargeTime_ >= kChargeTime)
 		{
@@ -132,10 +157,10 @@ void GameObjectComponent::ChargeMoveComponent::Charge(GameObject* owner)
 
 			state_ = State::Fire;
 		}
-		// 確認用回転させる
-		Vector3 rotation = owner->GetRotation();
-		rotation.y += rotationSpeed_ * TimeManager::GetInstance().GetGameContext().deltaTime;
-		owner->SetRotation(rotation);
+
+		owner->SetPosition(chargeStartPosition_ - toPlayer * back + shakeOffset);
+		owner->SetRotation(Vector3{0.0f, atan2f(toPlayer.x, toPlayer.z), 0.0f});
+
 	}
 }
 
@@ -161,15 +186,28 @@ void GameObjectComponent::ChargeMoveComponent::Fire(GameObject* owner)
 {
 	if (isAttacking_)
 	{
+		fireTime_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+
+		float t = fireTime_ / kFireTime;
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		float back = MathUtils::Lerp(maxBackDistance_, 0.0f, EaseOutQuad(t));
+
 		// プレイヤーへの向きを取得
 		Vector3 playerPosition = player_->GetPosition();
 		bulletDirection_ = playerPosition - owner->GetPosition();
 
-		// 弾生成
-		BulletInitialize(owner);
+		owner->SetPosition(chargeStartPosition_ - bulletDirection_ * back);
 
-		
-		state_ = State::Cooldown;
+
+		if (t >= 1.0f)
+		{
+			// 弾生成
+			BulletInitialize(owner);
+
+			state_ = State::Cooldown;
+		}
+
 	}
 }
 

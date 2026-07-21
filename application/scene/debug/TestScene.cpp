@@ -349,7 +349,7 @@ void TestScene::Initialize()
 	chargeEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
 	chargeEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	chargeEnemy_->SetName("ChargeEnemy");
-	chargeEnemy_->SetModel("cube");
+	chargeEnemy_->SetModel("chargeEnemy");
 	chargeEnemy_->SetScale({2.0f, 2.0f, 2.0f});
 	chargeEnemy_->SetPosition({-5.0f, 2.0f, -30.0f});
 

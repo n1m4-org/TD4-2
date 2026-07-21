@@ -103,9 +103,6 @@ namespace GameObjectComponent
 	  // 移動速度倍率
 	  const float kMoveSpeedRate_ = 5.0f;
 
-	  // 回転速度
-	  float rotationSpeed_ = 60.0f;
-
 	  // チャージ開始距離
 	  float chargeStartDistance_ = 30.0f;
 	  // チャージ開始フラグ
@@ -117,6 +114,17 @@ namespace GameObjectComponent
 	  // 攻撃クールタイム
 	  const float kCoolTime = 5.0f;
 	  float coolTime_ = 0.0f;
+
+	  // チャージ開始位置
+	  Vector3 chargeStartPosition_ = {0.0f, 0.0f, 0.0f};
+	  // 最大後退距離
+	  float maxBackDistance_ = 3.0f;
+
+	  Vector3 shakeOffset{};
+
+	  // 発射時間
+	  const float kFireTime = 0.5f;
+	  float fireTime_ = 0.0f;
 
 	   // 左右移動のタイマー
 	  float strafeTimer_ = 0.0f;
@@ -157,7 +165,7 @@ namespace GameObjectComponent
 	  bool isShake_ = false;
 	  // 揺れタイマー
 	  float shakeTimer_ = 0.0f;
-	  const float kShakeTime_ = 0.1f;
+	  const float kShakeTime_ = 0.15f;
 	  // 揺れの強さ
 	  float shakePower_ = 0.5f;
 	  // 揺れの基準位置
