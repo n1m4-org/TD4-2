@@ -63,6 +63,9 @@
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\common\UIComponent.cpp">
+      <Filter>gameobject\component\action\common</Filter>
+    </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.cpp">
       <Filter>gameobject\component\action\enemy</Filter>
     </ClCompile>
@@ -130,6 +133,9 @@
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
+      <Filter>gameobject\component\action\common</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\common\UIComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.h">
