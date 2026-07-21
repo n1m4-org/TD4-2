@@ -32,6 +32,12 @@ namespace GameObjectComponent
 			// この弾が現在狙っている対象
 			GameObject* target = nullptr;
 
+			// GameObjectではなく、指定座標へ飛ばすかどうか
+			bool useVirtualTarget = false;
+
+			// ロックオン対象がない時に飛ばす仮の目的地
+			Vector3 virtualTargetPosition = {};
+
 			Vector3 startPos = {};	  // ベジェ曲線の開始位置
 			Vector3 controlPos1 = {}; // ベジェ曲線の制御点1
 			Vector3 controlPos2 = {}; // ベジェ曲線の制御点2
@@ -79,8 +85,13 @@ namespace GameObjectComponent
 		// 指定した弾を削除する
 		void KillBullet(GameObject* bulletObject);
 
-		// 反射時に、PlayerReflectComponentから受け取ったロックオン方向へ直進させる
+		// 反射方向と一致する敵を探し、その敵へホーミングさせる
 		void ReflectBullet(GameObject* bulletObject, const Vector3& reflectDirection);
+
+		// 反射方向と最も一致する敵を取得する
+		GameObject* FindReflectTarget(
+			const Vector3& sourcePosition,
+			const Vector3& reflectDirection) const;
 
 		// 弾のベジェ曲線用の初期情報を作成する
 		void InitializeBulletCurve(HomingBullet& bullet);

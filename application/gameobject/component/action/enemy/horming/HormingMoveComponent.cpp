@@ -162,7 +162,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 				const Vector3 direction =
 					reflect->GetReflectDirectionFrom(bulletObject->GetPosition());
 
-				// ホーミング弾を、その方向へ直進するプレイヤー弾に変える
+				// 反射方向から対象を特定し、プレイヤー弾としてホーミングさせる
 				ReflectBullet(bulletObject, direction);
 
 				// 反射成功演出
@@ -182,7 +182,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 			// 反射後に敵へ当たったら弾を消す
 			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::Enemy)
 			{
-				// 反射後の直線移動APIがないため、ホーミング弾は現状ここで消す。
+				// 反射後に敵へ当たったため弾を消す
 				KillBullet(bulletObject);
 				return;
 			}
@@ -197,6 +197,8 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 
 	// 最初はプレイヤーを狙う
 	bullet.target = target_;
+	bullet.useVirtualTarget = false;
+	bullet.virtualTargetPosition = {};
 
 	bullet.lifeTime = bulletLifeTime_;
 	bullet.timer = 0.0f;
@@ -228,14 +230,29 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 
 void HormingMoveComponent::InitializeBulletCurve(HomingBullet& bullet)
 {
-	if (!bullet.object || !bullet.target)
+	if (!bullet.object)
 	{
 		return;
 	}
 
+	if (!bullet.target && !bullet.useVirtualTarget)
+	{
+		return;
+	}
+
+
 	// ベジェ曲線の開始点と終点を決める
 	bullet.startPos = bullet.object->GetPosition();
-	bullet.endPos = bullet.target->GetPosition();
+
+	// 終点を決める
+	if (bullet.useVirtualTarget)
+	{
+		bullet.endPos = bullet.virtualTargetPosition;
+	}
+	else
+	{
+		bullet.endPos = bullet.target->GetPosition();
+	}
 
 	// 開始点からターゲットへの方向
 	Vector3 toTarget = bullet.endPos - bullet.startPos;
@@ -299,7 +316,7 @@ void HormingMoveComponent::UpdateBullets()
 		}
 
 		// この弾が狙う対象がない場合は削除する
-		if (!bullet.target)
+		if (!bullet.target && !bullet.useVirtualTarget)
 		{
 			KillBullet(bullet.object);
 			continue;
@@ -318,10 +335,19 @@ void HormingMoveComponent::UpdateBullets()
 
 		// 現在の弾位置とターゲット位置
 		Vector3 bulletPos = bullet.object->GetPosition();
-		Vector3 targetPos = bullet.target->GetPosition();
+
+		Vector3 targetPos = {};
+		if (bullet.useVirtualTarget)
+		{
+			targetPos = bullet.virtualTargetPosition;
+		}
+		else
+		{
+			targetPos = bullet.target->GetPosition();
+		}
 
 		// まだホーミング中なら、一定距離以内でホーミング解除
-		if (!bullet.isStraight)
+		if (!bullet.isStraight && !bullet.isReflected)
 		{
 			Vector3 toTarget = targetPos - bulletPos;
 			float distance = toTarget.Length();
@@ -362,7 +388,10 @@ void HormingMoveComponent::UpdateBullets()
 		// ホーミング処理
 
 		// 終点をターゲットの現在位置へ少しずつ寄せる
-		bullet.endPos = bullet.endPos + (targetPos - bullet.endPos) * targetFollowRate_;
+		if (!bullet.useVirtualTarget)
+		{
+			bullet.endPos = bullet.endPos + (targetPos - bullet.endPos) * targetFollowRate_;
+		}
 
 		Vector3 toCurrentEnd = bullet.endPos - bullet.startPos;
 
@@ -404,7 +433,9 @@ void HormingMoveComponent::UpdateBullets()
 	}
 }
 
-void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, const Vector3& reflectDirection)
+void HormingMoveComponent::ReflectBullet(
+	GameObject* bulletObject,
+	const Vector3& reflectDirection)
 {
 	if (!bulletObject)
 	{
@@ -418,13 +449,7 @@ void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, const Vector3
 			continue;
 		}
 
-		if (bullet.isDead)
-		{
-			return;
-		}
-
-		// すでに反射済みなら二重反射しない
-		if (bullet.isReflected)
+		if (bullet.isDead || bullet.isReflected)
 		{
 			return;
 		}
@@ -439,31 +464,132 @@ void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, const Vector3
 
 		direction.NormalizeSelf();
 
-		// 反射済みにする
+		// プレイヤーから渡された方向と一致する敵を探す
+		GameObject* reflectTarget =
+			FindReflectTarget(
+				bulletObject->GetPosition(),
+				direction);
+
 		bullet.isReflected = true;
+		bullet.isStraight = false;
+		bullet.straightDir = {};
 
-		// 反射後はホーミングせず、ロックオン方向へ直進する
-		bullet.isStraight = true;
-		bullet.straightDir = direction;
-
-		// 反射後も寿命は残り時間のまま使う
-		// 必要ならここで timer をリセットして飛距離を伸ばしてもいい
-		// bullet.timer = 0.0f;
-
-		// 反射後はプレイヤー弾として扱う
-		if (auto collider = bullet.object->GetComponent<AABBColliderComponent>())
+		if (reflectTarget)
 		{
-			collider->SetCollisionLayer(CollisionLayer::PlayerBullet);
+			// ロックオン方向と一致する敵が見つかった場合
+			// その敵を実際のホーミング対象にする
+			bullet.target = reflectTarget;
+			bullet.useVirtualTarget = false;
+			bullet.virtualTargetPosition = {};
+		}
+		else
+		{
+			// ロックオン対象を復元できなかった場合は、プレイヤーから渡された方向へ曲線移動する
+			bullet.target = nullptr;
+			bullet.useVirtualTarget = true;
+
+			// 35のような固定値ではなく、
+			// 直進速度×寿命を曲線の到達距離にする
+			const float travelDistance =
+				straightSpeed_ * bulletLifeTime_;
+
+			bullet.virtualTargetPosition =
+				bulletObject->GetPosition() +
+				direction * travelDistance;
+		}
+
+		// 反射地点から、敵が撃った時と同じ曲線を作り直す
+		bullet.timer = 0.0f;
+		bullet.lifeTime = bulletLifeTime_;
+
+		InitializeBulletCurve(bullet);
+
+		if (auto collider =
+				bullet.object->GetComponent<AABBColliderComponent>())
+		{
+			collider->SetCollisionLayer(
+				CollisionLayer::PlayerBullet);
+
 			collider->SetCollisionMask(
 				CollisionLayer::Enemy |
 				CollisionLayer::Bumpers);
 		}
 
-		// タグもプレイヤー弾に変更する
 		bullet.object->SetTag(GameObjectTag::PlayerBullet);
 
 		return;
 	}
+}
+
+GameObject* HormingMoveComponent::FindReflectTarget(
+	const Vector3& sourcePosition,
+	const Vector3& reflectDirection) const
+{
+	Vector3 normalizedReflectDirection = reflectDirection;
+	normalizedReflectDirection.y = 0.0f;
+
+	if (normalizedReflectDirection.LengthSquared() <= 0.000001f)
+	{
+		return nullptr;
+	}
+
+	normalizedReflectDirection.NormalizeSelf();
+
+	const auto& gameObjects =
+		GameObjectManager::GetInstance()->GetGameObjects();
+
+	GameObject* bestTarget = nullptr;
+	float bestDot = -1.0f;
+
+	for (GameObject* object : gameObjects)
+	{
+		if (!object)
+		{
+			continue;
+		}
+
+		// 敵本体だけを候補にする
+		if (object->GetTag() != GameObjectTag::Enemy)
+		{
+			continue;
+		}
+
+		if (!object->IsActive() || object->IsPendingDestroy())
+		{
+			continue;
+		}
+
+		Vector3 toEnemy = object->GetPosition() - sourcePosition;
+		toEnemy.y = 0.0f;
+
+		if (toEnemy.LengthSquared() <= 0.000001f)
+		{
+			continue;
+		}
+
+		toEnemy.NormalizeSelf();
+
+		// Vector3のDot関数に依存しないように直接計算
+		const float dot =
+			normalizedReflectDirection.x * toEnemy.x +
+			normalizedReflectDirection.y * toEnemy.y +
+			normalizedReflectDirection.z * toEnemy.z;
+
+		if (dot > bestDot)
+		{
+			bestDot = dot;
+			bestTarget = object;
+		}
+	}
+
+	// 方向が十分一致している敵だけをロックオン対象として採用する
+	// 0.999なら誤差約2.5度以内
+	if (bestDot < 0.999f)
+	{
+		return nullptr;
+	}
+
+	return bestTarget;
 }
 
 void HormingMoveComponent::KillBullet(GameObject* bulletObject)
