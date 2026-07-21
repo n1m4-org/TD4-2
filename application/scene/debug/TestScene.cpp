@@ -464,6 +464,10 @@ void TestScene::OnFinalize()
 	{
 		GameObjectEditor::GetInstance()->Finalize();
 	}
+
+	// スポットライトの削除
+	sceneManager_->GetLightManager()->Clear();
+
 #ifdef USE_IMGUI
 	if (DebugUIManager::HasInstance())
 	{
