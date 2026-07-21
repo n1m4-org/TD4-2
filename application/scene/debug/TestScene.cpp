@@ -119,6 +119,7 @@ void TestScene::Initialize()
 	reflectCollider->SetActive(false); // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
+	reflectCollider->SetSizeOffset({ 2.0f, 2.0f, 2.0f });
 	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
 	{
 		if (!info.otherCollider)
