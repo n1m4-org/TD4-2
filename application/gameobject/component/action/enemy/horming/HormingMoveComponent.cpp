@@ -4,12 +4,14 @@
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/gameobject/base/GameObject.h"
+#include "application/gameobject/component/action/common/StatusComponent.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
 
+#include <algorithm>
 #include <string>
 
 using namespace GameObjectComponent;
@@ -30,12 +32,21 @@ HormingMoveComponent::HormingMoveComponent(GameObject* target)
 	Register("autoFireInterval", &autoFireInterval_);
 	Register("burstCount", &burstCount_);
 	Register("burstInterval", &burstInterval_);
+
+	Register("deathAnimationDuration", &deathAnimationDuration_);
+	Register("deathPopScale", &deathPopScale_);
 }
 
 void HormingMoveComponent::Update(GameObject* owner)
 {
 	// 発射元、または追尾対象がない場合は処理しない
 	if (!owner || !target_)
+	{
+		return;
+	}
+
+	// HP0後の死亡演出中なら、演出だけ更新して以降の攻撃処理はしない
+	if (UpdateDeathAnimation(owner))
 	{
 		return;
 	}
@@ -125,17 +136,38 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 			CollisionLayer::PlayerReflect);
 
 		// ホーミング弾自身のコールバックでは、この弾の生存状態だけを変更する。
-		collider->SetOnEnter([this, bulletObject, owner](const CollisionInfo& info)
+		collider->SetOnEnter([this, bulletObject](const CollisionInfo& info)
 		{
 			if (!info.otherCollider)
 			{
 				return;
 			}
 
-			// 反射判定に当たったら、撃ってきた敵に向かって弧を描いて跳ね返す
-			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect)
+			// 反射判定に当たったら、ロックオン方向へ跳ね返す
+			if (info.other &&
+				(info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect))
 			{
-				ReflectBullet(bulletObject, owner);
+				// PlayerReflect のコライダーは ReflectHand についているので、
+				// 親をたどってプレイヤー本体を取得する
+				GameObject* player = info.other->GetParent();
+
+				auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr;
+
+				if (!reflect)
+				{
+					return;
+				}
+
+				// チャージ弾と同じく、ロックオン方向を取得する
+				const Vector3 direction =
+					reflect->GetReflectDirectionFrom(bulletObject->GetPosition());
+
+				// ホーミング弾を、その方向へ直進するプレイヤー弾に変える
+				ReflectBullet(bulletObject, direction);
+
+				// 反射成功演出
+				reflect->NotifyReflectSucceeded();
+
 				return;
 			}
 
@@ -372,9 +404,9 @@ void HormingMoveComponent::UpdateBullets()
 	}
 }
 
-void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, GameObject* reflectTarget)
+void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, const Vector3& reflectDirection)
 {
-	if (!bulletObject || !reflectTarget)
+	if (!bulletObject)
 	{
 		return;
 	}
@@ -397,18 +429,26 @@ void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, GameObject* r
 			return;
 		}
 
+		Vector3 direction = reflectDirection;
+		direction.y = 0.0f;
+
+		if (direction.LengthSquared() <= 0.000001f)
+		{
+			return;
+		}
+
+		direction.NormalizeSelf();
+
+		// 反射済みにする
 		bullet.isReflected = true;
 
-		// 狙い先を「撃ってきた敵」に変更
-		bullet.target = reflectTarget;
+		// 反射後はホーミングせず、ロックオン方向へ直進する
+		bullet.isStraight = true;
+		bullet.straightDir = direction;
 
-		// 反射後はホーミング解除状態もリセット
-		bullet.isStraight = false;
-		bullet.straightDir = {};
-
-		// 反射した瞬間から、もう一度弧を描いて飛ばす
-		bullet.timer = 0.0f;
-		bullet.lifeTime = bulletLifeTime_;
+		// 反射後も寿命は残り時間のまま使う
+		// 必要ならここで timer をリセットして飛距離を伸ばしてもいい
+		// bullet.timer = 0.0f;
 
 		// 反射後はプレイヤー弾として扱う
 		if (auto collider = bullet.object->GetComponent<AABBColliderComponent>())
@@ -419,8 +459,8 @@ void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, GameObject* r
 				CollisionLayer::Bumpers);
 		}
 
-		// 現在位置から敵に向かうベジェ曲線を作り直す
-		InitializeBulletCurve(bullet);
+		// タグもプレイヤー弾に変更する
+		bullet.object->SetTag(GameObjectTag::PlayerBullet);
 
 		return;
 	}
@@ -445,6 +485,91 @@ void HormingMoveComponent::KillBullet(GameObject* bulletObject)
 			// 以降UpdateBulletsで触らないようにする
 			bullet.object = nullptr;
 			return;
+		}
+	}
+}
+
+bool HormingMoveComponent::UpdateDeathAnimation(GameObject* owner)
+{
+	if (!owner)
+	{
+		return false;
+	}
+
+	// まだ死亡演出に入っていない場合、HPを確認する
+	if (!isDeathAnimation_)
+	{
+		auto status = owner->GetComponent<StatusComponent>();
+		if (!status)
+		{
+			return false;
+		}
+
+		// HPが残っているなら通常処理を続ける
+		if (status->GetHp() > 0)
+		{
+			return false;
+		}
+
+		// HP0なら死亡演出開始
+		StartDeathAnimation(owner);
+	}
+
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	deathAnimationTimer_ += deltaTime;
+
+	float t = deathAnimationTimer_ / deathAnimationDuration_;
+	t = std::clamp(t, 0.0f, 1.0f);
+
+	float scaleRate = 1.0f;
+
+	// 前半で少し大きく、後半で小さくする
+	if (t < 0.3f)
+	{
+		float growT = t / 0.3f;
+		scaleRate = 1.0f + (deathPopScale_ - 1.0f) * growT;
+	}
+	else
+	{
+		float shrinkT = (t - 0.3f) / 0.7f;
+		scaleRate = deathPopScale_ * (1.0f - shrinkT);
+	}
+
+	owner->SetScale(deathBaseScale_ * scaleRate);
+
+	if (t >= 1.0f)
+	{
+		owner->Destroy();
+	}
+
+	return true;
+}
+
+void HormingMoveComponent::StartDeathAnimation(GameObject* owner)
+{
+	if (!owner)
+	{
+		return;
+	}
+
+	isDeathAnimation_ = true;
+	deathAnimationTimer_ = 0.0f;
+	deathBaseScale_ = owner->GetScale();
+
+	// 死亡演出中は敵本体の当たり判定を切る
+	if (auto collider = owner->GetComponent<AABBColliderComponent>())
+	{
+		collider->SetCollisionLayer(CollisionLayer::None);
+		collider->SetCollisionMask(CollisionLayer::None);
+	}
+
+	// すでに撃っているホーミング弾も消したい場合はここで消す
+	for (HomingBullet& bullet : bullets_)
+	{
+		if (bullet.object && !bullet.isDead)
+		{
+			KillBullet(bullet.object);
 		}
 	}
 }
