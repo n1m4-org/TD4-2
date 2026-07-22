@@ -136,6 +136,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp" />
+    <ClCompile Include="gameobject\component\action\common\SmashComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerSlowMotionComponent.cpp" />
     <ClCompile Include="scene\gameover\GameOverScene.cpp" />
@@ -177,6 +178,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h" />
+    <ClInclude Include="gameobject\component\action\common\SmashComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h" />
     <ClInclude Include="scene\gameover\GameOverScene.h" />

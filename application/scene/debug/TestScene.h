@@ -48,7 +48,7 @@ private:
 	static constexpr Vector3 kBombEnemyPosition = { 50.0f, 2.0f, 0.0f };
 	static constexpr Vector3 kBombEnemyScale = { 2.0f, 2.0f, 2.0f };
 	static constexpr Vector3 kReflectHandLocalPosition = {0.0f, 0.0f, 1.25f};
-	static constexpr Vector3 kReflectHandLocalScale = {1.5f, 0.35f, 0.35f};
+	static constexpr Vector3 kReflectHandLocalScale = { 0.5f, 0.5f, 0.5f};
 
 	// デバッグカメラ
 	std::unique_ptr<DebugCamera> debugCamera_;

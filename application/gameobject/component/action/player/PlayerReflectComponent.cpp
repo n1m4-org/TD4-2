@@ -73,6 +73,7 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 												  handBasePosition_.x * handBasePosition_.x +
 												  handBasePosition_.z * handBasePosition_.z) +
 												  handRadialOffset_);
+			handEffect_ = ParticleManager::GetInstance()->Play("hand", MathUtils::GetTranslateFromMatrix(hand_->GetWorldMatrix()));
 		}
 	}
 
@@ -104,11 +105,12 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 	UpdateHandAnimation(deltaTime);
 
 	if (!isReflecting_)
-	{
+	{	
 		return;
 	}
 
 	reflectTimer_ -= deltaTime;
+	handEffect_->SetPosition(MathUtils::GetTranslateFromMatrix(hand_->GetWorldMatrix()));
 	if (reflectTimer_ <= 0.0f)
 	{
 		isReflecting_ = false;
