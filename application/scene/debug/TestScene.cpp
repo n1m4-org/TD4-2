@@ -6,6 +6,7 @@
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
+#include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
@@ -23,6 +24,9 @@
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
+
+#include "engine/scene/factory/SceneFactory.h"
+REGISTER_SCENE(TestScene);
 
 using namespace GameObjectComponent;
 
@@ -512,6 +516,9 @@ void TestScene::Initialize()
 
 	// 一定間隔でプレイヤーに向かってホーミング弾を発射する
 	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
+	// 死亡演出をつける
+	hormingTest_->AddComponent("DeathEffect", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
+
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 }
