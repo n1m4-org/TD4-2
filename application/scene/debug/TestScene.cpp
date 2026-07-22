@@ -206,6 +206,11 @@ void TestScene::Initialize()
 				{
 					status->SetHp(status->GetHp() - 10);
 				
+				  if (status->GetHp() <= 0)
+					{
+						cameraState_ = CameraState::GameOver;
+						cameraTimer_ = 0.0f;
+					}
 				}
 			}
 
@@ -568,6 +573,10 @@ void TestScene::UpdateCamera()
 	case CameraState::Playing:
 		UpdateFollowCamera();
 		break;
+
+	case CameraState::GameOver:
+		UpdateGameOverCamera();
+		break;
 	}
 }
 
@@ -610,6 +619,32 @@ void TestScene::UpdateFollowCamera()
 {
 	topDownCamera_->Update();
 
+}
+
+
+void TestScene::UpdateGameOverCamera()
+{
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	cameraTimer_ += deltaTime;
+	
+	float t = cameraTimer_ / kGameOverTime;
+	t = std::clamp(t, 0.0f, 1.0f);
+
+	t = EaseOutQuad(t);
+
+	auto camera = sceneManager_->GetCameraManager()->GetActiveCamera();
+
+	// 開始位置と終了位置を設定
+	Vector3 startPos = player_->GetPosition() + Vector3(0, 90, -40);
+	Vector3 endPos = player_->GetPosition() + Vector3(0, 125, -55);
+
+	camera->SetTranslate(MathUtils::Lerp(startPos, endPos, t));
+
+	Vector3 startRot = {1.2f, 0, 0};
+	Vector3 endRot = {0.8f, 0, 0};
+
+	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
 }
 
 void TestScene::OnFinalize()
