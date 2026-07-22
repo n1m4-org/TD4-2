@@ -591,10 +591,10 @@ void TestScene::UpdateIntroCamera()
 	auto camera = sceneManager_->GetCameraManager()->GetActiveCamera();
 
 	// 開始位置
-	Vector3 startPos = {0.0f, 30.0f, 80.0f};
+	Vector3 startPos = {0.0f, 130.0f, 80.0f};
 
 	// 終了位置
-	Vector3 endPos = player_->GetPosition() + Vector3(0.0f, 18.0f, 40.0f);
+	Vector3 endPos = player_->GetPosition() + Vector3(0.0f, 90.0f, -40.0f);
 
 	// 補間してカメラの位置を更新
 	camera->SetTranslate(MathUtils::Lerp(startPos, endPos, t));
@@ -632,8 +632,8 @@ void TestScene::UpdateGameOverCamera()
 	auto camera = sceneManager_->GetCameraManager()->GetActiveCamera();
 
 	// 開始位置と終了位置を設定
-	Vector3 startPos = player_->GetPosition() + Vector3(0, 18, 40);
-	Vector3 endPos = player_->GetPosition() + Vector3(0, 25, 55);
+	Vector3 startPos = player_->GetPosition() + Vector3(0, 90, -40);
+	Vector3 endPos = player_->GetPosition() + Vector3(0, 125, -55);
 
 	camera->SetTranslate(MathUtils::Lerp(startPos, endPos, t));
 
