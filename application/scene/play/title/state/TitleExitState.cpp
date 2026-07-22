@@ -8,15 +8,15 @@
 
 namespace
 {
-    constexpr float kExitDuration = 1.0f; // 次シーン遷移前演出所要秒数
+    constexpr float kExitDuration = 1.5f; // 次シーン遷移前演出所要秒数
 }
 
 void TitleExitState::OnEnter(BaseScene& scene)
 {
 	auto title = static_cast<TitleScene*>(&scene);
 	title->GetTransitionEffect().SetFadeType(FadeType::FadeIn);
-	title->GetTransitionEffect().SetEaseType(SceneTransitionEase::OutSine);
-	title->GetTransitionEffect().Start(1.0f, VectorColorCodes::Black, VectorColorCodes::White);
+	title->GetTransitionEffect().SetEaseType(SceneTransitionEase::InSine);
+	title->GetTransitionEffect().Start(kExitDuration, VectorColorCodes::Black, VectorColorCodes::White);
 }
 
 void TitleExitState::OnUpdate(BaseScene& scene)

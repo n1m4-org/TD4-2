@@ -5,7 +5,7 @@
 
 namespace
 {
-	constexpr float kEnterDuration = 1.0f; // 登場演出所要秒数
+	constexpr float kEnterDuration = 2.0f; // 登場演出所要秒数
 }
 
 void TitleEnterState::OnEnter(BaseScene& scene)
@@ -13,7 +13,7 @@ void TitleEnterState::OnEnter(BaseScene& scene)
 	auto title = static_cast<TitleScene*>(&scene);
 	title->GetTransitionEffect().SetFadeType(FadeType::FadeOut);
 	title->GetTransitionEffect().SetEaseType(SceneTransitionEase::OutSine);
-	title->GetTransitionEffect().Start(2.0f, VectorColorCodes::Black, VectorColorCodes::White);
+	title->GetTransitionEffect().Start(kEnterDuration, VectorColorCodes::Black, VectorColorCodes::White);
 }
 
 void TitleEnterState::OnUpdate(BaseScene& scene)
