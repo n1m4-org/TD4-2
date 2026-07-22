@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <string>
+#include "../../common/SmashComponent.h"
 
 using namespace GameObjectComponent;
 
@@ -129,6 +130,9 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 	spawnPos.y += 1.0f;
 	bulletObject->SetPosition(spawnPos);
 
+	// 跳ね返した時のエフェクト再生コンポーネント
+	bulletObject->AddComponent("smash", std::make_unique<SmashComponent>());
+
 	// AABBコライダーの追加
 	bulletObject->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bulletObject));
 
@@ -175,6 +179,12 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 
 				// 反射成功演出
 				reflect->NotifyReflectSucceeded();
+
+				// 吹っ飛ばしエフェクトを再生
+				if (auto smash = bulletObject->GetComponent<SmashComponent>())
+				{
+					smash->Play(bulletObject);
+				}
 
 				return;
 			}

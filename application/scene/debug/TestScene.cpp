@@ -88,6 +88,8 @@ void TestScene::Initialize()
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 	ParticleManager::GetInstance()->Load("bullet_hit", "Resources/json/particle/hit.json");
+	ParticleManager::GetInstance()->Load("hand", "Resources/json/particle/hand.json");
+	ParticleManager::GetInstance()->Load("smash", "Resources/json/particle/smash.json");
 
 	// 1. テスト用キューブオブジェクトの作成
 	player_ = std::make_unique<GameObject>(GameObjectTag::Player);
