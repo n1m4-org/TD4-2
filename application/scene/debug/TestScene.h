@@ -33,6 +33,13 @@ private:
 	 */
 	void InitializeBombEnemy();
 
+	// 演出用カメラ
+	void UpdateCamera();
+	void UpdateIntroCamera();
+	void UpdateFollowCamera();
+	void UpdateGameOverCamera();
+
+
 	// ディレクショナルライト設定
 	static constexpr Vector3 kLightDirection = { -0.2f, -1.0f, 0.3f };
 	static constexpr float kLightIntensity = 0.6f;
@@ -54,5 +61,21 @@ private:
 	std::unique_ptr<GameObject> chargeEnemy_;
 	std::unique_ptr<GameObject> bombEnemy_;
 	std::unique_ptr<GameObject> hormingTest_;
+
+	// 演出用
+	enum class CameraState
+	{
+		Intro,
+		Playing,
+		GameOver,
+	};
+	CameraState cameraState_ = CameraState::Intro;
+	float cameraTimer_ = 0.0f;
+	// 演出時間
+	const float kIntroTime = 2.0f;
+	const float kGameOverTime = 2.5f;
+	// 演出中かどうかのフラグ
+	bool isIntroPlaying_ = true;
+	bool isGameOverPlaying_ = false;
 
 };
