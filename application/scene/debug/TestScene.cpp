@@ -20,8 +20,6 @@
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/math/MathUtils.h"
 #include "engine/graphics/3d/Object3dCommon.h"
-#include "engine/time/TimeManager.h"
-#include "engine/math/Easing.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
@@ -31,6 +29,8 @@
 #include "engine/effects/postprocess/CRTEffect.h"
 
 #include "engine/scene/factory/SceneFactory.h"
+#include "math/Easing.h"
+#include "time/TimeManager.h"
 REGISTER_SCENE(TestScene);
 
 using namespace GameObjectComponent;

@@ -41,6 +41,9 @@ private:
 
 	// ゲームオーバー演出
 	void GameOverDirection();
+	// クリア演出
+	void StartClearDirection();
+	void UpdateClearDirection();
 
 	// クリア演出
 	void StartClearDirection();
