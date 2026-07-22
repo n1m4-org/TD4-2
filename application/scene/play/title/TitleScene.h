@@ -53,6 +53,10 @@ private:
 	// スタートテキスト
 	std::unique_ptr<Sprite> startText_;
 	
+	// アニメーション用タイマー
+	float logoAnimTimer_ = 0.0f;
+	float startTextAnimTimer_ = 0.0f;
+
 	// シーン遷移時にフェード演出
 	SceneTransitionEffect transitionEffect_;
 };

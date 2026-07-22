@@ -50,13 +50,15 @@ void TitleScene::Initialize()
 	titleLogo_ = std::make_unique<Sprite>();
 	titleLogo_->Initialize(spCommon, "title/logo.png");
 	titleLogo_->SetAnchorPoint({ 0.5f, 0.5f });
+	titleLogo_->SetSize({700, 200});
 	titleLogo_->SetPosition({960.0f, 200.0f}); // 画面中央上に配置
 
 	// スタートテキストのスプライト作成
 	startText_ = std::make_unique<Sprite>();
 	startText_->Initialize(spCommon, "title/start.png");
 	startText_->SetAnchorPoint({ 0.5f, 0.5f });
-	startText_->SetPosition({960.0f, 850.0f}); // 画面中央下に配置
+	startText_->SetSize({800, 100});
+	startText_->SetPosition({960.0f, 900.0f}); // 画面中央下に配置
 
 	// シーン遷移演出の初期化
 	transitionEffect_.Initialize(spCommon, "./Resources/white1x1.png", 30, 30, WinApp::kClientWidth, WinApp::kClientHeight);
@@ -79,10 +81,45 @@ void TitleScene::OnFinalize()
 #endif
 }
 
+#include <cmath>
+
+namespace
+{
+	// ロゴ揺れ演出のパラメータ（名前付き定数）
+	constexpr float kLogoSwingSpeed = 1.5f;   // 揺れ速度
+	constexpr float kLogoSwingAngle = 0.05f;  // 最大振幅（ラジアン）
+
+	// スタートテキスト点滅演出のパラメータ（名前付き定数）
+	constexpr float kStartTextBlinkSpeed = 2.5f; // 点滅速度
+	constexpr float kStartTextMinAlpha = 0.2f;   // 最小透明度
+}
+
 void TitleScene::CommonUpdate()
 {
-	titleLogo_->Update();
-	startText_->Update();
+	float dt = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	// タイトルロゴのゆらゆら揺れる回転演出
+	if (titleLogo_)
+	{
+		logoAnimTimer_ += dt;
+		float rotation = std::sin(logoAnimTimer_ * kLogoSwingSpeed) * kLogoSwingAngle;
+		titleLogo_->SetRotation(rotation);
+		titleLogo_->Update();
+	}
+
+	// スタートテキストのゆっくりアルファ点滅演出
+	if (startText_)
+	{
+		startTextAnimTimer_ += dt;
+		float sinVal = (std::sin(startTextAnimTimer_ * kStartTextBlinkSpeed) + 1.0f) * 0.5f;
+		float alpha = kStartTextMinAlpha + (1.0f - kStartTextMinAlpha) * sinVal;
+
+		Vector4 color = startText_->GetColor();
+		color.w = alpha;
+		startText_->SetColor(color);
+		startText_->Update();
+	}
+
 	transitionEffect_.Update();
 }
 

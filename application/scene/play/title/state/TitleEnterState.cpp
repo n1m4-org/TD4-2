@@ -13,7 +13,8 @@ void TitleEnterState::OnEnter(BaseScene& scene)
 	auto title = static_cast<TitleScene*>(&scene);
 	title->GetTransitionEffect().SetFadeType(FadeType::FadeOut);
 	title->GetTransitionEffect().SetEaseType(SceneTransitionEase::OutSine);
-	title->GetTransitionEffect().Start(kEnterDuration, VectorColorCodes::Black, VectorColorCodes::White);
+	title->GetTransitionEffect().SetMode(TransitionMode::TopToBottom);
+	title->GetTransitionEffect().Start(kEnterDuration, VectorColorCodes::White, VectorColorCodes::White);
 }
 
 void TitleEnterState::OnUpdate(BaseScene& scene)

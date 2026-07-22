@@ -16,7 +16,8 @@ void TitleExitState::OnEnter(BaseScene& scene)
 	auto title = static_cast<TitleScene*>(&scene);
 	title->GetTransitionEffect().SetFadeType(FadeType::FadeIn);
 	title->GetTransitionEffect().SetEaseType(SceneTransitionEase::InSine);
-	title->GetTransitionEffect().Start(kExitDuration, VectorColorCodes::Black, VectorColorCodes::White);
+	title->GetTransitionEffect().SetMode(TransitionMode::BottomToTop);
+	title->GetTransitionEffect().Start(kExitDuration, VectorColorCodes::White, VectorColorCodes::White);
 }
 
 void TitleExitState::OnUpdate(BaseScene& scene)
