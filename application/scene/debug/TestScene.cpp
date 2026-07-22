@@ -26,6 +26,7 @@
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
+#include "engine/scene/factory/SceneFactory.h"
 
 #include "engine/scene/factory/SceneFactory.h"
 #include "math/Easing.h"
@@ -127,6 +128,7 @@ void TestScene::Initialize()
 	reflectCollider->SetActive(false); // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
+	reflectCollider->SetSizeOffset({ 2.0f, 2.0f, 2.0f });
 	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
 	{
 		if (!info.otherCollider)
@@ -814,17 +816,16 @@ void TestScene::OnFinalize()
 	{
 		GameObjectEditor::GetInstance()->Finalize();
 	}
+
+	// スポットライトの削除
+	sceneManager_->GetLightManager()->Clear();
+
 #ifdef USE_IMGUI
 	if (DebugUIManager::HasInstance())
 	{
 		DebugUIManager::GetInstance()->UnregisterDebugUI(this);
 	}
 #endif
-	player_.reset();
-	groundObject_.reset();
-	targetObject_.reset();
-	debugCamera_.reset();
-	topDownCamera_.reset();
 }
 
 void TestScene::CommonUpdate()
