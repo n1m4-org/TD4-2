@@ -15,6 +15,9 @@
 #include "audio/Audio.h"
 // scene
 #include "engine/scene/manager/SceneManager.h"
+#include "engine/scene/factory/SceneFactory.h"
+
+REGISTER_SCENE(TitleScene);
 // input
 #include "input/Input.h"
 // graphics / manager
@@ -33,7 +36,7 @@ void TitleScene::Initialize()
 #endif
 }
 
-void TitleScene::Finalize()
+void TitleScene::OnFinalize()
 {
 #ifdef USE_IMGUI
     if (DebugUIManager::HasInstance()) {
