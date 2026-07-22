@@ -55,11 +55,20 @@
     <Filter Include="scene\Wave">
       <UniqueIdentifier>{893A30A0-8BA7-EFEA-0B1D-DD0D7B0A0308}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scene\clear">
+      <UniqueIdentifier>{7853F6DF-BF3B-44DD-F780-87114114CAF0}</UniqueIdentifier>
+    </Filter>
     <Filter Include="scene\debug">
       <UniqueIdentifier>{043A9A6E-2075-85F6-1633-A6DA8AC323DB}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scene\gameover">
+      <UniqueIdentifier>{715B90F6-140D-56B7-A5E4-011F01DAB95E}</UniqueIdentifier>
+    </Filter>
     <Filter Include="scene\play">
       <UniqueIdentifier>{70549714-C486-8BD1-27AB-5E9361D090E7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\ui">
+      <UniqueIdentifier>{69E5C875-BCC1-6A96-6277-EDEF3879AD75}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -142,18 +151,24 @@
     <ClCompile Include="scene\Wave\WaveScene.cpp">
       <Filter>scene\Wave</Filter>
     </ClCompile>
+    <ClCompile Include="scene\clear\ClearScene.cpp">
+      <Filter>scene\clear</Filter>
+    </ClCompile>
     <ClCompile Include="scene\debug\ParticleTestScene.cpp">
       <Filter>scene\debug</Filter>
     </ClCompile>
     <ClCompile Include="scene\debug\TestScene.cpp">
       <Filter>scene\debug</Filter>
     </ClCompile>
+    <ClCompile Include="scene\gameover\GameOverScene.cpp">
+      <Filter>scene\gameover</Filter>
+    </ClCompile>
     <ClCompile Include="scene\play\TitleScene.cpp">
       <Filter>scene\play</Filter>
     </ClCompile>
-    <ClCompile Include="scene\gameover\GameOverScene.cpp" />
-    <ClCompile Include="scene\clear\ClearScene.cpp" />
-    <ClCompile Include="scene\ui\MenuButton.cpp" />
+    <ClCompile Include="scene\ui\MenuButton.cpp">
+      <Filter>scene\ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Waves\EnemyFactory.h">
@@ -237,18 +252,24 @@
     <ClInclude Include="scene\Wave\WaveScene.h">
       <Filter>scene\Wave</Filter>
     </ClInclude>
+    <ClInclude Include="scene\clear\ClearScene.h">
+      <Filter>scene\clear</Filter>
+    </ClInclude>
     <ClInclude Include="scene\debug\ParticleTestScene.h">
       <Filter>scene\debug</Filter>
     </ClInclude>
     <ClInclude Include="scene\debug\TestScene.h">
       <Filter>scene\debug</Filter>
     </ClInclude>
+    <ClInclude Include="scene\gameover\GameOverScene.h">
+      <Filter>scene\gameover</Filter>
+    </ClInclude>
     <ClInclude Include="scene\play\TitleScene.h">
       <Filter>scene\play</Filter>
     </ClInclude>
-    <ClInclude Include="scene\gameover\GameOverScene.h" />
-    <ClInclude Include="scene\clear\ClearScene.h" />
-    <ClInclude Include="scene\ui\MenuButton.h" />
+    <ClInclude Include="scene\ui\MenuButton.h">
+      <Filter>scene\ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">
