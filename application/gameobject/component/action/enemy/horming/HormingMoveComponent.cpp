@@ -4,12 +4,14 @@
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/gameobject/base/GameObject.h"
+#include "application/gameobject/component/action/common/StatusComponent.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
 
+#include <algorithm>
 #include <string>
 
 using namespace GameObjectComponent;
@@ -30,12 +32,21 @@ HormingMoveComponent::HormingMoveComponent(GameObject* target)
 	Register("autoFireInterval", &autoFireInterval_);
 	Register("burstCount", &burstCount_);
 	Register("burstInterval", &burstInterval_);
+
+	Register("deathAnimationDuration", &deathAnimationDuration_);
+	Register("deathPopScale", &deathPopScale_);
 }
 
 void HormingMoveComponent::Update(GameObject* owner)
 {
 	// 発射元、または追尾対象がない場合は処理しない
 	if (!owner || !target_)
+	{
+		return;
+	}
+
+	// HP0後の死亡演出中なら、演出だけ更新して以降の攻撃処理はしない
+	if (UpdateDeathAnimation(owner))
 	{
 		return;
 	}
@@ -125,17 +136,38 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 			CollisionLayer::PlayerReflect);
 
 		// ホーミング弾自身のコールバックでは、この弾の生存状態だけを変更する。
-		collider->SetOnEnter([this, bulletObject, owner](const CollisionInfo& info)
+		collider->SetOnEnter([this, bulletObject](const CollisionInfo& info)
 		{
 			if (!info.otherCollider)
 			{
 				return;
 			}
 
-			// 反射判定に当たったら、撃ってきた敵に向かって弧を描いて跳ね返す
-			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect)
+			// 反射判定に当たったら、ロックオン方向へ跳ね返す
+			if (info.other &&
+				(info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerReflect))
 			{
-				ReflectBullet(bulletObject, owner);
+				// PlayerReflect のコライダーは ReflectHand についているので、
+				// 親をたどってプレイヤー本体を取得する
+				GameObject* player = info.other->GetParent();
+
+				auto reflect = player ? player->GetComponent<PlayerReflectComponent>() : nullptr;
+
+				if (!reflect)
+				{
+					return;
+				}
+
+				// チャージ弾と同じく、ロックオン方向を取得する
+				const Vector3 direction =
+					reflect->GetReflectDirectionFrom(bulletObject->GetPosition());
+
+				// 反射方向から対象を特定し、プレイヤー弾としてホーミングさせる
+				ReflectBullet(bulletObject, direction);
+
+				// 反射成功演出
+				reflect->NotifyReflectSucceeded();
+
 				return;
 			}
 
@@ -150,7 +182,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 			// 反射後に敵へ当たったら弾を消す
 			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::Enemy)
 			{
-				// 反射後の直線移動APIがないため、ホーミング弾は現状ここで消す。
+				// 反射後に敵へ当たったため弾を消す
 				KillBullet(bulletObject);
 				return;
 			}
@@ -165,6 +197,8 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 
 	// 最初はプレイヤーを狙う
 	bullet.target = target_;
+	bullet.useVirtualTarget = false;
+	bullet.virtualTargetPosition = {};
 
 	bullet.lifeTime = bulletLifeTime_;
 	bullet.timer = 0.0f;
@@ -196,14 +230,29 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 
 void HormingMoveComponent::InitializeBulletCurve(HomingBullet& bullet)
 {
-	if (!bullet.object || !bullet.target)
+	if (!bullet.object)
 	{
 		return;
 	}
 
+	if (!bullet.target && !bullet.useVirtualTarget)
+	{
+		return;
+	}
+
+
 	// ベジェ曲線の開始点と終点を決める
 	bullet.startPos = bullet.object->GetPosition();
-	bullet.endPos = bullet.target->GetPosition();
+
+	// 終点を決める
+	if (bullet.useVirtualTarget)
+	{
+		bullet.endPos = bullet.virtualTargetPosition;
+	}
+	else
+	{
+		bullet.endPos = bullet.target->GetPosition();
+	}
 
 	// 開始点からターゲットへの方向
 	Vector3 toTarget = bullet.endPos - bullet.startPos;
@@ -267,7 +316,7 @@ void HormingMoveComponent::UpdateBullets()
 		}
 
 		// この弾が狙う対象がない場合は削除する
-		if (!bullet.target)
+		if (!bullet.target && !bullet.useVirtualTarget)
 		{
 			KillBullet(bullet.object);
 			continue;
@@ -286,10 +335,19 @@ void HormingMoveComponent::UpdateBullets()
 
 		// 現在の弾位置とターゲット位置
 		Vector3 bulletPos = bullet.object->GetPosition();
-		Vector3 targetPos = bullet.target->GetPosition();
+
+		Vector3 targetPos = {};
+		if (bullet.useVirtualTarget)
+		{
+			targetPos = bullet.virtualTargetPosition;
+		}
+		else
+		{
+			targetPos = bullet.target->GetPosition();
+		}
 
 		// まだホーミング中なら、一定距離以内でホーミング解除
-		if (!bullet.isStraight)
+		if (!bullet.isStraight && !bullet.isReflected)
 		{
 			Vector3 toTarget = targetPos - bulletPos;
 			float distance = toTarget.Length();
@@ -330,7 +388,10 @@ void HormingMoveComponent::UpdateBullets()
 		// ホーミング処理
 
 		// 終点をターゲットの現在位置へ少しずつ寄せる
-		bullet.endPos = bullet.endPos + (targetPos - bullet.endPos) * targetFollowRate_;
+		if (!bullet.useVirtualTarget)
+		{
+			bullet.endPos = bullet.endPos + (targetPos - bullet.endPos) * targetFollowRate_;
+		}
 
 		Vector3 toCurrentEnd = bullet.endPos - bullet.startPos;
 
@@ -372,9 +433,11 @@ void HormingMoveComponent::UpdateBullets()
 	}
 }
 
-void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, GameObject* reflectTarget)
+void HormingMoveComponent::ReflectBullet(
+	GameObject* bulletObject,
+	const Vector3& reflectDirection)
 {
-	if (!bulletObject || !reflectTarget)
+	if (!bulletObject)
 	{
 		return;
 	}
@@ -386,44 +449,147 @@ void HormingMoveComponent::ReflectBullet(GameObject* bulletObject, GameObject* r
 			continue;
 		}
 
-		if (bullet.isDead)
+		if (bullet.isDead || bullet.isReflected)
 		{
 			return;
 		}
 
-		// すでに反射済みなら二重反射しない
-		if (bullet.isReflected)
+		Vector3 direction = reflectDirection;
+		direction.y = 0.0f;
+
+		if (direction.LengthSquared() <= 0.000001f)
 		{
 			return;
 		}
+
+		direction.NormalizeSelf();
+
+		// プレイヤーから渡された方向と一致する敵を探す
+		GameObject* reflectTarget =
+			FindReflectTarget(
+				bulletObject->GetPosition(),
+				direction);
 
 		bullet.isReflected = true;
-
-		// 狙い先を「撃ってきた敵」に変更
-		bullet.target = reflectTarget;
-
-		// 反射後はホーミング解除状態もリセット
 		bullet.isStraight = false;
 		bullet.straightDir = {};
 
-		// 反射した瞬間から、もう一度弧を描いて飛ばす
+		if (reflectTarget)
+		{
+			// ロックオン方向と一致する敵が見つかった場合
+			// その敵を実際のホーミング対象にする
+			bullet.target = reflectTarget;
+			bullet.useVirtualTarget = false;
+			bullet.virtualTargetPosition = {};
+		}
+		else
+		{
+			// ロックオン対象を復元できなかった場合は、プレイヤーから渡された方向へ曲線移動する
+			bullet.target = nullptr;
+			bullet.useVirtualTarget = true;
+
+			// 35のような固定値ではなく、
+			// 直進速度×寿命を曲線の到達距離にする
+			const float travelDistance =
+				straightSpeed_ * bulletLifeTime_;
+
+			bullet.virtualTargetPosition =
+				bulletObject->GetPosition() +
+				direction * travelDistance;
+		}
+
+		// 反射地点から、敵が撃った時と同じ曲線を作り直す
 		bullet.timer = 0.0f;
 		bullet.lifeTime = bulletLifeTime_;
 
-		// 反射後はプレイヤー弾として扱う
-		if (auto collider = bullet.object->GetComponent<AABBColliderComponent>())
+		InitializeBulletCurve(bullet);
+
+		if (auto collider =
+				bullet.object->GetComponent<AABBColliderComponent>())
 		{
-			collider->SetCollisionLayer(CollisionLayer::PlayerBullet);
+			collider->SetCollisionLayer(
+				CollisionLayer::PlayerBullet);
+
 			collider->SetCollisionMask(
 				CollisionLayer::Enemy |
 				CollisionLayer::Bumpers);
 		}
 
-		// 現在位置から敵に向かうベジェ曲線を作り直す
-		InitializeBulletCurve(bullet);
+		bullet.object->SetTag(GameObjectTag::PlayerBullet);
 
 		return;
 	}
+}
+
+GameObject* HormingMoveComponent::FindReflectTarget(
+	const Vector3& sourcePosition,
+	const Vector3& reflectDirection) const
+{
+	Vector3 normalizedReflectDirection = reflectDirection;
+	normalizedReflectDirection.y = 0.0f;
+
+	if (normalizedReflectDirection.LengthSquared() <= 0.000001f)
+	{
+		return nullptr;
+	}
+
+	normalizedReflectDirection.NormalizeSelf();
+
+	const auto& gameObjects =
+		GameObjectManager::GetInstance()->GetGameObjects();
+
+	GameObject* bestTarget = nullptr;
+	float bestDot = -1.0f;
+
+	for (GameObject* object : gameObjects)
+	{
+		if (!object)
+		{
+			continue;
+		}
+
+		// 敵本体だけを候補にする
+		if (object->GetTag() != GameObjectTag::Enemy)
+		{
+			continue;
+		}
+
+		if (!object->IsActive() || object->IsPendingDestroy())
+		{
+			continue;
+		}
+
+		Vector3 toEnemy = object->GetPosition() - sourcePosition;
+		toEnemy.y = 0.0f;
+
+		if (toEnemy.LengthSquared() <= 0.000001f)
+		{
+			continue;
+		}
+
+		toEnemy.NormalizeSelf();
+
+		// Vector3のDot関数に依存しないように直接計算
+		const float dot =
+			normalizedReflectDirection.x * toEnemy.x +
+			normalizedReflectDirection.y * toEnemy.y +
+			normalizedReflectDirection.z * toEnemy.z;
+
+		if (dot > bestDot)
+		{
+			bestDot = dot;
+			bestTarget = object;
+		}
+	}
+
+	// 方向が十分一致している敵だけをロックオン対象として採用する
+	// 0.999なら誤差約2.5度以内
+	if (bestDot < 0.999f)
+	{
+		return nullptr;
+	}
+
+	return bestTarget;
 }
 
 void HormingMoveComponent::KillBullet(GameObject* bulletObject)
@@ -445,6 +611,91 @@ void HormingMoveComponent::KillBullet(GameObject* bulletObject)
 			// 以降UpdateBulletsで触らないようにする
 			bullet.object = nullptr;
 			return;
+		}
+	}
+}
+
+bool HormingMoveComponent::UpdateDeathAnimation(GameObject* owner)
+{
+	if (!owner)
+	{
+		return false;
+	}
+
+	// まだ死亡演出に入っていない場合、HPを確認する
+	if (!isDeathAnimation_)
+	{
+		auto status = owner->GetComponent<StatusComponent>();
+		if (!status)
+		{
+			return false;
+		}
+
+		// HPが残っているなら通常処理を続ける
+		if (status->GetHp() > 0)
+		{
+			return false;
+		}
+
+		// HP0なら死亡演出開始
+		StartDeathAnimation(owner);
+	}
+
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	deathAnimationTimer_ += deltaTime;
+
+	float t = deathAnimationTimer_ / deathAnimationDuration_;
+	t = std::clamp(t, 0.0f, 1.0f);
+
+	float scaleRate = 1.0f;
+
+	// 前半で少し大きく、後半で小さくする
+	if (t < 0.3f)
+	{
+		float growT = t / 0.3f;
+		scaleRate = 1.0f + (deathPopScale_ - 1.0f) * growT;
+	}
+	else
+	{
+		float shrinkT = (t - 0.3f) / 0.7f;
+		scaleRate = deathPopScale_ * (1.0f - shrinkT);
+	}
+
+	owner->SetScale(deathBaseScale_ * scaleRate);
+
+	if (t >= 1.0f)
+	{
+		owner->Destroy();
+	}
+
+	return true;
+}
+
+void HormingMoveComponent::StartDeathAnimation(GameObject* owner)
+{
+	if (!owner)
+	{
+		return;
+	}
+
+	isDeathAnimation_ = true;
+	deathAnimationTimer_ = 0.0f;
+	deathBaseScale_ = owner->GetScale();
+
+	// 死亡演出中は敵本体の当たり判定を切る
+	if (auto collider = owner->GetComponent<AABBColliderComponent>())
+	{
+		collider->SetCollisionLayer(CollisionLayer::None);
+		collider->SetCollisionMask(CollisionLayer::None);
+	}
+
+	// すでに撃っているホーミング弾も消したい場合はここで消す
+	for (HomingBullet& bullet : bullets_)
+	{
+		if (bullet.object && !bullet.isDead)
+		{
+			KillBullet(bullet.object);
 		}
 	}
 }
