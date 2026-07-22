@@ -12,6 +12,7 @@
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
+#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
@@ -20,8 +21,6 @@
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/math/MathUtils.h"
 #include "engine/graphics/3d/Object3dCommon.h"
-#include "engine/time/TimeManager.h"
-#include "engine/math/Easing.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
@@ -29,6 +28,8 @@
 #include "scene/manager/SceneManager.h"
 
 #include "engine/scene/factory/SceneFactory.h"
+#include "math/Easing.h"
+#include "time/TimeManager.h"
 REGISTER_SCENE(TestScene);
 
 using namespace GameObjectComponent;
