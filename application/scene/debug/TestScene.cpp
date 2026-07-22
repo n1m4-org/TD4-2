@@ -4,14 +4,14 @@
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/common/UIComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
+#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
-#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
+#include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
-#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
@@ -110,7 +110,7 @@ void TestScene::Initialize()
 			sceneManager_->GetSpriteCommon(),
 			sceneManager_->GetCameraManager()->GetActiveCamera(),
 			Vector3(0.0f, 6.0f, 0.0f) // プレイヤーの頭上少し上
-		));
+			));
 
 	// 円弧の基準位置として、プレイヤーの少し前へ反射判定を配置する。
 	auto reflectHand = std::make_unique<GameObject>(GameObjectTag::Player);
@@ -361,6 +361,8 @@ void TestScene::Initialize()
 	chargeEnemy_->AddComponent("Move", std::make_unique<ChargeMoveComponent>(player_.get()));
 	chargeEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(chargeEnemy_.get()));
 	chargeEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(chargeEnemy_.get()));
+	// 死亡演出コンポーネント
+	chargeEnemy_->AddComponent("DeathDirection", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
 	chargeEnemy_->AddComponent(
 		"UI",
 		std::make_unique<UIComponent>(
@@ -368,7 +370,7 @@ void TestScene::Initialize()
 			sceneManager_->GetSpriteCommon(),
 			sceneManager_->GetCameraManager()->GetActiveCamera(),
 			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
-		));
+			));
 
 	// HPを設定
 	auto status = chargeEnemy_->GetComponent<StatusComponent>();
@@ -420,7 +422,6 @@ void TestScene::Initialize()
 						}
 					}
 				}
-
 			}
 
 			// 弾が当たったらHPを減らす
@@ -440,7 +441,6 @@ void TestScene::Initialize()
 					}
 				}
 			}
-
 		};
 
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
@@ -542,7 +542,7 @@ void TestScene::InitializeBombEnemy()
 			sceneManager_->GetSpriteCommon(),
 			sceneManager_->GetCameraManager()->GetActiveCamera(),
 			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
-		));
+			));
 	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
 	bombEnemy_->AddComponent("ExplosionCollider", std::make_unique<SphereColliderComponent>(bombEnemy_.get()));
 

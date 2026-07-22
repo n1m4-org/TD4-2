@@ -4,6 +4,7 @@
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
+#include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
@@ -33,21 +34,6 @@ void GameObjectComponent::ChargeMoveComponent::Update(GameObject* owner)
 	physics_ = owner->GetComponent<PhysicsComponent>().get();
 	// ステータスコンポーネントを取得
 	status_ = owner->GetComponent<StatusComponent>().get();
-
-	// HPが0以下で死亡アニメーションが開始されていない場合、死亡アニメーションを開始
-	if (status_->GetHp() <= 0 && !isDeadAnimation_)
-	{
-		isDeadAnimation_ = true;
-		deathTimer_ = 0.0f;
-
-		return;
-	}
-	else if (isDeadAnimation_)
-	{
-		// 死亡アニメーションの進行
-		Destroy(owner);
-		return;
-	}
 
 	switch (state_)
 	{
@@ -316,43 +302,6 @@ void GameObjectComponent::ChargeMoveComponent::StrafeMove(GameObject* owner)
 float GameObjectComponent::ChargeMoveComponent::Random(float min, float max)
 {
 	return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
-}
-
-void GameObjectComponent::ChargeMoveComponent::Destroy(GameObject* owner)
-{
-	float dt = TimeManager::GetInstance().GetGameContext().deltaTime;
-
-	deathTimer_ += dt;
-
-	// 一瞬大きく
-	if (deathTimer_ <= kExpandTime)
-	{
-		float t = deathTimer_ / kExpandTime;
-		
-		float eased = EaseOutQuad(t);
-		
-		float scale = MathUtils::Lerp(2.0f, 2.8f, eased);
-
-		owner->SetScale({scale, scale, scale});
-	}
-	else // 徐々に小さく
-	{
-		float t = (deathTimer_ - kExpandTime) / kShrinkTime;
-
-		// 念のため
-		t = std::clamp(t, 0.0f, 1.0f);
-
-		float eased = EaseOutQuad(t);
-
-		float scale = MathUtils::Lerp(2.8f, 0.0f, eased);
-
-		owner->SetScale({scale, scale, scale});
-
-		if (t >= 1.0f)
-		{
-			owner->Destroy();
-		}
-	}
 }
 
 void GameObjectComponent::ChargeMoveComponent::StartShake()
