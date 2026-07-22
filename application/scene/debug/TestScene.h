@@ -33,6 +33,16 @@ private:
 	 */
 	void InitializeBombEnemy();
 
+	// 演出用カメラ
+	void UpdateCamera();
+	void UpdateIntroCamera();
+	void UpdateFollowCamera();
+	void UpdateGameOverCamera();
+
+	// クリア演出
+	void StartClearDirection();
+	void UpdateClearDirection();
+
 	// ディレクショナルライト設定
 	static constexpr Vector3 kLightDirection = { -0.2f, -1.0f, 0.3f };
 	static constexpr float kLightIntensity = 0.6f;
@@ -55,4 +65,48 @@ private:
 	std::unique_ptr<GameObject> bombEnemy_;
 	std::unique_ptr<GameObject> hormingTest_;
 
+	// 演出用
+	enum class CameraState
+	{
+		Intro,
+		Playing,
+		Clear,
+		GameOver,
+	};
+	CameraState cameraState_ = CameraState::Intro;
+	float cameraTimer_ = 0.0f;
+	// 演出時間
+	const float kIntroTime = 2.0f;
+	const float kGameOverTime = 2.5f;
+	// 演出中かどうかのフラグ
+	bool isIntroPlaying_ = true;
+	bool isGameOverPlaying_ = false;
+
+	// --------- クリア演出用 --------- //
+	// クリア演出全体の時間
+	const float kClearDirectionTime = 2.2f;
+
+	// カメラが正面へ移動する時間
+	const float kClearCameraMoveTime = 0.8f;
+
+	// プレイヤーが回転・ジャンプする時間
+	const float kClearPlayerActionTime = 1.2f;
+
+	// カメラの正面距離
+	const float kClearCameraDistance = 30.0f;
+
+	// カメラの高さ
+	const float kClearCameraHeight = 6.0f;
+
+	// ジャンプの最大高さ
+	const float kClearJumpHeight = 5.0f;
+
+	// クリア開始時の状態
+	Vector3 clearStartCameraPosition_ = {};
+	Vector3 clearStartCameraRotation_ = {};
+
+	Vector3 clearPlayerBasePosition_ = {};
+	Vector3 clearPlayerBaseRotation_ = {};
+
+	bool isClearDirectionStarted_ = false;
 };

@@ -120,6 +120,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClCompile Include="scene\ui\MenuButton.cpp" />
     <ClCompile Include="scene\clear\ClearScene.cpp" />
+    <ClCompile Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.cpp" />
@@ -154,6 +155,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClInclude Include="scene\ui\MenuButton.h" />
     <ClInclude Include="scene\clear\ClearScene.h" />
+    <ClInclude Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.h" />
     <ClInclude Include="gameobject\GameObjectTag.h" />
     <ClInclude Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.h" />
     <ClInclude Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.h" />
