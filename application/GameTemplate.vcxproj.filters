@@ -76,6 +76,9 @@
     <Filter Include="scene\ui">
       <UniqueIdentifier>{69E5C875-BCC1-6A96-6277-EDEF3879AD75}</UniqueIdentifier>
     </Filter>
+    <Filter Include="transition">
+      <UniqueIdentifier>{1E305752-7650-F36A-BC8C-FA0131920CDA}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Waves\EnemyFactory.cpp">
@@ -166,6 +169,9 @@
     <ClCompile Include="scene\debug\TestScene.cpp">
       <Filter>scene\debug</Filter>
     </ClCompile>
+    <ClCompile Include="scene\gameover\GameOverScene.cpp">
+      <Filter>scene\gameover</Filter>
+    </ClCompile>
     <ClCompile Include="scene\play\title\TitleScene.cpp">
       <Filter>scene\play\title</Filter>
     </ClCompile>
@@ -177,15 +183,12 @@
     </ClCompile>
     <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
       <Filter>scene\play\title\state</Filter>
-    <ClCompile Include="scene\gameover\GameOverScene.cpp">
-      <Filter>scene\gameover</Filter>
     </ClCompile>
-    <ClCompile Include="scene\play\TitleScene.cpp">
-      <Filter>scene\play</Filter>
-    </ClCompile>
-    <ClCompile Include="transition\SceneTransitionEffect.cpp" />
     <ClCompile Include="scene\ui\MenuButton.cpp">
       <Filter>scene\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="transition\SceneTransitionEffect.cpp">
+      <Filter>transition</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -282,8 +285,6 @@
     <ClInclude Include="scene\gameover\GameOverScene.h">
       <Filter>scene\gameover</Filter>
     </ClInclude>
-    <ClInclude Include="scene\play\TitleScene.h">
-      <Filter>scene\play</Filter>
     <ClInclude Include="scene\play\title\TitleScene.h">
       <Filter>scene\play\title</Filter>
     </ClInclude>
@@ -299,7 +300,9 @@
     <ClInclude Include="scene\ui\MenuButton.h">
       <Filter>scene\ui</Filter>
     </ClInclude>
-    <ClInclude Include="transition\SceneTransitionEffect.h" />
+    <ClInclude Include="transition\SceneTransitionEffect.h">
+      <Filter>transition</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">
