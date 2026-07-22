@@ -1,10 +1,11 @@
 #include "HormingMoveComponent.h"
+#include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 
 #include "application/collision/CollisionLayer.h"
+#include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/gameobject/base/GameObject.h"
-#include "application/gameobject/component/action/common/StatusComponent.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
@@ -32,9 +33,6 @@ HormingMoveComponent::HormingMoveComponent(GameObject* target)
 	Register("autoFireInterval", &autoFireInterval_);
 	Register("burstCount", &burstCount_);
 	Register("burstInterval", &burstInterval_);
-
-	Register("deathAnimationDuration", &deathAnimationDuration_);
-	Register("deathPopScale", &deathPopScale_);
 }
 
 void HormingMoveComponent::Update(GameObject* owner)
@@ -45,9 +43,19 @@ void HormingMoveComponent::Update(GameObject* owner)
 		return;
 	}
 
-	// HP0後の死亡演出中なら、演出だけ更新して以降の攻撃処理はしない
-	if (UpdateDeathAnimation(owner))
+	auto deathEffect =
+		owner->GetComponent<EnemyDeathDirectionComponent>();
+
+	// 死亡演出中は、この敵が発射した弾をすべて消して処理を止める
+	if (deathEffect && deathEffect->IsDying())
 	{
+		KillAllBullets();
+
+		// 発射待ちのバーストも中止する
+		pendingBurstCount_ = 0;
+		currentBurstIndex_ = 0;
+		burstTimer_ = 0.0f;
+
 		return;
 	}
 
@@ -583,7 +591,6 @@ GameObject* HormingMoveComponent::FindReflectTarget(
 	}
 
 	// 方向が十分一致している敵だけをロックオン対象として採用する
-	// 0.999なら誤差約2.5度以内
 	if (bestDot < 0.999f)
 	{
 		return nullptr;
@@ -615,118 +622,37 @@ void HormingMoveComponent::KillBullet(GameObject* bulletObject)
 	}
 }
 
-bool HormingMoveComponent::UpdateDeathAnimation(GameObject* owner)
+void HormingMoveComponent::KillAllBullets()
 {
-	if (!owner)
-	{
-		return false;
-	}
-
-	// まだ死亡演出に入っていない場合、HPを確認する
-	if (!isDeathAnimation_)
-	{
-		auto status = owner->GetComponent<StatusComponent>();
-		if (!status)
-		{
-			return false;
-		}
-
-		// HPが残っているなら通常処理を続ける
-		if (status->GetHp() > 0)
-		{
-			return false;
-		}
-
-		// HP0なら死亡演出開始
-		StartDeathAnimation(owner);
-	}
-
-	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
-
-	deathAnimationTimer_ += deltaTime;
-
-	float t = deathAnimationTimer_ / deathAnimationDuration_;
-	t = std::clamp(t, 0.0f, 1.0f);
-
-	float scaleRate = 1.0f;
-
-	// 前半で少し大きく、後半で小さくする
-	if (t < 0.3f)
-	{
-		float growT = t / 0.3f;
-		scaleRate = 1.0f + (deathPopScale_ - 1.0f) * growT;
-	}
-	else
-	{
-		float shrinkT = (t - 0.3f) / 0.7f;
-		scaleRate = deathPopScale_ * (1.0f - shrinkT);
-	}
-
-	owner->SetScale(deathBaseScale_ * scaleRate);
-
-	if (t >= 1.0f)
-	{
-		owner->Destroy();
-	}
-
-	return true;
-}
-
-void HormingMoveComponent::StartDeathAnimation(GameObject* owner)
-{
-	if (!owner)
-	{
-		return;
-	}
-
-	isDeathAnimation_ = true;
-	deathAnimationTimer_ = 0.0f;
-	deathBaseScale_ = owner->GetScale();
-
-	// 死亡演出中は敵本体の当たり判定を切る
-	if (auto collider = owner->GetComponent<AABBColliderComponent>())
-	{
-		collider->SetCollisionLayer(CollisionLayer::None);
-		collider->SetCollisionMask(CollisionLayer::None);
-	}
-
-	// すでに撃っているホーミング弾も消したい場合はここで消す
 	for (HomingBullet& bullet : bullets_)
 	{
-		if (bullet.object && !bullet.isDead)
+		if (!bullet.object || bullet.isDead)
 		{
-			KillBullet(bullet.object);
+			continue;
 		}
+
+		// KillBullet()はbullets_を再度検索するので、
+		// 削除対象のポインタを一度保存してから呼ぶ
+		GameObject* bulletObject = bullet.object;
+		KillBullet(bulletObject);
 	}
 }
 
-Vector3 HormingMoveComponent::CubicBezier(
-	const Vector3& p0,
-	const Vector3& p1,
-	const Vector3& p2,
-	const Vector3& p3,
-	float t)
+Vector3 HormingMoveComponent::CubicBezier(const Vector3& p0, const Vector3& p1,
+										  const Vector3& p2, const Vector3& p3,
+										  float t)
 {
-	float invT = 1.0f - t;
+	const float invT = 1.0f - t;
 
-	return p0 * (invT * invT * invT) +
-		   p1 * (3.0f * invT * invT * t) +
-		   p2 * (3.0f * invT * t * t) +
-		   p3 * (t * t * t);
+	return p0 * (invT * invT * invT) + p1 * (3.0f * invT * invT * t) +
+		   p2 * (3.0f * invT * t * t) + p3 * (t * t * t);
 }
 
 float HormingMoveComponent::EaseBullet(float t)
 {
-	if (t < 0.0f)
-	{
-		t = 0.0f;
-	}
-	if (t > 1.0f)
-	{
-		t = 1.0f;
-	}
+	t = std::clamp(t, 0.0f, 1.0f);
 
-	// 弾っぽく、発射直後からスッと進む補間
-	float invT = 1.0f - t;
+	// 発射直後に速く進み、終点へ近づくほど緩やかになる
+	const float invT = 1.0f - t;
 	return 1.0f - invT * invT * invT;
 }

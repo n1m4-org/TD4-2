@@ -37,6 +37,7 @@ private:
 	void UpdateCamera();
 	void UpdateIntroCamera();
 	void UpdateFollowCamera();
+	void UpdateGameOverCamera();
 
 	// クリア演出
 	void StartClearDirection();
@@ -70,6 +71,7 @@ private:
 		Intro,
 		Playing,
 		Clear,
+		GameOver,
 	};
 	CameraState cameraState_ = CameraState::Intro;
 	float cameraTimer_ = 0.0f;
