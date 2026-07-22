@@ -538,6 +538,11 @@ void TestScene::Initialize()
 
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
+
+	
+	auto post = sceneManager_->GetPostProcessManager();
+	// 色収差(RGBシフト)を無効化
+	post->crtEffect_->SetChromaticAberrationEnabled(false);
 }
 
 void TestScene::InitializeBombEnemy()
