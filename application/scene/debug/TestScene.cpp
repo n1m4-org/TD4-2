@@ -35,8 +35,6 @@ REGISTER_SCENE(TestScene);
 
 using namespace GameObjectComponent;
 
-REGISTER_SCENE(TestScene);
-
 void TestScene::Initialize()
 {
 	// カメラの設定

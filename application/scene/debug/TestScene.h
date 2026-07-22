@@ -18,8 +18,6 @@ public:
 	void DrawShadow() override;
 	void DrawGBuffer() override;
 
-	void CommonUpdate() override;
-
 #ifdef USE_IMGUI
 	void DrawImGui();
 #endif
