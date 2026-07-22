@@ -87,6 +87,8 @@ private:
 
 	// エフェクトタイマー
 	float effectTimer_ = 0.0f;
+	// RGBシフトの強さ
+	float rgbShiftStrength_ = 15.0f;
 
 	// --------- クリア演出用 --------- //
 	// クリア演出全体の時間

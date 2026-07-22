@@ -820,17 +820,19 @@ void TestScene::GameOverDirection()
 
 	effectTimer_ += TimeManager::GetInstance().GetGameContext().deltaTime;
 
+	// 0.35秒周期で色収差をON/OFFする
 	float interval = 0.35f;
 	float time = fmod(effectTimer_, interval);
 
 	if (time < 0.25f)
 	{
-		post->crtEffect_->SetChromaticAberrationOffset(10.5f);
+		post->crtEffect_->SetChromaticAberrationOffset(rgbShiftStrength_);
 	}
 	else
 	{
 		post->crtEffect_->SetChromaticAberrationOffset(0.0f);
 	}
+
 
 }
 
