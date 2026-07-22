@@ -29,6 +29,9 @@ public:
 	void Start();
 	void Update(float deltaTime, EnemySpawner* spawner);
 
+	// Ready状態に戻し、スポーン済みフラグをクリアする(デバッグ用の再スタートに使用)
+	void Reset();
+
 	bool IsCompleted() const { return state_ == WaveState::Completed; }
 	WaveState GetState() const { return state_; }
 };
