@@ -28,6 +28,8 @@
 #include "scene/manager/SceneManager.h"
 
 #include "engine/scene/factory/SceneFactory.h"
+#include "math/Easing.h"
+#include "time/TimeManager.h"
 REGISTER_SCENE(TestScene);
 
 using namespace GameObjectComponent;
