@@ -14,10 +14,17 @@ void TitleWaitState::OnUpdate(BaseScene& scene)
 void TitleWaitState::CheckTransition(BaseScene& scene)
 {
     auto input = Input::GetInstance();
-    if (input && (input->TriggerKey(DIK_SPACE) || input->TriggerKey(DIK_RETURN)))
-    {
-        scene.ChangeState("Exit");
-    }
+	#ifdef _DEBUG
+	if (input && (input->TriggerKey(DIK_SPACE)))
+	{
+		scene.ChangeState("Exit");
+	}
+	#else
+	if (input && (input->TriggerKey(DIK_SPACE) || input->IsMouseButtonTriggered(1)))
+	{
+		scene.ChangeState("Exit");
+	}
+	#endif
 }
 
 const std::string& TitleWaitState::GetName() const
