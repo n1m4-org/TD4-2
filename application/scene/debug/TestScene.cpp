@@ -513,8 +513,6 @@ void TestScene::Initialize()
 	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
-
-	StartState(SceneState::Playing);
 }
 
 void TestScene::InitializeBombEnemy()
@@ -543,7 +541,7 @@ void TestScene::InitializeBombEnemy()
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 }
 
-void TestScene::Finalize()
+void TestScene::OnFinalize()
 {
 	// 登録されたオブジェクトの登録解除とクリア
 	GameObjectManager::GetInstance()->Finalize();
@@ -565,7 +563,7 @@ void TestScene::Finalize()
 	topDownCamera_.reset();
 }
 
-void TestScene::OnUpdatePlaying()
+void TestScene::CommonUpdate()
 {
 	static bool isDebugCameraActive = false;
 

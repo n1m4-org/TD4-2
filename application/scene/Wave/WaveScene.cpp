@@ -70,11 +70,9 @@ void WaveScene::Initialize()
 #ifdef USE_IMGUI
 	DebugUIManager::GetInstance()->RegisterDebugUI(this, "Wave Scene", [this]() { this->DrawImGui(); }, DebugUIArea::Inspector);
 #endif
-
-	StartState(SceneState::Playing);
 }
 
-void WaveScene::Finalize()
+void WaveScene::OnFinalize()
 {
 	GameObjectManager::GetInstance()->Finalize();
 	CollisionManager::GetInstance()->Finalize();
@@ -109,7 +107,7 @@ void WaveScene::DrawGBuffer()
 	GameObjectManager::GetInstance()->DrawGBuffer(sceneManager_->GetCameraManager());
 }
 
-void WaveScene::OnUpdatePlaying()
+void WaveScene::CommonUpdate()
 {
 	CollisionManager::GetInstance()->UpdatePreviousPositions();
 
