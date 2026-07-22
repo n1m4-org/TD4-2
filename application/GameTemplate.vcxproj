@@ -143,6 +143,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="scene\play\title\state\TitleEnterState.cpp" />
     <ClCompile Include="scene\play\title\state\TitleWaitState.cpp" />
     <ClCompile Include="scene\play\title\state\TitleExitState.cpp" />
+    <ClCompile Include="scene\Wave\WaveScene.cpp" />
+    <ClCompile Include="Waves\EnemyFactory.cpp" />
+    <ClCompile Include="Waves\Wave.cpp" />
+    <ClCompile Include="Waves\WaveSystem.cpp" />
+    <ClCompile Include="Waves\SpawnCommand.cpp" />
+    <ClCompile Include="Waves\WaveData.cpp" />
+    <ClCompile Include="Waves\EnemySpawner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gameobject\GameObjectTag.h" />
@@ -170,6 +177,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="scene\play\title\state\TitleEnterState.h" />
     <ClInclude Include="scene\play\title\state\TitleWaitState.h" />
     <ClInclude Include="scene\play\title\state\TitleExitState.h" />
+    <ClInclude Include="scene\Wave\WaveScene.h" />
+    <ClInclude Include="Waves\EnemyFactory.h" />
+    <ClInclude Include="Waves\Wave.h" />
+    <ClInclude Include="Waves\WaveSystem.h" />
+    <ClInclude Include="Waves\SpawnCommand.h" />
+    <ClInclude Include="Waves\WaveData.h" />
+    <ClInclude Include="Waves\EnemySpawner.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">

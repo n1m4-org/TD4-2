@@ -10,6 +10,7 @@
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
+#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
@@ -17,7 +18,6 @@
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
-#include "externals/imgui/imgui.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
@@ -370,61 +370,151 @@ void TestScene::Initialize()
 			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
 		));
 
+	// HPを設定
+	auto status = chargeEnemy_->GetComponent<StatusComponent>();
+	status->SetHp(5);
+
 	// AABBコライダーの追加
 	chargeEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(chargeEnemy_.get()));
 	if (auto collider = chargeEnemy_->GetComponent<AABBColliderComponent>())
 	{
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
-		collider->SetCollisionMask(CollisionLayer::PlayerBullet | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(
+			CollisionLayer::PlayerBullet |
+			CollisionLayer::Terrain |
+			CollisionLayer::Bumpers);
 
 		auto handleTargetCollision = [this](const CollisionInfo& info)
 		{
 			if (!info.otherCollider)
-				return;
-			if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::Terrain))
-				return;
-			if (!targetObject_)
-				return;
-
-			// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
-			Vector3 pos = chargeEnemy_->GetPosition();
-			pos += info.normal * info.depth;
-			chargeEnemy_->SetPosition(pos);
-
-			// 接地判定と速度リセット
-			auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
-			if (!physics)
-				return;
-
-			if (info.normal.y > 0.0f)
 			{
-				physics->SetGrounded(true);
-				Vector3 vel = physics->GetExternalVelocity();
-				if (vel.y < 0.0f)
+				return;
+			}
+
+			uint32_t layer = info.otherCollider->GetCollisionLayer();
+
+			// Terrain に衝突した場合は押し戻しと接地判定を行う
+			if (layer & CollisionLayer::Terrain)
+			{
+				// 衝突情報（法線とめり込み深さ）から押し戻しベクトルを計算して位置を補正
+				Vector3 pos = chargeEnemy_->GetPosition();
+				pos += info.normal * info.depth;
+				chargeEnemy_->SetPosition(pos);
+
+				// 接地判定と速度リセット
+				auto physics = chargeEnemy_->GetComponent<PhysicsComponent>();
+				if (physics)
 				{
-					vel.y = 0.0f;
-					physics->SetExternalVelocity(vel);
+					if (info.normal.y > 0.0f)
+					{
+						// 接地状態を設定
+						physics->SetGrounded(true);
+
+						Vector3 vel = physics->GetExternalVelocity();
+
+						// 下方向の速度をリセット
+						if (vel.y < 0.0f)
+						{
+							vel.y = 0.0f;
+							physics->SetExternalVelocity(vel);
+						}
+					}
+				}
+
+
+				// 弾が当たったらHPを減らす
+				if (layer & CollisionLayer::PlayerBullet)
+				{
+					auto status = chargeEnemy_->GetComponent<StatusComponent>();
+
+					if (status)
+					{
+						status->SetHp(status->GetHp() - 1);
+
+						// 攻撃を食らったらシェイクする
+						auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
+						if (move && status->GetHp() > 0)
+						{
+							move->StartShake();
+						}
+					}
 				}
 			}
 		};
 
-		// ホーミングテスト用キューブオブジェクトの作成
-		hormingTest_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
-		hormingTest_->SetName("HormingTestCube");
-		hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-		hormingTest_->SetModel("cube");
-		hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
-		hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
-
-		// Hキーで cubeObject_ の位置へスプライン移動する
-		hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
-		{ handleTargetCollision(info); });
+		{
+			handleTargetCollision(info);
+		});
+
 		collider->SetOnStay([handleTargetCollision](const CollisionInfo& info)
-		{ handleTargetCollision(info); });
+		{
+			handleTargetCollision(info);
+		});
+
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
+
 	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
+
+	// ホーミング敵
+	hormingTest_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
+	hormingTest_->SetName("HormingTestCube");
+	hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	hormingTest_->SetModel("cube");
+	hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
+	hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
+
+	// HPを持たせる
+	hormingTest_->AddComponent("Status", std::make_unique<StatusComponent>(hormingTest_.get()));
+	if (auto status = hormingTest_->GetComponent<StatusComponent>())
+	{
+		// 3回当たったら倒れるようにHP3
+		status->SetHp(3);
+	}
+
+	// 当たり判定を付ける
+	hormingTest_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(hormingTest_.get()));
+	if (auto collider = hormingTest_->GetComponent<AABBColliderComponent>())
+	{
+		collider->SetCollisionLayer(CollisionLayer::Enemy);
+
+		// 跳ね返した弾(PlayerBullet)と当たるようにする
+		collider->SetCollisionMask(
+			CollisionLayer::PlayerBullet |
+			CollisionLayer::Terrain |
+			CollisionLayer::Bumpers);
+
+		collider->SetOnEnter([this](const CollisionInfo& info)
+		{
+			if (!info.otherCollider)
+			{
+				return;
+			}
+
+			// 跳ね返した弾に当たった場合
+			if (info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerBullet)
+			{
+				auto status = hormingTest_->GetComponent<StatusComponent>();
+				if (!status)
+				{
+					return;
+				}
+
+				// 1ダメージ
+				status->ApplyDamage(1);
+
+				// 弾の削除は HormingMoveComponent 側の KillBullet に任せる
+				// ここで info.other->Destroy() はしない
+			}
+		});
+
+		collider->SetOnStay([](const CollisionInfo& info) {});
+		collider->SetOnExit([](const CollisionInfo& info) {});
+	}
+
+	// 一定間隔でプレイヤーに向かってホーミング弾を発射する
+	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 }

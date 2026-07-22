@@ -46,7 +46,7 @@ bool BulletBehaviorComponent::Reflect(GameObject* owner, const Vector3& directio
 	normalizedDirection.NormalizeSelf();
 
 	// コールバック内では弾自身の移動・当たり判定・タグだけを切り替える。
-	physics->SetMovementVelocity(normalizedDirection * speed);
+ 	physics->SetMovementVelocity(normalizedDirection * speed);
 	collider->SetCollisionLayer(CollisionLayer::PlayerBullet);
 	collider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Bumpers);
 	owner->SetTag(GameObjectTag::PlayerBullet);

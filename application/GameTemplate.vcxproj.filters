@@ -7,6 +7,9 @@
     <Filter Include="Resources\shaders">
       <UniqueIdentifier>{7017182E-6FB0-BB7B-B84B-996D35E442E5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Waves">
+      <UniqueIdentifier>{A4B44939-AABF-E8DF-39B1-ECF05FA95C0A}</UniqueIdentifier>
+    </Filter>
     <Filter Include="collision">
       <UniqueIdentifier>{CB5E8A23-EC9E-46A8-5837-2247AF29A414}</UniqueIdentifier>
     </Filter>
@@ -49,6 +52,9 @@
     <Filter Include="scene">
       <UniqueIdentifier>{1E7F604B-8641-5ADE-94E1-5FEF8627609B}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scene\Wave">
+      <UniqueIdentifier>{893A30A0-8BA7-EFEA-0B1D-DD0D7B0A0308}</UniqueIdentifier>
+    </Filter>
     <Filter Include="scene\debug">
       <UniqueIdentifier>{043A9A6E-2075-85F6-1633-A6DA8AC323DB}</UniqueIdentifier>
     </Filter>
@@ -63,6 +69,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Waves\EnemyFactory.cpp">
+      <Filter>Waves</Filter>
+    </ClCompile>
+    <ClCompile Include="Waves\EnemySpawner.cpp">
+      <Filter>Waves</Filter>
+    </ClCompile>
+    <ClCompile Include="Waves\SpawnCommand.cpp">
+      <Filter>Waves</Filter>
+    </ClCompile>
+    <ClCompile Include="Waves\Wave.cpp">
+      <Filter>Waves</Filter>
+    </ClCompile>
+    <ClCompile Include="Waves\WaveData.cpp">
+      <Filter>Waves</Filter>
+    </ClCompile>
+    <ClCompile Include="Waves\WaveSystem.cpp">
+      <Filter>Waves</Filter>
+    </ClCompile>
     <ClCompile Include="gameobject\component\action\common\PhysicsComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
@@ -118,6 +142,9 @@
     <ClCompile Include="resources\LoadGameResources.cpp">
       <Filter>resources</Filter>
     </ClCompile>
+    <ClCompile Include="scene\Wave\WaveScene.cpp">
+      <Filter>scene\Wave</Filter>
+    </ClCompile>
     <ClCompile Include="scene\debug\ParticleTestScene.cpp">
       <Filter>scene\debug</Filter>
     </ClCompile>
@@ -138,6 +165,24 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Waves\EnemyFactory.h">
+      <Filter>Waves</Filter>
+    </ClInclude>
+    <ClInclude Include="Waves\EnemySpawner.h">
+      <Filter>Waves</Filter>
+    </ClInclude>
+    <ClInclude Include="Waves\SpawnCommand.h">
+      <Filter>Waves</Filter>
+    </ClInclude>
+    <ClInclude Include="Waves\Wave.h">
+      <Filter>Waves</Filter>
+    </ClInclude>
+    <ClInclude Include="Waves\WaveData.h">
+      <Filter>Waves</Filter>
+    </ClInclude>
+    <ClInclude Include="Waves\WaveSystem.h">
+      <Filter>Waves</Filter>
+    </ClInclude>
     <ClInclude Include="collision\CollisionLayer.h">
       <Filter>collision</Filter>
     </ClInclude>
@@ -194,6 +239,9 @@
     </ClInclude>
     <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h">
       <Filter>gameobject\component\action\player</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\Wave\WaveScene.h">
+      <Filter>scene\Wave</Filter>
     </ClInclude>
     <ClInclude Include="scene\debug\ParticleTestScene.h">
       <Filter>scene\debug</Filter>
