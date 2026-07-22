@@ -18,8 +18,10 @@
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
-#include "engine/math/MathUtils.h"
 #include "engine/graphics/3d/Object3dCommon.h"
+#include "engine/math/Easing.h"
+#include "engine/math/MathUtils.h"
+#include "engine/time/TimeManager.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
@@ -209,16 +211,14 @@ void TestScene::Initialize()
 				if (status)
 				{
 					status->SetHp(status->GetHp() - 10);
-				
-				  if (status->GetHp() <= 0)
+
+					if (status->GetHp() <= 0)
 					{
 						cameraState_ = CameraState::GameOver;
 						cameraTimer_ = 0.0f;
 					}
 				}
 			}
-
-
 		});
 		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
 		{
@@ -226,8 +226,6 @@ void TestScene::Initialize()
 			handleCubeCollision(info);
 		});
 		collider->SetOnExit([](const CollisionInfo& info) {});
-
-
 	}
 
 	// こいつに追従カメラを追従させる
@@ -364,7 +362,6 @@ void TestScene::Initialize()
 
 	// ボムエネミーの生成
 	InitializeBombEnemy();
-
 
 	// チャージ敵
 	chargeEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
@@ -536,6 +533,9 @@ void TestScene::Initialize()
 	// 死亡演出をつける
 	hormingTest_->AddComponent("DeathEffect", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
 
+	// ポーズメニュー
+	pauseMenu_ = std::make_unique<PauseMenu>();
+	pauseMenu_->Initialize(sceneManager_->GetSpriteCommon());
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 
@@ -785,7 +785,6 @@ void TestScene::UpdateClearDirection()
 void TestScene::UpdateFollowCamera()
 {
 	topDownCamera_->Update();
-
 }
 
 
@@ -794,7 +793,7 @@ void TestScene::UpdateGameOverCamera()
 	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
 
 	cameraTimer_ += deltaTime;
-	
+
 	float t = cameraTimer_ / kGameOverTime;
 	t = std::clamp(t, 0.0f, 1.0f);
 
@@ -868,6 +867,39 @@ void TestScene::CommonUpdate()
 {
 	static bool isDebugCameraActive = false;
 
+	// ESCでポーズメニューの切り替え
+	if (pauseMenu_)
+	{
+		const PauseMenu::Result pauseResult =
+			pauseMenu_->Update();
+
+		// 中央ボタン：現在のシーンを最初からやり直す
+		if (pauseResult == PauseMenu::Result::Restart)
+		{
+			// ポーズ状態を次のシーンへ残さない
+			TimeManager::GetInstance().Resume();
+
+			sceneManager_->ChangeScene("Test");
+			return;
+		}
+
+		// 右ボタン：タイトルへ戻る
+		if (pauseResult == PauseMenu::Result::GoToTitle)
+		{
+			// ポーズ状態を次のシーンへ残さない
+			TimeManager::GetInstance().Resume();
+
+			sceneManager_->ChangeScene("Title");
+			return;
+		}
+	}
+
+	// ポーズ中は通常のゲーム更新を止める
+	if (pauseMenu_ && pauseMenu_->IsPaused())
+	{
+		return;
+	}
+
 	if (Input::GetInstance()->TriggerKey(DIK_F7))
 	{
 		isDebugCameraActive = !isDebugCameraActive;
@@ -915,6 +947,12 @@ void TestScene::Draw2D()
 {
 	// ゲームオブジェクトの2D描画
 	GameObjectManager::GetInstance()->Draw2D();
+
+	// 最後にポーズ背景を描画
+	if (pauseMenu_)
+	{
+		pauseMenu_->Draw();
+	}
 }
 
 #ifdef USE_IMGUI

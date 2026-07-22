@@ -118,6 +118,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="scene\ui\PauseMenu.cpp" />
     <ClCompile Include="scene\ui\MenuButton.cpp" />
     <ClCompile Include="scene\clear\ClearScene.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.cpp" />
@@ -157,6 +158,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Waves\EnemySpawner.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="scene\ui\PauseMenu.h" />
     <ClInclude Include="scene\ui\MenuButton.h" />
     <ClInclude Include="scene\clear\ClearScene.h" />
     <ClInclude Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.h" />

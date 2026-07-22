@@ -187,6 +187,9 @@
     <ClCompile Include="scene\ui\MenuButton.cpp">
       <Filter>scene\ui</Filter>
     </ClCompile>
+    <ClCompile Include="scene\ui\PauseMenu.cpp">
+      <Filter>scene\ui</Filter>
+    </ClCompile>
     <ClCompile Include="transition\SceneTransitionEffect.cpp">
       <Filter>transition</Filter>
     </ClCompile>
@@ -298,6 +301,9 @@
       <Filter>scene\play\title\state</Filter>
     </ClInclude>
     <ClInclude Include="scene\ui\MenuButton.h">
+      <Filter>scene\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\ui\PauseMenu.h">
       <Filter>scene\ui</Filter>
     </ClInclude>
     <ClInclude Include="transition\SceneTransitionEffect.h">
