@@ -48,8 +48,6 @@ namespace
 	constexpr Vector3 kReflectHandLocalScale = {1.5f, 0.35f, 0.35f};
 }
 
-REGISTER_SCENE(WaveScene);
-
 void WaveScene::Initialize()
 {
 	GameObjectManager::GetInstance()->Initialize();
@@ -327,25 +325,6 @@ void WaveScene::CommonUpdate()
 		return;
 	}
 
-	    // プレイヤーが死亡していたらゲームオーバーへ遷移
-	if (auto* player = GameObjectManager::GetInstance()->FindWithTag(GameObjectTag::Player))
-	{
-		auto status = player->GetComponent<GameObjectComponent::StatusComponent>();
-		if (status && !status->IsAlive())
-		{
-			sceneManager_->ChangeScene("GameOverScene");
-			return; 
-		}
-	}
-
-	// 全ウェーブ撃破でゲームクリアへ遷移
-	if (waveSystem_ && waveSystem_->HasStarted() && waveSystem_->IsCompleted())
-	{
-		sceneManager_->ChangeScene("ClearScene");
-	}
-
-	
-}
 
 	// 全Wave完了 かつ 敵を全滅させた場合を疑似的なゲームクリアとして扱う。
 	// クリア/ゲームオーバー専用シーンが未実装のため、暫定でWaveScene自身に遷移してインスタンスをリセットする。
