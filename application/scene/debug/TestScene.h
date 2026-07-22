@@ -37,6 +37,7 @@ private:
 	void UpdateCamera();
 	void UpdateIntroCamera();
 	void UpdateFollowCamera();
+	void UpdateGameOverCamera();
 
 
 	// ディレクショナルライト設定
@@ -66,6 +67,7 @@ private:
 	{
 		Intro,
 		Playing,
+		GameOver,
 	};
 	CameraState cameraState_ = CameraState::Intro;
 	float cameraTimer_ = 0.0f;
