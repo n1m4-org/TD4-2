@@ -118,6 +118,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.cpp" />
@@ -149,6 +150,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Waves\EnemySpawner.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.h" />
     <ClInclude Include="gameobject\GameObjectTag.h" />
     <ClInclude Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.h" />
     <ClInclude Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.h" />
