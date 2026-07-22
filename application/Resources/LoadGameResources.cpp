@@ -33,6 +33,9 @@ void MyGame::LoadTextures()
 	// ===================
 	// ゲーム固有のリソース
 	// ===================
+
+	TextureManager::GetInstance()->LoadTexture("title/logo.png");
+	TextureManager::GetInstance()->LoadTexture("title/start.png");
 }
 
 void MyGame::LoadModels()

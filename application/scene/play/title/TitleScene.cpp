@@ -51,6 +51,20 @@ void TitleScene::Initialize()
 
     // 初期ステートを登場演出（Enter）に設定
     ChangeState("Enter");
+
+	SpriteCommon* spCommon = sceneManager_->GetSpriteCommon();
+
+	// タイトルロゴのスプライトを作成
+	titleLogo_ = std::make_unique<Sprite>();
+	titleLogo_->Initialize(spCommon, "title/logo.png");
+	titleLogo_->SetAnchorPoint({ 0.5f, 0.5f });
+	titleLogo_->SetPosition({960.0f, 200.0f}); // 画面中央上に配置
+
+	// スタートテキストのスプライト作成
+	startText_ = std::make_unique<Sprite>();
+	startText_->Initialize(spCommon, "title/start.png");
+	startText_->SetAnchorPoint({ 0.5f, 0.5f });
+	startText_->SetPosition({960.0f, 850.0f}); // 画面中央下に配置
 }
 
 void TitleScene::OnFinalize()
@@ -62,6 +76,12 @@ void TitleScene::OnFinalize()
 #endif
 }
 
+void TitleScene::CommonUpdate()
+{
+	titleLogo_->Update();
+	startText_->Update();
+}
+
 void TitleScene::Draw3D()
 {
 
@@ -69,6 +89,8 @@ void TitleScene::Draw3D()
 
 void TitleScene::Draw2D()
 {
+	titleLogo_->Draw();
+	startText_->Draw();
 }
 
 void TitleScene::DrawImGui()

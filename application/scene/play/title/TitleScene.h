@@ -3,7 +3,7 @@
 
 // scene
 #include "engine/scene/interface/BaseScene.h"
-#include "graphics/2d/FontSprite.h"
+#include "graphics/2d/Sprite.h"
 
 /**
  * @brief タイトルシーン。
@@ -41,10 +41,13 @@ public:
 
 protected:
     void OnFinalize() override;
+	void CommonUpdate() override;
 
 private:
-	std::unique_ptr<FontSprite> titleLogo_;
-
+	// タイトルロゴ
+	std::unique_ptr<Sprite> titleLogo_;
+	// スタートテキスト
+	std::unique_ptr<Sprite> startText_;
 };
 
 
