@@ -12,7 +12,6 @@
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
-#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
@@ -26,6 +25,8 @@
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
+#include "engine/manager/effect/PostProcessManager.h"
+#include "engine/effects/postprocess/CRTEffect.h"
 #include "engine/scene/factory/SceneFactory.h"
 
 #include "engine/scene/factory/SceneFactory.h"
@@ -537,6 +538,11 @@ void TestScene::Initialize()
 
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
+
+	
+	auto post = sceneManager_->GetPostProcessManager();
+	// 色収差(RGBシフト)を無効化
+	post->crtEffect_->SetChromaticAberrationEnabled(false);
 }
 
 void TestScene::InitializeBombEnemy()
@@ -582,6 +588,7 @@ void TestScene::UpdateCamera()
 
 	case CameraState::GameOver:
 		UpdateGameOverCamera();
+		GameOverDirection();
 		break;
 	}
 }
@@ -805,6 +812,35 @@ void TestScene::UpdateGameOverCamera()
 	Vector3 endRot = {0.8f, 0, 0};
 
 	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
+}
+
+void TestScene::GameOverDirection()
+{
+	auto post = sceneManager_->GetPostProcessManager();
+
+	// エフェクト自体を有効化
+	post->crtEffect_->SetEnabled(true);
+	// CRTエフェクト自体を有効化
+	post->crtEffect_->SetCrtEnabled(true);
+	// 色収差(RGBシフト)を有効化
+	post->crtEffect_->SetChromaticAberrationEnabled(true);
+
+	effectTimer_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	// 0.35秒周期で色収差をON/OFFする
+	float interval = 0.35f;
+	float time = fmod(effectTimer_, interval);
+
+	if (time < 0.25f)
+	{
+		post->crtEffect_->SetChromaticAberrationOffset(rgbShiftStrength_);
+	}
+	else
+	{
+		post->crtEffect_->SetChromaticAberrationOffset(0.0f);
+	}
+
+
 }
 
 void TestScene::OnFinalize()

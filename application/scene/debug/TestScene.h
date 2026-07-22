@@ -38,6 +38,9 @@ private:
 	void UpdateFollowCamera();
 	void UpdateGameOverCamera();
 
+	// ゲームオーバー演出
+	void GameOverDirection();
+
 	// クリア演出
 	void StartClearDirection();
 	void UpdateClearDirection();
@@ -80,6 +83,11 @@ private:
 	// 演出中かどうかのフラグ
 	bool isIntroPlaying_ = true;
 	bool isGameOverPlaying_ = false;
+
+	// エフェクトタイマー
+	float effectTimer_ = 0.0f;
+	// RGBシフトの強さ
+	float rgbShiftStrength_ = 15.0f;
 
 	// --------- クリア演出用 --------- //
 	// クリア演出全体の時間
