@@ -23,6 +23,10 @@
 #include "scene/factory/SceneFactory.h"
 #include "scene/manager/SceneManager.h"
 #include "time/TimeManager.h"
+#include "application/gameobject/GameObjectTag.h"
+#include "application/gameobject/component/action/common/StatusComponent.h"
+#include "engine/scene/factory/SceneFactory.h"
+
 
 #include <algorithm>
 
@@ -43,6 +47,8 @@ namespace
 	constexpr Vector3 kReflectHandLocalPosition = {0.0f, 0.0f, 1.25f};
 	constexpr Vector3 kReflectHandLocalScale = {1.5f, 0.35f, 0.35f};
 }
+
+REGISTER_SCENE(WaveScene);
 
 void WaveScene::Initialize()
 {
