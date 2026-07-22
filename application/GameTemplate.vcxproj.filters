@@ -62,10 +62,10 @@
       <UniqueIdentifier>{70549714-C486-8BD1-27AB-5E9361D090E7}</UniqueIdentifier>
     </Filter>
     <Filter Include="scene\play\title">
-      <UniqueIdentifier>{B12C4567-89AB-4CDE-9F01-23456789ABCD}</UniqueIdentifier>
+      <UniqueIdentifier>{049E5710-6DAA-B6AB-07A8-40C40F20C526}</UniqueIdentifier>
     </Filter>
     <Filter Include="scene\play\title\state">
-      <UniqueIdentifier>{C23D5678-9ABC-4DEF-A123-456789ABCDEF}</UniqueIdentifier>
+      <UniqueIdentifier>{59A26E78-117C-D4D7-621C-6511A4C9C91B}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -157,10 +157,10 @@
     <ClCompile Include="scene\play\title\state\TitleEnterState.cpp">
       <Filter>scene\play\title\state</Filter>
     </ClCompile>
-    <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
+    <ClCompile Include="scene\play\title\state\TitleExitState.cpp">
       <Filter>scene\play\title\state</Filter>
     </ClCompile>
-    <ClCompile Include="scene\play\title\state\TitleExitState.cpp">
+    <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
       <Filter>scene\play\title\state</Filter>
     </ClCompile>
   </ItemGroup>
@@ -255,10 +255,10 @@
     <ClInclude Include="scene\play\title\state\TitleEnterState.h">
       <Filter>scene\play\title\state</Filter>
     </ClInclude>
-    <ClInclude Include="scene\play\title\state\TitleWaitState.h">
+    <ClInclude Include="scene\play\title\state\TitleExitState.h">
       <Filter>scene\play\title\state</Filter>
     </ClInclude>
-    <ClInclude Include="scene\play\title\state\TitleExitState.h">
+    <ClInclude Include="scene\play\title\state\TitleWaitState.h">
       <Filter>scene\play\title\state</Filter>
     </ClInclude>
   </ItemGroup>
