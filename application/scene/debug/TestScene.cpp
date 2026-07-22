@@ -349,7 +349,7 @@ void TestScene::Initialize()
 	chargeEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
 	chargeEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	chargeEnemy_->SetName("ChargeEnemy");
-	chargeEnemy_->SetModel("cube");
+	chargeEnemy_->SetModel("chargeEnemy");
 	chargeEnemy_->SetScale({2.0f, 2.0f, 2.0f});
 	chargeEnemy_->SetPosition({-5.0f, 2.0f, -30.0f});
 
@@ -417,25 +417,26 @@ void TestScene::Initialize()
 					}
 				}
 
+			}
 
-				// 弾が当たったらHPを減らす
-				if (layer & CollisionLayer::PlayerBullet)
+			// 弾が当たったらHPを減らす
+			if (layer & CollisionLayer::PlayerBullet)
+			{
+				auto status = chargeEnemy_->GetComponent<StatusComponent>();
+
+				if (status)
 				{
-					auto status = chargeEnemy_->GetComponent<StatusComponent>();
+					status->SetHp(status->GetHp() - 1);
 
-					if (status)
+					// 攻撃を食らったらシェイクする
+					auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
+					if (move && status->GetHp() > 0)
 					{
-						status->SetHp(status->GetHp() - 1);
-
-						// 攻撃を食らったらシェイクする
-						auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
-						if (move && status->GetHp() > 0)
-						{
-							move->StartShake();
-						}
+						move->StartShake();
 					}
 				}
 			}
+
 		};
 
 		collider->SetOnEnter([handleTargetCollision](const CollisionInfo& info)
