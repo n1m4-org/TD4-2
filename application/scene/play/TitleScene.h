@@ -17,10 +17,8 @@ public:
      */
     void Initialize() override;
     
-    /**
-     * @brief 終了処理。
-     */
-    void Finalize() override;
+protected:
+    void OnFinalize() override;
     
     /**
      * @brief 3D描画。

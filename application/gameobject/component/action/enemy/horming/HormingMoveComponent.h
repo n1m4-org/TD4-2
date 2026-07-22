@@ -32,6 +32,12 @@ namespace GameObjectComponent
 			// この弾が現在狙っている対象
 			GameObject* target = nullptr;
 
+			// GameObjectではなく、指定座標へ飛ばすかどうか
+			bool useVirtualTarget = false;
+
+			// ロックオン対象がない時に飛ばす仮の目的地
+			Vector3 virtualTargetPosition = {};
+
 			Vector3 startPos = {};	  // ベジェ曲線の開始位置
 			Vector3 controlPos1 = {}; // ベジェ曲線の制御点1
 			Vector3 controlPos2 = {}; // ベジェ曲線の制御点2
@@ -70,17 +76,19 @@ namespace GameObjectComponent
 		// 一定間隔での自動発射処理
 		void UpdateAutoFire(GameObject* owner);
 
-		// HPが0になったか確認し、死亡演出を開始・更新する
-		bool UpdateDeathAnimation(GameObject* owner);
-
-		// 死亡演出を開始する
-		void StartDeathAnimation(GameObject* owner);
-
 		// 指定した弾を削除する
 		void KillBullet(GameObject* bulletObject);
 
-		// 反射時に、PlayerReflectComponentから受け取ったロックオン方向へ直進させる
+		// この敵が発射した弾をすべて削除する
+		void KillAllBullets();
+
+		// 反射方向と一致する敵を探し、その敵へホーミングさせる
 		void ReflectBullet(GameObject* bulletObject, const Vector3& reflectDirection);
+
+		// 反射方向と最も一致する敵を取得する
+		GameObject* FindReflectTarget(
+			const Vector3& sourcePosition,
+			const Vector3& reflectDirection) const;
 
 		// 弾のベジェ曲線用の初期情報を作成する
 		void InitializeBulletCurve(HomingBullet& bullet);
@@ -147,20 +155,5 @@ namespace GameObjectComponent
 
 		// 今のバースト内で何発目か
 		int32_t currentBurstIndex_ = 0;
-
-		// 死亡演出中かどうか
-		bool isDeathAnimation_ = false;
-
-		// 死亡演出の経過時間
-		float deathAnimationTimer_ = 0.0f;
-
-		// 死亡演出の長さ
-		float deathAnimationDuration_ = 0.35f;
-
-		// 死亡演出開始時のスケール
-		Vector3 deathBaseScale_ = {1.0f, 1.0f, 1.0f};
-
-		// 一瞬大きくなる倍率
-		float deathPopScale_ = 1.25f;
 	};
 } // namespace GameObjectComponent

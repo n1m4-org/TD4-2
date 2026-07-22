@@ -301,7 +301,7 @@ void WaveScene::DrawImGui()
 		for (auto* enemy : GameObjectManager::GetInstance()->FindAllWithTag("Enemy"))
 		{
 			enemy->Destroy();
-		}
+			}
 		waveSystem_->Restart();
 	}
 
