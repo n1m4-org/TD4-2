@@ -144,6 +144,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="scene\play\title\state\TitleWaitState.cpp" />
     <ClCompile Include="scene\play\title\state\TitleExitState.cpp" />
     <ClCompile Include="scene\Wave\WaveScene.cpp" />
+    <ClCompile Include="transition\SceneTransitionEffect.cpp" />
     <ClCompile Include="Waves\EnemyFactory.cpp" />
     <ClCompile Include="Waves\Wave.cpp" />
     <ClCompile Include="Waves\WaveSystem.cpp" />
@@ -178,6 +179,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="scene\play\title\state\TitleWaitState.h" />
     <ClInclude Include="scene\play\title\state\TitleExitState.h" />
     <ClInclude Include="scene\Wave\WaveScene.h" />
+    <ClInclude Include="transition\SceneTransitionEffect.h" />
     <ClInclude Include="Waves\EnemyFactory.h" />
     <ClInclude Include="Waves\Wave.h" />
     <ClInclude Include="Waves\WaveSystem.h" />

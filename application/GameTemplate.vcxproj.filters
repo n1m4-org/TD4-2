@@ -163,6 +163,7 @@
     <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
       <Filter>scene\play\title\state</Filter>
     </ClCompile>
+    <ClCompile Include="transition\SceneTransitionEffect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Waves\EnemyFactory.h">
@@ -261,6 +262,7 @@
     <ClInclude Include="scene\play\title\state\TitleWaitState.h">
       <Filter>scene\play\title\state</Filter>
     </ClInclude>
+    <ClInclude Include="transition\SceneTransitionEffect.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">

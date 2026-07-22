@@ -38,6 +38,4 @@ public:
     const std::string& GetName() const override;
 
 private:
-    // 演出タイマー（秒）
-    float timer_ = 0.0f;
 };

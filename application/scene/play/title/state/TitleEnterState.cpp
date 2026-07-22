@@ -1,33 +1,38 @@
 #include "TitleEnterState.h"
+#include "application/scene/play/title/TitleScene.h"
 #include "engine/scene/interface/BaseScene.h"
-#include "engine/time/TimeManager.h"
+#include "math/VectorColorCodes.h"
 
 namespace
 {
-    constexpr float kEnterDuration = 1.0f; // 登場演出所要秒数
+	constexpr float kEnterDuration = 1.0f; // 登場演出所要秒数
 }
 
 void TitleEnterState::OnEnter(BaseScene& scene)
 {
-    timer_ = 0.0f;
+	auto title = static_cast<TitleScene*>(&scene);
+	title->GetTransitionEffect().SetFadeType(FadeType::FadeOut);
+	title->GetTransitionEffect().SetEaseType(SceneTransitionEase::OutSine);
+	title->GetTransitionEffect().Start(2.0f, VectorColorCodes::Black, VectorColorCodes::White);
 }
 
 void TitleEnterState::OnUpdate(BaseScene& scene)
 {
-    float dt = TimeManager::GetInstance().GetGameContext().deltaTime;
-    timer_ += dt;
 }
 
 void TitleEnterState::CheckTransition(BaseScene& scene)
 {
-    if (timer_ >= kEnterDuration)
-    {
-        scene.ChangeState("Wait");
-    }
+	if (auto title = static_cast<TitleScene*>(&scene))
+	{
+		if (title->GetTransitionEffect().GetState() == TransitionState::Done)
+		{
+			scene.ChangeState("Wait");
+		}
+	}
 }
 
 const std::string& TitleEnterState::GetName() const
 {
-    static const std::string name = "Enter";
-    return name;
+	static const std::string name = "Enter";
+	return name;
 }

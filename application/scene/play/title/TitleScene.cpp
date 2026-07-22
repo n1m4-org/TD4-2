@@ -44,14 +44,6 @@ void TitleScene::Initialize()
     DebugUIManager::GetInstance()->RegisterDebugUI(this, "Title Scene", [this]() { this->DrawImGui(); }, DebugUIArea::Hierarchy);
 #endif
 
-    // 各ステートの登録
-    RegisterState("Enter", std::make_unique<TitleEnterState>());
-    RegisterState("Wait", std::make_unique<TitleWaitState>());
-    RegisterState("Exit", std::make_unique<TitleExitState>());
-
-    // 初期ステートを登場演出（Enter）に設定
-    ChangeState("Enter");
-
 	SpriteCommon* spCommon = sceneManager_->GetSpriteCommon();
 
 	// タイトルロゴのスプライトを作成
@@ -65,6 +57,17 @@ void TitleScene::Initialize()
 	startText_->Initialize(spCommon, "title/start.png");
 	startText_->SetAnchorPoint({ 0.5f, 0.5f });
 	startText_->SetPosition({960.0f, 850.0f}); // 画面中央下に配置
+
+	// シーン遷移演出の初期化
+	transitionEffect_.Initialize(spCommon, "./Resources/white1x1.png", 30, 30, WinApp::kClientWidth, WinApp::kClientHeight);
+
+	// 各ステートの登録
+	RegisterState("Enter", std::make_unique<TitleEnterState>());
+	RegisterState("Wait", std::make_unique<TitleWaitState>());
+	RegisterState("Exit", std::make_unique<TitleExitState>());
+
+	// 初期ステートを登場演出（Enter）に設定
+	ChangeState("Enter");
 }
 
 void TitleScene::OnFinalize()
@@ -80,6 +83,7 @@ void TitleScene::CommonUpdate()
 {
 	titleLogo_->Update();
 	startText_->Update();
+	transitionEffect_.Update();
 }
 
 void TitleScene::Draw3D()
@@ -91,6 +95,7 @@ void TitleScene::Draw2D()
 {
 	titleLogo_->Draw();
 	startText_->Draw();
+	transitionEffect_.Draw();
 }
 
 void TitleScene::DrawImGui()

@@ -2,6 +2,9 @@
 #include "application/scene/play/title/TitleScene.h"
 #include "engine/scene/manager/SceneManager.h"
 #include "engine/time/TimeManager.h"
+#include "engine/time/TimerManager.h"
+#include "engine/time/Timer.h"
+#include "math/VectorColorCodes.h"
 
 namespace
 {
@@ -10,7 +13,10 @@ namespace
 
 void TitleExitState::OnEnter(BaseScene& scene)
 {
-    timer_ = 0.0f;
+	auto title = static_cast<TitleScene*>(&scene);
+	title->GetTransitionEffect().SetFadeType(FadeType::FadeIn);
+	title->GetTransitionEffect().SetEaseType(SceneTransitionEase::OutSine);
+	title->GetTransitionEffect().Start(1.0f, VectorColorCodes::Black, VectorColorCodes::White);
 }
 
 void TitleExitState::OnUpdate(BaseScene& scene)
@@ -21,14 +27,18 @@ void TitleExitState::OnUpdate(BaseScene& scene)
 
 void TitleExitState::CheckTransition(BaseScene& scene)
 {
-    if (timer_ >= kExitDuration)
-    {
-        auto& titleScene = static_cast<TitleScene&>(scene);
-        if (auto mgr = titleScene.GetSceneManager())
-        {
-            mgr->ChangeScene("Test");
-        }
-    }
+	if (auto title = static_cast<TitleScene*>(&scene))
+	{
+		if (title->GetTransitionEffect().GetState() == TransitionState::Done)
+		{
+			auto timer = std::make_unique<Timer>("wait_change_scene", 0.3f, DeltaTimeType::DeltaTime);
+			timer->SetOnFinish([title]()
+			{
+				title->GetSceneManager()->ChangeScene("Test");
+			});
+			TimerManager::GetInstance().AddTimer(std::move(timer));
+		}
+	}
 }
 
 const std::string& TitleExitState::GetName() const

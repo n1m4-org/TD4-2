@@ -4,7 +4,7 @@
 // scene
 #include "engine/scene/interface/BaseScene.h"
 #include "graphics/2d/Sprite.h"
-
+#include "transition/SceneTransitionEffect.h"
 /**
  * @brief タイトルシーン。
  * 
@@ -39,6 +39,10 @@ public:
      */
     SceneManager* GetSceneManager() const { return sceneManager_; }
 
+public: // ステートクラスへのアクセッサ
+	// シーントランジションの取得
+	SceneTransitionEffect& GetTransitionEffect() { return transitionEffect_; }
+
 protected:
     void OnFinalize() override;
 	void CommonUpdate() override;
@@ -48,6 +52,9 @@ private:
 	std::unique_ptr<Sprite> titleLogo_;
 	// スタートテキスト
 	std::unique_ptr<Sprite> startText_;
+	
+	// シーン遷移時にフェード演出
+	SceneTransitionEffect transitionEffect_;
 };
 
 
