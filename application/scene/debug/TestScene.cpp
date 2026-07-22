@@ -207,7 +207,7 @@ void TestScene::Initialize()
 				{
 					status->SetHp(status->GetHp() - 10);
 				
-				    if (status->GetHp() <= 0)
+				  if (status->GetHp() <= 0)
 					{
 						cameraState_ = CameraState::GameOver;
 						cameraTimer_ = 0.0f;
@@ -571,6 +571,7 @@ void TestScene::UpdateCamera()
 	case CameraState::Playing:
 		UpdateFollowCamera();
 		break;
+
 	case CameraState::GameOver:
 		UpdateGameOverCamera();
 		break;
@@ -617,6 +618,7 @@ void TestScene::UpdateFollowCamera()
 	topDownCamera_->Update();
 
 }
+
 
 void TestScene::UpdateGameOverCamera()
 {
