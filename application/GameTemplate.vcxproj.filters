@@ -148,6 +148,9 @@
     <ClCompile Include="scene\play\TitleScene.cpp">
       <Filter>scene\play</Filter>
     </ClCompile>
+    <ClCompile Include="scene\gameover\GameOverScene.cpp" />
+    <ClCompile Include="scene\clear\ClearScene.cpp" />
+    <ClCompile Include="scene\ui\MenuButton.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Waves\EnemyFactory.h">
@@ -237,6 +240,9 @@
     <ClInclude Include="scene\play\TitleScene.h">
       <Filter>scene\play</Filter>
     </ClInclude>
+    <ClInclude Include="scene\gameover\GameOverScene.h" />
+    <ClInclude Include="scene\clear\ClearScene.h" />
+    <ClInclude Include="scene\ui\MenuButton.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">

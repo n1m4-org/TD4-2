@@ -10,11 +10,17 @@
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
 #include "time/TimeManager.h"
+#include "application/gameobject/GameObjectTag.h"
+#include "application/gameobject/component/action/common/StatusComponent.h"
+#include "engine/scene/factory/SceneFactory.h"
+
 
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
 #include "manager/editor/DebugUIManager.h"
 #endif
+
+
 
 namespace
 {
@@ -22,6 +28,8 @@ namespace
 	constexpr Vector3 kLightDirection = {-0.2f, -1.0f, 0.3f};
 	constexpr float kLightIntensity = 0.6f;
 }
+
+REGISTER_SCENE(WaveScene);
 
 void WaveScene::Initialize()
 {
@@ -115,6 +123,25 @@ void WaveScene::CommonUpdate()
 
 	GameObjectManager::GetInstance()->Update();
 	CollisionManager::GetInstance()->CheckCollisions();
+
+	    // プレイヤーが死亡していたらゲームオーバーへ遷移
+	if (auto* player = GameObjectManager::GetInstance()->FindWithTag(GameObjectTag::Player))
+	{
+		auto status = player->GetComponent<GameObjectComponent::StatusComponent>();
+		if (status && !status->IsAlive())
+		{
+			sceneManager_->ChangeScene("GameOverScene");
+			return; 
+		}
+	}
+
+	// 全ウェーブ撃破でゲームクリアへ遷移
+	if (waveSystem_ && waveSystem_->HasStarted() && waveSystem_->IsCompleted())
+	{
+		sceneManager_->ChangeScene("ClearScene");
+	}
+
+	
 }
 
 #ifdef USE_IMGUI
