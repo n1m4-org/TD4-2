@@ -3,6 +3,7 @@
 
 // scene
 #include "engine/scene/interface/BaseScene.h"
+#include "graphics/2d/FontSprite.h"
 
 /**
  * @brief タイトルシーン。
@@ -42,6 +43,7 @@ protected:
     void OnFinalize() override;
 
 private:
+	std::unique_ptr<FontSprite> titleLogo_;
 
 };
 
