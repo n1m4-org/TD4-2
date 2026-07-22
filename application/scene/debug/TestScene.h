@@ -5,6 +5,7 @@
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/camerawork/topdown/TopDownCamera.h"
 #include "engine/gameobject/component/collision/SphereColliderComponent.h"
+#include "application/scene/ui/PauseMenu.h"
 
 /**
  * @brief ゲームオブジェクトの動作確認を行うデバッグ用シーン。
@@ -55,6 +56,9 @@ private:
 	std::unique_ptr<DebugCamera> debugCamera_;
 	// 追従カメラ
 	std::unique_ptr<TopDownCamera> topDownCamera_;
+
+	// ポーズメニュー
+	std::unique_ptr<PauseMenu> pauseMenu_;
 
 	// テスト用のゲームオブジェクト
 	std::unique_ptr<GameObject> player_;

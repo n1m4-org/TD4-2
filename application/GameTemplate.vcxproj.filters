@@ -169,6 +169,7 @@
     <ClCompile Include="scene\ui\MenuButton.cpp">
       <Filter>scene\ui</Filter>
     </ClCompile>
+    <ClCompile Include="scene\ui\PauseMenu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Waves\EnemyFactory.h">
@@ -270,6 +271,7 @@
     <ClInclude Include="scene\ui\MenuButton.h">
       <Filter>scene\ui</Filter>
     </ClInclude>
+    <ClInclude Include="scene\ui\PauseMenu.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">
