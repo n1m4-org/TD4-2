@@ -48,8 +48,6 @@ namespace
 	constexpr Vector3 kReflectHandLocalScale = {1.5f, 0.35f, 0.35f};
 }
 
-REGISTER_SCENE(WaveScene);
-
 void WaveScene::Initialize()
 {
 	GameObjectManager::GetInstance()->Initialize();
