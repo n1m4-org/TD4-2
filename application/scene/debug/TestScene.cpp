@@ -573,6 +573,9 @@ void TestScene::UpdateCamera()
 	case CameraState::Playing:
 		UpdateFollowCamera();
 		break;
+	case CameraState::Clear:
+		UpdateClearDirection();
+		break;
 
 	case CameraState::GameOver:
 		UpdateGameOverCamera();
@@ -612,6 +615,160 @@ void TestScene::UpdateIntroCamera()
 	{
 		cameraState_ = CameraState::Playing;
 		cameraTimer_ = 0.0f;
+	}
+}
+
+void TestScene::StartClearDirection()
+{
+	if (!player_ || isClearDirectionStarted_)
+	{
+		return;
+	}
+
+	isClearDirectionStarted_ = true;
+	cameraState_ = CameraState::Clear;
+	cameraTimer_ = 0.0f;
+
+	auto camera =
+		sceneManager_->GetCameraManager()->GetActiveCamera();
+
+	// 演出開始時のカメラ状態を保存
+	clearStartCameraPosition_ = camera->GetTranslate();
+	clearStartCameraRotation_ = camera->GetRotate();
+
+	// 演出開始時のプレイヤー状態を保存
+	clearPlayerBasePosition_ = player_->GetPosition();
+	clearPlayerBaseRotation_ = player_->GetRotation();
+
+	// プレイヤーの物理移動を止める
+	auto physics = player_->GetComponent<PhysicsComponent>();
+	if (physics)
+	{
+		physics->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+		physics->SetExternalVelocity({0.0f, 0.0f, 0.0f});
+	}
+}
+
+void TestScene::UpdateClearDirection()
+{
+	if (!player_)
+	{
+		return;
+	}
+
+	const float deltaTime =
+		TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	cameraTimer_ += deltaTime;
+
+	auto camera =
+		sceneManager_->GetCameraManager()->GetActiveCamera();
+
+	const float playerYaw = clearPlayerBaseRotation_.y;
+
+	// プレイヤーが向いている正面方向
+	Vector3 playerForward = {
+		std::sin(playerYaw),
+		0.0f,
+		std::cos(playerYaw)};
+
+	if (playerForward.LengthSquared() > 0.000001f)
+	{
+		playerForward.NormalizeSelf();
+	}
+	else
+	{
+		playerForward = {0.0f, 0.0f, 1.0f};
+	}
+
+	// プレイヤーの正面側へカメラを置く
+	// カメラはプレイヤー側を向く
+	const Vector3 clearCameraPosition =
+		clearPlayerBasePosition_ +
+		playerForward * kClearCameraDistance +
+		Vector3{0.0f, kClearCameraHeight, 0.0f};
+
+	const Vector3 clearCameraRotation = {
+		0.2f,
+		playerYaw + std::numbers::pi_v<float>,
+		0.0f};
+
+	// ─────────────────────────────
+	// 前半：カメラをプレイヤー正面へ移動
+	// ─────────────────────────────
+	if (cameraTimer_ <= kClearCameraMoveTime)
+	{
+		float t =
+			cameraTimer_ / kClearCameraMoveTime;
+
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		// 徐々に減速しながら正面へ移動
+		const float easedT = EaseOutQuad(t);
+
+		camera->SetTranslate(
+			MathUtils::Lerp(
+				clearStartCameraPosition_,
+				clearCameraPosition,
+				easedT));
+
+		camera->SetRotate(
+			MathUtils::Lerp(
+				clearStartCameraRotation_,
+				clearCameraRotation,
+				easedT));
+
+		return;
+	}
+
+	// カメラは正面位置で固定
+	camera->SetTranslate(clearCameraPosition);
+	camera->SetRotate(clearCameraRotation);
+
+	// ─────────────────────────────
+	// 後半：プレイヤーが回転しながらジャンプ
+	// ─────────────────────────────
+	const float actionElapsed =
+		cameraTimer_ - kClearCameraMoveTime;
+
+	float actionT =
+		actionElapsed / kClearPlayerActionTime;
+
+	actionT = std::clamp(actionT, 0.0f, 1.0f);
+
+	// 0 → 1 → 0になる放物線
+	const float jumpRate =
+		4.0f * actionT * (1.0f - actionT);
+
+	Vector3 playerPosition =
+		clearPlayerBasePosition_;
+
+	playerPosition.y +=
+		kClearJumpHeight * jumpRate;
+
+	// Y軸を1回転
+	Vector3 playerRotation =
+		clearPlayerBaseRotation_;
+
+	playerRotation.y +=
+		2.0f *
+		std::numbers::pi_v<float> *
+		actionT;
+
+	player_->SetPosition(playerPosition);
+	player_->SetRotation(playerRotation);
+
+	// 演出終了時
+	if (actionT >= 1.0f)
+	{
+		// 地面と回転を元の状態へ正確に戻す
+		player_->SetPosition(clearPlayerBasePosition_);
+		player_->SetRotation(clearPlayerBaseRotation_);
+
+		// 仮実装なので、終了後もクリア画面のカメラ位置で停止
+		cameraTimer_ =
+			kClearCameraMoveTime +
+			kClearPlayerActionTime;
 	}
 }
 
@@ -676,6 +833,14 @@ void TestScene::CommonUpdate()
 	if (Input::GetInstance()->TriggerKey(DIK_F7))
 	{
 		isDebugCameraActive = !isDebugCameraActive;
+	}
+
+	// 通常プレイ中にCキーを押したら開始
+	if (!isDebugCameraActive &&
+		cameraState_ == CameraState::Playing &&
+		Input::GetInstance()->TriggerKey(DIK_C))
+	{
+		StartClearDirection();
 	}
 
 	if (isDebugCameraActive)
