@@ -27,6 +27,8 @@
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
+#include "engine/manager/effect/PostProcessManager.h"
+#include "engine/effects/postprocess/CRTEffect.h"
 
 #include "engine/scene/factory/SceneFactory.h"
 REGISTER_SCENE(TestScene);
@@ -579,6 +581,7 @@ void TestScene::UpdateCamera()
 
 	case CameraState::GameOver:
 		UpdateGameOverCamera();
+		GameOverDirection();
 		break;
 	}
 }
@@ -802,6 +805,33 @@ void TestScene::UpdateGameOverCamera()
 	Vector3 endRot = {0.8f, 0, 0};
 
 	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
+}
+
+void TestScene::GameOverDirection()
+{
+	auto post = sceneManager_->GetPostProcessManager();
+
+	// エフェクト自体を有効化
+	post->crtEffect_->SetEnabled(true);
+	// CRTエフェクト自体を有効化
+	post->crtEffect_->SetCrtEnabled(true);
+	// 色収差(RGBシフト)を有効化
+	post->crtEffect_->SetChromaticAberrationEnabled(true);
+
+	effectTimer_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	float interval = 0.35f;
+	float time = fmod(effectTimer_, interval);
+
+	if (time < 0.25f)
+	{
+		post->crtEffect_->SetChromaticAberrationOffset(10.5f);
+	}
+	else
+	{
+		post->crtEffect_->SetChromaticAberrationOffset(0.0f);
+	}
+
 }
 
 void TestScene::OnFinalize()
