@@ -18,7 +18,10 @@
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
+#include "engine/math/MathUtils.h"
 #include "engine/graphics/3d/Object3dCommon.h"
+#include "engine/time/TimeManager.h"
+#include "engine/math/Easing.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
@@ -202,8 +205,11 @@ void TestScene::Initialize()
 				if (status)
 				{
 					status->SetHp(status->GetHp() - 10);
+				
 				}
 			}
+
+
 		});
 		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
 		{
@@ -211,6 +217,8 @@ void TestScene::Initialize()
 			handleCubeCollision(info);
 		});
 		collider->SetOnExit([](const CollisionInfo& info) {});
+
+
 	}
 
 	// こいつに追従カメラを追従させる
@@ -549,6 +557,61 @@ void TestScene::InitializeBombEnemy()
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 }
 
+void TestScene::UpdateCamera()
+{
+	// カメラの状態に応じて更新処理を切り替える
+	switch (cameraState_)
+	{
+	case CameraState::Intro:
+		UpdateIntroCamera();
+		break;
+	case CameraState::Playing:
+		UpdateFollowCamera();
+		break;
+	}
+}
+
+void TestScene::UpdateIntroCamera()
+{
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	cameraTimer_ += deltaTime;
+
+	float t = cameraTimer_ / kIntroTime;
+	t = std::clamp(t, 0.0f, 1.0f);
+
+	t = EaseOutQuad(t);
+
+	auto camera = sceneManager_->GetCameraManager()->GetActiveCamera();
+
+	// 開始位置
+	Vector3 startPos = {0.0f, 130.0f, 80.0f};
+
+	// 終了位置
+	Vector3 endPos = player_->GetPosition() + Vector3(0.0f, 90.0f, -40.0f);
+
+	// 補間してカメラの位置を更新
+	camera->SetTranslate(MathUtils::Lerp(startPos, endPos, t));
+
+	// 開始回転
+	Vector3 startRot = {0.6f, 0.0f, 0.0f};
+	Vector3 endRot = {1.2f, 0.0f, 0.0f};
+
+	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
+
+	if (cameraTimer_ >= kIntroTime)
+	{
+		cameraState_ = CameraState::Playing;
+		cameraTimer_ = 0.0f;
+	}
+}
+
+void TestScene::UpdateFollowCamera()
+{
+	topDownCamera_->Update();
+
+}
+
 void TestScene::OnFinalize()
 {
 	// 登録されたオブジェクトの登録解除とクリア
@@ -586,7 +649,12 @@ void TestScene::CommonUpdate()
 	}
 	else
 	{
-		topDownCamera_->Update();
+		UpdateCamera();
+	}
+
+	if (cameraState_ != CameraState::Playing)
+	{
+		return;
 	}
 
 	// コリジョンマネージャーの前フレーム位置更新
