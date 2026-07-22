@@ -4,7 +4,9 @@
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/common/UIComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
+#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
+#include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
@@ -17,6 +19,7 @@
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
+#include "engine/math/MathUtils.h"
 #include "engine/graphics/3d/Object3dCommon.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
@@ -24,6 +27,11 @@
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
 #include "engine/scene/factory/SceneFactory.h"
+
+#include "engine/scene/factory/SceneFactory.h"
+#include "math/Easing.h"
+#include "time/TimeManager.h"
+REGISTER_SCENE(TestScene);
 
 using namespace GameObjectComponent;
 
@@ -109,7 +117,7 @@ void TestScene::Initialize()
 			sceneManager_->GetSpriteCommon(),
 			sceneManager_->GetCameraManager()->GetActiveCamera(),
 			Vector3(0.0f, 6.0f, 0.0f) // プレイヤーの頭上少し上
-		));
+			));
 
 	// 円弧の基準位置として、プレイヤーの少し前へ反射判定を配置する。
 	auto reflectHand = std::make_unique<GameObject>(GameObjectTag::Player);
@@ -202,8 +210,16 @@ void TestScene::Initialize()
 				if (status)
 				{
 					status->SetHp(status->GetHp() - 10);
+				
+				  if (status->GetHp() <= 0)
+					{
+						cameraState_ = CameraState::GameOver;
+						cameraTimer_ = 0.0f;
+					}
 				}
 			}
+
+
 		});
 		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
 		{
@@ -211,6 +227,8 @@ void TestScene::Initialize()
 			handleCubeCollision(info);
 		});
 		collider->SetOnExit([](const CollisionInfo& info) {});
+
+
 	}
 
 	// こいつに追従カメラを追従させる
@@ -353,7 +371,7 @@ void TestScene::Initialize()
 	chargeEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
 	chargeEnemy_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
 	chargeEnemy_->SetName("ChargeEnemy");
-	chargeEnemy_->SetModel("cube");
+	chargeEnemy_->SetModel("chargeEnemy");
 	chargeEnemy_->SetScale({2.0f, 2.0f, 2.0f});
 	chargeEnemy_->SetPosition({-5.0f, 2.0f, -30.0f});
 
@@ -361,6 +379,8 @@ void TestScene::Initialize()
 	chargeEnemy_->AddComponent("Move", std::make_unique<ChargeMoveComponent>(player_.get()));
 	chargeEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(chargeEnemy_.get()));
 	chargeEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(chargeEnemy_.get()));
+	// 死亡演出コンポーネント
+	chargeEnemy_->AddComponent("DeathDirection", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
 	chargeEnemy_->AddComponent(
 		"UI",
 		std::make_unique<UIComponent>(
@@ -368,7 +388,7 @@ void TestScene::Initialize()
 			sceneManager_->GetSpriteCommon(),
 			sceneManager_->GetCameraManager()->GetActiveCamera(),
 			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
-		));
+			));
 
 	// HPを設定
 	auto status = chargeEnemy_->GetComponent<StatusComponent>();
@@ -420,23 +440,22 @@ void TestScene::Initialize()
 						}
 					}
 				}
+			}
 
+			// 弾が当たったらHPを減らす
+			if (layer & CollisionLayer::PlayerBullet)
+			{
+				auto status = chargeEnemy_->GetComponent<StatusComponent>();
 
-				// 弾が当たったらHPを減らす
-				if (layer & CollisionLayer::PlayerBullet)
+				if (status)
 				{
-					auto status = chargeEnemy_->GetComponent<StatusComponent>();
+					status->SetHp(status->GetHp() - 1);
 
-					if (status)
+					// 攻撃を食らったらシェイクする
+					auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
+					if (move && status->GetHp() > 0)
 					{
-						status->SetHp(status->GetHp() - 1);
-
-						// 攻撃を食らったらシェイクする
-						auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
-						if (move && status->GetHp() > 0)
-						{
-							move->StartShake();
-						}
+						move->StartShake();
 					}
 				}
 			}
@@ -515,6 +534,9 @@ void TestScene::Initialize()
 
 	// 一定間隔でプレイヤーに向かってホーミング弾を発射する
 	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
+	// 死亡演出をつける
+	hormingTest_->AddComponent("DeathEffect", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
+
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 }
@@ -538,11 +560,253 @@ void TestScene::InitializeBombEnemy()
 			sceneManager_->GetSpriteCommon(),
 			sceneManager_->GetCameraManager()->GetActiveCamera(),
 			Vector3(0.0f, 6.0f, 0.0f) // 敵の頭上少し上
-		));
+			));
 	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
 	bombEnemy_->AddComponent("ExplosionCollider", std::make_unique<SphereColliderComponent>(bombEnemy_.get()));
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
+}
+
+void TestScene::UpdateCamera()
+{
+	// カメラの状態に応じて更新処理を切り替える
+	switch (cameraState_)
+	{
+	case CameraState::Intro:
+		UpdateIntroCamera();
+		break;
+	case CameraState::Playing:
+		UpdateFollowCamera();
+		break;
+	case CameraState::Clear:
+		UpdateClearDirection();
+		break;
+
+	case CameraState::GameOver:
+		UpdateGameOverCamera();
+		break;
+	}
+}
+
+void TestScene::UpdateIntroCamera()
+{
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	cameraTimer_ += deltaTime;
+
+	float t = cameraTimer_ / kIntroTime;
+	t = std::clamp(t, 0.0f, 1.0f);
+
+	t = EaseOutQuad(t);
+
+	auto camera = sceneManager_->GetCameraManager()->GetActiveCamera();
+
+	// 開始位置
+	Vector3 startPos = {0.0f, 130.0f, 80.0f};
+
+	// 終了位置
+	Vector3 endPos = player_->GetPosition() + Vector3(0.0f, 90.0f, -40.0f);
+
+	// 補間してカメラの位置を更新
+	camera->SetTranslate(MathUtils::Lerp(startPos, endPos, t));
+
+	// 開始回転
+	Vector3 startRot = {0.6f, 0.0f, 0.0f};
+	Vector3 endRot = {1.2f, 0.0f, 0.0f};
+
+	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
+
+	if (cameraTimer_ >= kIntroTime)
+	{
+		cameraState_ = CameraState::Playing;
+		cameraTimer_ = 0.0f;
+	}
+}
+
+void TestScene::StartClearDirection()
+{
+	if (!player_ || isClearDirectionStarted_)
+	{
+		return;
+	}
+
+	isClearDirectionStarted_ = true;
+	cameraState_ = CameraState::Clear;
+	cameraTimer_ = 0.0f;
+
+	auto camera =
+		sceneManager_->GetCameraManager()->GetActiveCamera();
+
+	// 演出開始時のカメラ状態を保存
+	clearStartCameraPosition_ = camera->GetTranslate();
+	clearStartCameraRotation_ = camera->GetRotate();
+
+	// 演出開始時のプレイヤー状態を保存
+	clearPlayerBasePosition_ = player_->GetPosition();
+	clearPlayerBaseRotation_ = player_->GetRotation();
+
+	// プレイヤーの物理移動を止める
+	auto physics = player_->GetComponent<PhysicsComponent>();
+	if (physics)
+	{
+		physics->SetMovementVelocity({0.0f, 0.0f, 0.0f});
+		physics->SetExternalVelocity({0.0f, 0.0f, 0.0f});
+	}
+}
+
+void TestScene::UpdateClearDirection()
+{
+	if (!player_)
+	{
+		return;
+	}
+
+	const float deltaTime =
+		TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	cameraTimer_ += deltaTime;
+
+	auto camera =
+		sceneManager_->GetCameraManager()->GetActiveCamera();
+
+	const float playerYaw = clearPlayerBaseRotation_.y;
+
+	// プレイヤーが向いている正面方向
+	Vector3 playerForward = {
+		std::sin(playerYaw),
+		0.0f,
+		std::cos(playerYaw)};
+
+	if (playerForward.LengthSquared() > 0.000001f)
+	{
+		playerForward.NormalizeSelf();
+	}
+	else
+	{
+		playerForward = {0.0f, 0.0f, 1.0f};
+	}
+
+	// プレイヤーの正面側へカメラを置く
+	// カメラはプレイヤー側を向く
+	const Vector3 clearCameraPosition =
+		clearPlayerBasePosition_ +
+		playerForward * kClearCameraDistance +
+		Vector3{0.0f, kClearCameraHeight, 0.0f};
+
+	const Vector3 clearCameraRotation = {
+		0.2f,
+		playerYaw + std::numbers::pi_v<float>,
+		0.0f};
+
+	// ─────────────────────────────
+	// 前半：カメラをプレイヤー正面へ移動
+	// ─────────────────────────────
+	if (cameraTimer_ <= kClearCameraMoveTime)
+	{
+		float t =
+			cameraTimer_ / kClearCameraMoveTime;
+
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		// 徐々に減速しながら正面へ移動
+		const float easedT = EaseOutQuad(t);
+
+		camera->SetTranslate(
+			MathUtils::Lerp(
+				clearStartCameraPosition_,
+				clearCameraPosition,
+				easedT));
+
+		camera->SetRotate(
+			MathUtils::Lerp(
+				clearStartCameraRotation_,
+				clearCameraRotation,
+				easedT));
+
+		return;
+	}
+
+	// カメラは正面位置で固定
+	camera->SetTranslate(clearCameraPosition);
+	camera->SetRotate(clearCameraRotation);
+
+	// ─────────────────────────────
+	// 後半：プレイヤーが回転しながらジャンプ
+	// ─────────────────────────────
+	const float actionElapsed =
+		cameraTimer_ - kClearCameraMoveTime;
+
+	float actionT =
+		actionElapsed / kClearPlayerActionTime;
+
+	actionT = std::clamp(actionT, 0.0f, 1.0f);
+
+	// 0 → 1 → 0になる放物線
+	const float jumpRate =
+		4.0f * actionT * (1.0f - actionT);
+
+	Vector3 playerPosition =
+		clearPlayerBasePosition_;
+
+	playerPosition.y +=
+		kClearJumpHeight * jumpRate;
+
+	// Y軸を1回転
+	Vector3 playerRotation =
+		clearPlayerBaseRotation_;
+
+	playerRotation.y +=
+		2.0f *
+		std::numbers::pi_v<float> *
+		actionT;
+
+	player_->SetPosition(playerPosition);
+	player_->SetRotation(playerRotation);
+
+	// 演出終了時
+	if (actionT >= 1.0f)
+	{
+		// 地面と回転を元の状態へ正確に戻す
+		player_->SetPosition(clearPlayerBasePosition_);
+		player_->SetRotation(clearPlayerBaseRotation_);
+
+		// 仮実装なので、終了後もクリア画面のカメラ位置で停止
+		cameraTimer_ =
+			kClearCameraMoveTime +
+			kClearPlayerActionTime;
+	}
+}
+
+void TestScene::UpdateFollowCamera()
+{
+	topDownCamera_->Update();
+
+}
+
+
+void TestScene::UpdateGameOverCamera()
+{
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	cameraTimer_ += deltaTime;
+	
+	float t = cameraTimer_ / kGameOverTime;
+	t = std::clamp(t, 0.0f, 1.0f);
+
+	t = EaseOutQuad(t);
+
+	auto camera = sceneManager_->GetCameraManager()->GetActiveCamera();
+
+	// 開始位置と終了位置を設定
+	Vector3 startPos = player_->GetPosition() + Vector3(0, 90, -40);
+	Vector3 endPos = player_->GetPosition() + Vector3(0, 125, -55);
+
+	camera->SetTranslate(MathUtils::Lerp(startPos, endPos, t));
+
+	Vector3 startRot = {1.2f, 0, 0};
+	Vector3 endRot = {0.8f, 0, 0};
+
+	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
 }
 
 void TestScene::OnFinalize()
@@ -575,13 +839,26 @@ void TestScene::CommonUpdate()
 		isDebugCameraActive = !isDebugCameraActive;
 	}
 
+	// 通常プレイ中にCキーを押したら開始
+	if (!isDebugCameraActive &&
+		cameraState_ == CameraState::Playing &&
+		Input::GetInstance()->TriggerKey(DIK_C))
+	{
+		StartClearDirection();
+	}
+
 	if (isDebugCameraActive)
 	{
 		debugCamera_->Update();
 	}
 	else
 	{
-		topDownCamera_->Update();
+		UpdateCamera();
+	}
+
+	if (cameraState_ != CameraState::Playing)
+	{
+		return;
 	}
 
 	// コリジョンマネージャーの前フレーム位置更新

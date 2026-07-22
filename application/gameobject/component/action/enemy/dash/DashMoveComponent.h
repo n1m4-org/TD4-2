@@ -13,7 +13,7 @@ namespace GameObjectComponent
 		float triggerTime_ = 3.f;
 
 		Vector3 dashDirection_ = {};
-		float speed_ = 125.f;
+		float speed_ = 50.f;
 
 		enum class State { Idle, Dash };
 		State state_ = State::Idle;

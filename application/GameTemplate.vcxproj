@@ -118,6 +118,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="scene\ui\MenuButton.cpp" />
+    <ClCompile Include="scene\clear\ClearScene.cpp" />
+    <ClCompile Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.cpp" />
@@ -135,6 +138,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerSlowMotionComponent.cpp" />
+    <ClCompile Include="scene\gameover\GameOverScene.cpp" />
     <ClCompile Include="resources\LoadGameResources.cpp" />
     <ClCompile Include="scene\debug\ParticleTestScene.cpp" />
     <ClCompile Include="scene\debug\TestScene.cpp" />
@@ -153,6 +157,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Waves\EnemySpawner.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="scene\ui\MenuButton.h" />
+    <ClInclude Include="scene\clear\ClearScene.h" />
+    <ClInclude Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.h" />
     <ClInclude Include="gameobject\GameObjectTag.h" />
     <ClInclude Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.h" />
     <ClInclude Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.h" />
@@ -172,6 +179,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h" />
+    <ClInclude Include="scene\gameover\GameOverScene.h" />
     <ClInclude Include="scene\debug\ParticleTestScene.h" />
     <ClInclude Include="scene\debug\TestScene.h" />
     <ClInclude Include="scene\play\title\TitleScene.h" />
