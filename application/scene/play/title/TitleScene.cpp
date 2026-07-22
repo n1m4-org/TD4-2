@@ -11,6 +11,9 @@
 #include "engine/graphics/3d/InstancedModelRenderer.h"
 #include "engine/graphics/3d/Object3dCommon.h"
 
+// engine/time
+#include "engine/time/TimeManager.h"
+
 // audio
 #include "audio/Audio.h"
 // scene
@@ -25,28 +28,13 @@
 #include "effects/particle/ParticleEffect.h"
 #ifdef USE_IMGUI
 #include "manager/editor/DebugUIManager.h"
+#include "externals/imgui/imgui.h"
 #endif
 
-namespace
-{
-    /**
-     * @brief タイトルシーンのプレイステート
-     */
-    class TitlePlayingState : public ISceneState
-    {
-    public:
-        explicit TitlePlayingState(TitleScene* scene) : scene_(scene) {}
-
-        const std::string& GetName() const override
-        {
-            static const std::string name = "Title";
-            return name;
-        }
-
-    private:
-        TitleScene* scene_;
-    };
-}
+// title states
+#include "state/TitleEnterState.h"
+#include "state/TitleWaitState.h"
+#include "state/TitleExitState.h"
 
 REGISTER_SCENE(TitleScene);
 
@@ -56,8 +44,13 @@ void TitleScene::Initialize()
     DebugUIManager::GetInstance()->RegisterDebugUI(this, "Title Scene", [this]() { this->DrawImGui(); }, DebugUIArea::Hierarchy);
 #endif
 
-    RegisterState("Playing", std::make_unique<TitlePlayingState>(this));
-    ChangeState("Playing");
+    // 各ステートの登録
+    RegisterState("Enter", std::make_unique<TitleEnterState>());
+    RegisterState("Wait", std::make_unique<TitleWaitState>());
+    RegisterState("Exit", std::make_unique<TitleExitState>());
+
+    // 初期ステートを登場演出（Enter）に設定
+    ChangeState("Enter");
 }
 
 void TitleScene::OnFinalize()
@@ -80,4 +73,7 @@ void TitleScene::Draw2D()
 
 void TitleScene::DrawImGui()
 {
+#ifdef USE_IMGUI
+    ImGui::Text("Current State: %s", GetCurrentStateName().c_str());
+#endif
 }

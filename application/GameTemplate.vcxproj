@@ -138,8 +138,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="resources\LoadGameResources.cpp" />
     <ClCompile Include="scene\debug\ParticleTestScene.cpp" />
     <ClCompile Include="scene\debug\TestScene.cpp" />
-    <ClCompile Include="scene\play\TitleScene.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="scene\play\title\TitleScene.cpp" />
+    <ClCompile Include="scene\play\title\state\TitleEnterState.cpp" />
+    <ClCompile Include="scene\play\title\state\TitleWaitState.cpp" />
+    <ClCompile Include="scene\play\title\state\TitleExitState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gameobject\GameObjectTag.h" />
@@ -163,7 +166,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h" />
     <ClInclude Include="scene\debug\ParticleTestScene.h" />
     <ClInclude Include="scene\debug\TestScene.h" />
-    <ClInclude Include="scene\play\TitleScene.h" />
+    <ClInclude Include="scene\play\title\TitleScene.h" />
+    <ClInclude Include="scene\play\title\state\TitleEnterState.h" />
+    <ClInclude Include="scene\play\title\state\TitleWaitState.h" />
+    <ClInclude Include="scene\play\title\state\TitleExitState.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">

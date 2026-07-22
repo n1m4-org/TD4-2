@@ -55,6 +55,12 @@
     <Filter Include="scene\play">
       <UniqueIdentifier>{70549714-C486-8BD1-27AB-5E9361D090E7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scene\play\title">
+      <UniqueIdentifier>{B12C4567-89AB-4CDE-9F01-23456789ABCD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\play\title\state">
+      <UniqueIdentifier>{C23D5678-9ABC-4DEF-A123-456789ABCDEF}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gameobject\component\action\common\PhysicsComponent.cpp">
@@ -118,8 +124,17 @@
     <ClCompile Include="scene\debug\TestScene.cpp">
       <Filter>scene\debug</Filter>
     </ClCompile>
-    <ClCompile Include="scene\play\TitleScene.cpp">
-      <Filter>scene\play</Filter>
+    <ClCompile Include="scene\play\title\TitleScene.cpp">
+      <Filter>scene\play\title</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\play\title\state\TitleEnterState.cpp">
+      <Filter>scene\play\title\state</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
+      <Filter>scene\play\title\state</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\play\title\state\TitleExitState.cpp">
+      <Filter>scene\play\title\state</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -186,8 +201,17 @@
     <ClInclude Include="scene\debug\TestScene.h">
       <Filter>scene\debug</Filter>
     </ClInclude>
-    <ClInclude Include="scene\play\TitleScene.h">
-      <Filter>scene\play</Filter>
+    <ClInclude Include="scene\play\title\TitleScene.h">
+      <Filter>scene\play\title</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\play\title\state\TitleEnterState.h">
+      <Filter>scene\play\title\state</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\play\title\state\TitleWaitState.h">
+      <Filter>scene\play\title\state</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\play\title\state\TitleExitState.h">
+      <Filter>scene\play\title\state</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

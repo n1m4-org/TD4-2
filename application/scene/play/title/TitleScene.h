@@ -32,10 +32,17 @@ public:
      */
     void DrawImGui() override;
 
+    /**
+     * @brief シーンマネージャーを取得する。
+     * @return シーンマネージャーのポインタ
+     */
+    SceneManager* GetSceneManager() const { return sceneManager_; }
+
 protected:
     void OnFinalize() override;
 
 private:
 
 };
+
 
