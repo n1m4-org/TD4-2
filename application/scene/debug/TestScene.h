@@ -13,18 +13,19 @@ class TestScene : public BaseScene
 {
 public:
 	void Initialize() override;
-	void Finalize() override;
 	void Draw3D() override;
 	void Draw2D() override;
 	void DrawShadow() override;
 	void DrawGBuffer() override;
+
+	void CommonUpdate() override;
 
 #ifdef USE_IMGUI
 	void DrawImGui();
 #endif
 
 protected:
-	void OnUpdatePlaying() override;
+	void OnFinalize() override;
 
 private:
 	/**

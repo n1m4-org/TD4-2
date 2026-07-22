@@ -10,6 +10,7 @@
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
+#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
@@ -17,7 +18,6 @@
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
-#include "externals/imgui/imgui.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
@@ -514,8 +514,6 @@ void TestScene::Initialize()
 	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
-
-	StartState(SceneState::Playing);
 }
 
 void TestScene::InitializeBombEnemy()
@@ -544,7 +542,7 @@ void TestScene::InitializeBombEnemy()
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 }
 
-void TestScene::Finalize()
+void TestScene::OnFinalize()
 {
 	// 登録されたオブジェクトの登録解除とクリア
 	GameObjectManager::GetInstance()->Finalize();
@@ -566,7 +564,7 @@ void TestScene::Finalize()
 	topDownCamera_.reset();
 }
 
-void TestScene::OnUpdatePlaying()
+void TestScene::CommonUpdate()
 {
 	static bool isDebugCameraActive = false;
 
