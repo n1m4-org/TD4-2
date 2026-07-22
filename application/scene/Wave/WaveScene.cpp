@@ -15,12 +15,16 @@
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
+#include "engine/math/MathUtils.h"
 #include "gameobject/component/collision/CollisionManager.h"
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
+#include "math/Easing.h"
 #include "scene/factory/SceneFactory.h"
 #include "scene/manager/SceneManager.h"
 #include "time/TimeManager.h"
+
+#include <algorithm>
 
 using namespace GameObjectComponent;
 
@@ -55,10 +59,8 @@ void WaveScene::Initialize()
 	// デフォルトライトマネージャーの設定（Object3d描画用）
 	sceneManager_->GetObject3dCommon()->SetDefaultLightManager(lightManager);
 
-	// カメラをスポーン範囲(x:-8~8, z:8~15付近)を見渡せる位置に固定
+	// カメラの実際の配置はIntro演出(UpdateIntroCamera)が最初のフレームから制御する
 	auto activeCamera = sceneManager_->GetCameraManager()->GetActiveCamera();
-	activeCamera->SetTranslate({0.0f, 12.0f, -15.0f});
-	activeCamera->SetRotate({0.3f, 0.0f, 0.0f});
 
 	// 地面キューブの作成(TestSceneと同様。基準が無いと敵の位置が分かりづらいため)
 	groundObject_ = std::make_unique<GameObject>("GroundCube");
@@ -188,6 +190,10 @@ void WaveScene::Initialize()
 				if (status)
 				{
 					status->SetHp(status->GetHp() - 10);
+					if (status->GetHp() <= 0)
+					{
+						gameOverRequested_ = true;
+					}
 				}
 			}
 		});
@@ -252,9 +258,56 @@ void WaveScene::DrawGBuffer()
 	GameObjectManager::GetInstance()->DrawGBuffer(sceneManager_->GetCameraManager());
 }
 
+void WaveScene::UpdateCamera()
+{
+	switch (cameraState_)
+	{
+	case CameraState::Intro:
+		UpdateIntroCamera();
+		break;
+	case CameraState::Playing:
+		topDownCamera_->Update();
+		break;
+	}
+}
+
+void WaveScene::UpdateIntroCamera()
+{
+	// TestSceneのUpdateIntroCameraと同様、遠景からプレイヤー付近へイージングで寄せる
+	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	cameraTimer_ += deltaTime;
+
+	float t = cameraTimer_ / kIntroTime;
+	t = std::clamp(t, 0.0f, 1.0f);
+	t = EaseOutQuad(t);
+
+	auto camera = sceneManager_->GetCameraManager()->GetActiveCamera();
+
+	Vector3 startPos = {0.0f, 130.0f, 80.0f};
+	Vector3 endPos = player_->GetPosition() + Vector3(0.0f, 90.0f, -40.0f);
+	camera->SetTranslate(MathUtils::Lerp(startPos, endPos, t));
+
+	Vector3 startRot = {0.6f, 0.0f, 0.0f};
+	Vector3 endRot = {1.2f, 0.0f, 0.0f};
+	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
+
+	if (cameraTimer_ >= kIntroTime)
+	{
+		cameraState_ = CameraState::Playing;
+		cameraTimer_ = 0.0f;
+	}
+}
+
 void WaveScene::CommonUpdate()
 {
-	topDownCamera_->Update();
+	UpdateCamera();
+
+	// Intro演出中はゲームプレイの更新を止める(TestSceneと同様)
+	if (cameraState_ != CameraState::Playing)
+	{
+		return;
+	}
 
 	CollisionManager::GetInstance()->UpdatePreviousPositions();
 
@@ -263,10 +316,21 @@ void WaveScene::CommonUpdate()
 	GameObjectManager::GetInstance()->Update();
 	CollisionManager::GetInstance()->CheckCollisions();
 
-	if (waveSystem_->IsCompleted())
+	if (sceneChangeRequested_)
 	{
-		clearSceneRequested_ = true;
-		sceneManager_->ChangeScene("title");
+		return;
+	}
+
+	// 全Wave完了 かつ 敵を全滅させた場合を疑似的なゲームクリアとして扱う。
+	// クリア/ゲームオーバー専用シーンが未実装のため、暫定でWaveScene自身に遷移してインスタンスをリセットする。
+	const bool isWaveClear =
+		waveSystem_->IsCompleted() &&
+		GameObjectManager::GetInstance()->FindAllWithTag("Enemy").empty();
+
+	if (isWaveClear || gameOverRequested_)
+	{
+		sceneChangeRequested_ = true;
+		sceneManager_->ChangeScene("Wave");
 	}
 }
 
