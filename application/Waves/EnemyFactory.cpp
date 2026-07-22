@@ -14,6 +14,7 @@
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/dash/DashMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
+#include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
 
 using namespace GameObjectComponent;
 
@@ -119,6 +120,8 @@ GameObject* EnemyFactory::CreateBaseEnemy(const SpawnCommand& command, const std
 
 	enemy->AddComponent("Status", std::make_unique<StatusComponent>(enemy));
 	enemy->AddComponent("Physics", std::make_unique<PhysicsComponent>(enemy));
+	// HPが尽きたら死亡演出を再生してDestroyする(TestSceneのChargeEnemy/HormingTestCubeと同様)
+	enemy->AddComponent("DeathDirection", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
 
 	if (spriteCommon_ && camera_)
 	{
@@ -141,7 +144,7 @@ void EnemyFactory::RegisterDefaultEnemies()
 
 	Register("Charge", [this](const SpawnCommand& command, GameObject* player) -> GameObject*
 	{
-		GameObject* enemy = CreateBaseEnemy(command, "cube");
+		GameObject* enemy = CreateBaseEnemy(command, "chargeEnemy");
 		if (!enemy) { return nullptr; }
 		enemy->AddComponent("Move", std::make_unique<ChargeMoveComponent>(player));
 		SetupCommonCollider(enemy);

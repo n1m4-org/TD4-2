@@ -28,6 +28,26 @@ void WaveSystem::Start()
 	waves_[current_]->Start();
 }
 
+void WaveSystem::Restart()
+{
+	current_ = 0;
+	waitingInterval_ = false;
+	intervalTimer_ = 0.0f;
+	started_ = false;
+
+	for (auto& wave : waves_)
+	{
+		wave->Reset();
+	}
+}
+
+void WaveSystem::ForceComplete()
+{
+	current_ = static_cast<uint32_t>(waves_.size());
+	waitingInterval_ = false;
+	intervalTimer_ = 0.0f;
+}
+
 void WaveSystem::Update(float deltaTime)
 {
 	if (!started_) { return; }

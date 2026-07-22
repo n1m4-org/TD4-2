@@ -11,10 +11,13 @@
 #include "manager/scene/CameraManager.h"
 #include "math/VectorColorCodes.h"
 #include "scene/manager/SceneManager.h"
+#include "engine/scene/factory/SceneFactory.h"
 #include "base/DirectXCommon.h"
 #include "manager/system/SrvManager.h"
 #include "manager/scene/LightManager.h"
 
+
+REGISTER_SCENE(ParticleTestScene);
 
 void ParticleTestScene::Initialize()
 {
@@ -52,6 +55,7 @@ void ParticleTestScene::Initialize()
 	skydome_->SetScale({ 0.8f, 0.8f, 0.8f });
 	skydome_->SetCastShadow(false);
 
+	// エミッターの初期位置設定
 	auto* cylinder = ParticleManager::GetInstance()->GetEmitter("auraCylinder");
 	auto* mist = ParticleManager::GetInstance()->GetEmitter("auraMist");
 	auto* floor = ParticleManager::GetInstance()->GetEmitter("auraFloor");
@@ -68,10 +72,6 @@ void ParticleTestScene::OnFinalize()
 	// シーン終了時にパーティクルをクリア
 	ParticleManager::GetInstance()->Clear();
 }
-
-// ==================================================
-// 共通更新
-// ==================================================
 
 void ParticleTestScene::CommonUpdate()
 {
