@@ -120,6 +120,9 @@
     <ClCompile Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.cpp">
       <Filter>gameobject\component\action\enemy</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\EnemySpawnDirectionComponent.cpp">
+      <Filter>gameobject\component\action\enemy</Filter>
+    </ClCompile>
     <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp">
       <Filter>gameobject\component\action\enemy\bomb</Filter>
     </ClCompile>
@@ -247,6 +250,9 @@
       <Filter>gameobject\component\action\enemy</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.h">
+      <Filter>gameobject\component\action\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\EnemySpawnDirectionComponent.h">
       <Filter>gameobject\component\action\enemy</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\enemy\bomb\BombMoveComponent.h">

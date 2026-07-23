@@ -1,5 +1,6 @@
 #include "HormingMoveComponent.h"
 #include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
+#include "application/gameobject/component/action/enemy/EnemySpawnDirectionComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 
 #include "application/collision/CollisionLayer.h"
@@ -52,6 +53,17 @@ void HormingMoveComponent::Update(GameObject* owner)
 		return;
 	}
 
+	// 登場演出中はホーミング弾を発射しない
+	auto spawnDirection =
+		owner->GetComponent<
+			EnemySpawnDirectionComponent>();
+
+	if (spawnDirection &&
+		spawnDirection->IsAppearing())
+	{
+		return;
+	}
+
 	auto deathEffect =
 		owner->GetComponent<EnemyDeathDirectionComponent>();
 
@@ -92,9 +104,12 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 	}
 
 	const float deltaTime =
-		TimeManager::GetInstance().GetGameContext().deltaTime;
+		TimeManager::GetInstance()
+			.GetGameContext()
+			.deltaTime;
 
 	// 発射前の回転演出中
+	// この間は左右移動しない
 	if (isPreFireRotating_)
 	{
 		UpdatePreFireRotation(owner, deltaTime);
@@ -102,6 +117,7 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 	}
 
 	// バースト発射中
+	// この間も左右移動しない
 	if (pendingBurstCount_ > 0)
 	{
 		burstTimer_ += deltaTime;
@@ -122,6 +138,9 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 		return;
 	}
 
+	// 攻撃していない間だけ左右移動
+	StrafeMove(owner, deltaTime);
+
 	// 次の攻撃開始までの時間
 	autoFireTimer_ += deltaTime;
 
@@ -129,9 +148,97 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 	{
 		autoFireTimer_ = 0.0f;
 
-		// すぐに弾を撃たず、先に回転演出を開始
+		// 左右移動を止めて発射前回転へ
 		StartPreFireRotation(owner);
 	}
+}
+
+void HormingMoveComponent::StrafeMove(
+	GameObject* owner,
+	float deltaTime)
+{
+	if (!owner || !target_)
+	{
+		return;
+	}
+
+	strafeTimer_ += deltaTime;
+
+	// 一定時間ごとに左右方向と速度を変更
+	if (strafeTimer_ >= strafeChangeTime_)
+	{
+		// チャージ敵と同じように、
+		// 完全な五分五分ではなく少し右へ行きやすくする
+		strafeMoveRight_ =
+			Random(0.0f, 1.0f) > 0.3f;
+
+		strafeChangeTime_ =
+			Random(
+				strafeMinChangeTime_,
+				strafeMaxChangeTime_);
+
+		currentStrafeSpeed_ =
+			Random(
+				strafeMinSpeed_,
+				strafeMaxSpeed_);
+
+		strafeTimer_ = 0.0f;
+	}
+
+	// ホーミング対象、つまりプレイヤーへの方向
+	Vector3 toTarget =
+		target_->GetPosition() -
+		owner->GetPosition();
+
+	// 高さ方向は左右移動に使わない
+	toTarget.y = 0.0f;
+
+	if (toTarget.LengthSquared() <= 0.000001f)
+	{
+		return;
+	}
+
+	toTarget.NormalizeSelf();
+
+	// プレイヤー方向に対して右方向のベクトル
+	Vector3 side = {
+		-toTarget.z,
+		0.0f,
+		toTarget.x};
+
+	if (!strafeMoveRight_)
+	{
+		side *= -1.0f;
+	}
+
+	// プレイヤーの方を向く
+	const float yaw =
+		std::atan2(
+			toTarget.x,
+			toTarget.z);
+
+	owner->SetRotation({0.0f,
+						yaw,
+						0.0f});
+
+	// 左右へ移動
+	const Vector3 nextPosition =
+		owner->GetPosition() +
+		side *
+			currentStrafeSpeed_ *
+			deltaTime;
+
+	owner->SetPosition(nextPosition);
+}
+
+float HormingMoveComponent::Random(
+	float min,
+	float max)
+{
+	return min +
+		   static_cast<float>(rand()) /
+			   static_cast<float>(RAND_MAX) *
+			   (max - min);
 }
 
 void HormingMoveComponent::StartPreFireRotation(GameObject* owner)
