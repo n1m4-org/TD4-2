@@ -124,7 +124,10 @@ namespace GameObjectComponent
 		std::vector<HomingBullet> bullets_;
 
 		// 弾の寿命
-		float bulletLifeTime_ = 5.0f;
+		float bulletLifeTime_ = 3.0f;
+
+		// 反射後、ロックオン対象へ到達するまでの時間
+		float reflectedBulletLifeTime_ = 1.5f;
 
 		// 弾のスケール
 		float bulletScale_ = 0.6f;

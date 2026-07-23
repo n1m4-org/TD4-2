@@ -678,7 +678,7 @@ void HormingMoveComponent::ReflectBullet(
 
 		// 反射地点から、敵が撃った時と同じ曲線を作り直す
 		bullet.timer = 0.0f;
-		bullet.lifeTime = bulletLifeTime_;
+		bullet.lifeTime = reflectedBulletLifeTime_;
 
 		InitializeBulletCurve(bullet);
 
