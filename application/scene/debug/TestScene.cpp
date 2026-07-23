@@ -12,24 +12,30 @@
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
-#include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
-#include "engine/math/MathUtils.h"
 #include "engine/graphics/3d/Object3dCommon.h"
+#include "engine/math/Easing.h"
+#include "engine/math/MathUtils.h"
+#include "engine/time/TimeManager.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
+#include "engine/manager/effect/PostProcessManager.h"
+#include "engine/effects/postprocess/CRTEffect.h"
+#include "engine/scene/factory/SceneFactory.h"
 
 #include "engine/scene/factory/SceneFactory.h"
+#include <Windows.h>
 #include "math/Easing.h"
 #include "time/TimeManager.h"
+
 REGISTER_SCENE(TestScene);
 
 using namespace GameObjectComponent;
@@ -84,6 +90,8 @@ void TestScene::Initialize()
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 	ParticleManager::GetInstance()->Load("bullet_hit", "Resources/json/particle/hit.json");
+	ParticleManager::GetInstance()->Load("hand", "Resources/json/particle/hand.json");
+	ParticleManager::GetInstance()->Load("smash", "Resources/json/particle/smash.json");
 
 	// 1. テスト用キューブオブジェクトの作成
 	player_ = std::make_unique<GameObject>(GameObjectTag::Player);
@@ -127,6 +135,7 @@ void TestScene::Initialize()
 	reflectCollider->SetActive(false); // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
+	reflectCollider->SetSizeOffset({ 2.0f, 2.0f, 2.0f });
 	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
 	{
 		if (!info.otherCollider)
@@ -206,16 +215,14 @@ void TestScene::Initialize()
 				if (status)
 				{
 					status->SetHp(status->GetHp() - 10);
-				
-				  if (status->GetHp() <= 0)
+
+					if (status->GetHp() <= 0)
 					{
 						cameraState_ = CameraState::GameOver;
 						cameraTimer_ = 0.0f;
 					}
 				}
 			}
-
-
 		});
 		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
 		{
@@ -223,8 +230,6 @@ void TestScene::Initialize()
 			handleCubeCollision(info);
 		});
 		collider->SetOnExit([](const CollisionInfo& info) {});
-
-
 	}
 
 	// こいつに追従カメラを追従させる
@@ -361,7 +366,6 @@ void TestScene::Initialize()
 
 	// ボムエネミーの生成
 	InitializeBombEnemy();
-
 
 	// チャージ敵
 	chargeEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
@@ -533,8 +537,18 @@ void TestScene::Initialize()
 	// 死亡演出をつける
 	hormingTest_->AddComponent("DeathEffect", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
 
+	// ポーズメニュー
+	pauseMenu_ = std::make_unique<PauseMenu>();
+	pauseMenu_->Initialize(sceneManager_->GetSpriteCommon());
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
+
+	// 結果UI（クリア／ゲームオーバー）の生成（演出終了まで非表示）
+	InitializeResultUI();
+
+	auto post = sceneManager_->GetPostProcessManager();
+	// 色収差(RGBシフト)を無効化
+	post->crtEffect_->SetChromaticAberrationEnabled(false);
 }
 
 void TestScene::InitializeBombEnemy()
@@ -580,6 +594,7 @@ void TestScene::UpdateCamera()
 
 	case CameraState::GameOver:
 		UpdateGameOverCamera();
+		GameOverDirection();
 		break;
 	}
 }
@@ -648,6 +663,8 @@ void TestScene::StartClearDirection()
 		physics->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 		physics->SetExternalVelocity({0.0f, 0.0f, 0.0f});
 	}
+
+
 }
 
 void TestScene::UpdateClearDirection()
@@ -770,13 +787,113 @@ void TestScene::UpdateClearDirection()
 		cameraTimer_ =
 			kClearCameraMoveTime +
 			kClearPlayerActionTime;
+
+		// 演出が終わったのでクリアUIを表示する
+		isClearUIVisible_ = true;
+	}
+}
+
+void TestScene::InitializeResultUI()
+{
+	auto* spriteCommon = sceneManager_->GetSpriteCommon();
+
+	// 仮画像：白1x1テクスチャを色分けして使う（後で正式な画像へ差し替え予定）
+	const std::string kTexturePath = "./Resources/white1x1.png";
+
+	// 背景の暗幕（全画面・半透明。演出後の画面を少し暗くしてUIを見やすくする）
+	resultBackground_ = std::make_unique<Sprite>();
+	resultBackground_->Initialize(spriteCommon, kTexturePath);
+	resultBackground_->SetPosition({0.0f, 0.0f});
+	resultBackground_->SetSize({Sprite::kCoordinateWidth, Sprite::kCoordinateHeight});
+	resultBackground_->SetColor({0.0f, 0.05f, 0.15f, 0.5f});
+
+	// 「クリア！」帯（金色・中心アンカー。後で文字画像へ差し替え予定）
+	clearTitleSprite_ = std::make_unique<Sprite>();
+	clearTitleSprite_->Initialize(spriteCommon, kTexturePath);
+	clearTitleSprite_->SetAnchorPoint({0.5f, 0.5f});
+	clearTitleSprite_->SetPosition(kResultTitlePos);
+	clearTitleSprite_->SetSize(kResultTitleSize);
+	clearTitleSprite_->SetColor({1.0f, 0.85f, 0.2f, 0.95f});
+
+	// 「ゲームオーバー」帯（赤・中心アンカー。後で文字画像へ差し替え予定）
+	gameOverTitleSprite_ = std::make_unique<Sprite>();
+	gameOverTitleSprite_->Initialize(spriteCommon, kTexturePath);
+	gameOverTitleSprite_->SetAnchorPoint({0.5f, 0.5f});
+	gameOverTitleSprite_->SetPosition(kResultTitlePos);
+	gameOverTitleSprite_->SetSize(kResultTitleSize);
+	gameOverTitleSprite_->SetColor({0.75f, 0.12f, 0.12f, 0.95f});
+
+	// ボタンを横並びに配置（中央を挟んで左：もう一度／右：ゲームを終了）
+	const float halfSeparation = kResultButtonSize.x * 0.5f + kResultButtonGap * 0.5f;
+	const Vector2 retryPos = {kResultUICenterX - halfSeparation, kResultButtonRowY};
+	const Vector2 quitPos = {kResultUICenterX + halfSeparation, kResultButtonRowY};
+
+	// もう一度（緑）
+	retryButton_ = std::make_unique<MenuButton>();
+	retryButton_->Initialize(spriteCommon, kTexturePath, retryPos, kResultButtonSize);
+	retryButton_->SetColors({0.2f, 0.5f, 0.2f, 0.9f}, {0.4f, 1.0f, 0.4f, 1.0f});
+
+	// ゲームを終了（赤）
+	quitButton_ = std::make_unique<MenuButton>();
+	quitButton_->Initialize(spriteCommon, kTexturePath, quitPos, kResultButtonSize);
+	quitButton_->SetColors({0.5f, 0.2f, 0.2f, 0.9f}, {1.0f, 0.4f, 0.4f, 1.0f});
+}
+
+void TestScene::UpdateResultUI()
+{
+	if (resultBackground_)
+	{
+		resultBackground_->Update();
+	}
+	if (clearTitleSprite_)
+	{
+		clearTitleSprite_->Update();
+	}
+	if (gameOverTitleSprite_)
+	{
+		gameOverTitleSprite_->Update();
+	}
+
+	const Vector2 mousePos = Input::GetInstance()->GetMousePosition();
+	const bool clicked = Input::GetInstance()->IsMouseButtonTriggered(0);
+
+	// もう一度：TestSceneを最初から読み込み直す（ChangeSceneは末尾に"Scene"を自動付与するため"Test"を渡す）
+	if (retryButton_ && retryButton_->Update(mousePos, clicked))
+	{
+		sceneManager_->ChangeScene("Test");
+		return; // 二重ChangeScene防止
+	}
+
+	// ゲームを終了：アプリケーションを閉じる
+	if (quitButton_ && quitButton_->Update(mousePos, clicked))
+	{
+		PostQuitMessage(0);
+	}
+}
+
+void TestScene::DrawResultUI(Sprite* titleSprite)
+{
+	if (resultBackground_)
+	{
+		resultBackground_->Draw();
+	}
+	if (titleSprite)
+	{
+		titleSprite->Draw();
+	}
+	if (retryButton_)
+	{
+		retryButton_->Draw();
+	}
+	if (quitButton_)
+	{
+		quitButton_->Draw();
 	}
 }
 
 void TestScene::UpdateFollowCamera()
 {
 	topDownCamera_->Update();
-
 }
 
 
@@ -785,7 +902,7 @@ void TestScene::UpdateGameOverCamera()
 	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
 
 	cameraTimer_ += deltaTime;
-	
+
 	float t = cameraTimer_ / kGameOverTime;
 	t = std::clamp(t, 0.0f, 1.0f);
 
@@ -803,6 +920,41 @@ void TestScene::UpdateGameOverCamera()
 	Vector3 endRot = {0.8f, 0, 0};
 
 	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
+
+	// 演出が終わったのでゲームオーバーUIを表示する
+	if (cameraTimer_ >= kGameOverTime)
+	{
+		isGameOverUIVisible_ = true;
+	}
+}
+
+void TestScene::GameOverDirection()
+{
+	auto post = sceneManager_->GetPostProcessManager();
+
+	// エフェクト自体を有効化
+	post->crtEffect_->SetEnabled(true);
+	// CRTエフェクト自体を有効化
+	post->crtEffect_->SetCrtEnabled(true);
+	// 色収差(RGBシフト)を有効化
+	post->crtEffect_->SetChromaticAberrationEnabled(true);
+
+	effectTimer_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	// 0.35秒周期で色収差をON/OFFする
+	float interval = 0.35f;
+	float time = fmod(effectTimer_, interval);
+
+	if (time < 0.25f)
+	{
+		post->crtEffect_->SetChromaticAberrationOffset(rgbShiftStrength_);
+	}
+	else
+	{
+		post->crtEffect_->SetChromaticAberrationOffset(0.0f);
+	}
+
+
 }
 
 void TestScene::OnFinalize()
@@ -814,22 +966,75 @@ void TestScene::OnFinalize()
 	{
 		GameObjectEditor::GetInstance()->Finalize();
 	}
+
+	// スポットライトの削除
+	sceneManager_->GetLightManager()->Clear();
+
 #ifdef USE_IMGUI
 	if (DebugUIManager::HasInstance())
 	{
 		DebugUIManager::GetInstance()->UnregisterDebugUI(this);
 	}
 #endif
+
 	player_.reset();
 	groundObject_.reset();
 	targetObject_.reset();
 	debugCamera_.reset();
 	topDownCamera_.reset();
+
+	// 結果UI（クリア／ゲームオーバー）の解放
+	resultBackground_.reset();
+	clearTitleSprite_.reset();
+	gameOverTitleSprite_.reset();
+	retryButton_.reset();
+	quitButton_.reset();
+
 }
 
 void TestScene::CommonUpdate()
 {
 	static bool isDebugCameraActive = false;
+
+	// クリア/ゲームオーバーの演出中・結果画面ではポーズを開けないようにする
+	const bool isResultSequence =
+		cameraState_ == CameraState::Clear ||
+		cameraState_ == CameraState::GameOver ||
+		isClearUIVisible_ ||
+		isGameOverUIVisible_;
+
+	// ESCでポーズメニューの切り替え（通常プレイ中のみ）
+	if (pauseMenu_ && !isResultSequence)
+	{
+		const PauseMenu::Result pauseResult =
+			pauseMenu_->Update();
+
+		// 中央ボタン：現在のシーンを最初からやり直す
+		if (pauseResult == PauseMenu::Result::Restart)
+		{
+			// ポーズ状態を次のシーンへ残さない
+			TimeManager::GetInstance().Resume();
+
+			sceneManager_->ChangeScene("Test");
+			return;
+		}
+
+		// 右ボタン：タイトルへ戻る
+		if (pauseResult == PauseMenu::Result::GoToTitle)
+		{
+			// ポーズ状態を次のシーンへ残さない
+			TimeManager::GetInstance().Resume();
+
+			sceneManager_->ChangeScene("Title");
+			return;
+		}
+	}
+
+	// ポーズ中は通常のゲーム更新を止める
+	if (pauseMenu_ && pauseMenu_->IsPaused())
+	{
+		return;
+	}
 
 	if (Input::GetInstance()->TriggerKey(DIK_F7))
 	{
@@ -851,6 +1056,12 @@ void TestScene::CommonUpdate()
 	else
 	{
 		UpdateCamera();
+	}
+
+	// クリア／ゲームオーバー演出が終わってUIが出ている間はボタン入力を処理する
+	if (isClearUIVisible_ || isGameOverUIVisible_)
+	{
+		UpdateResultUI();
 	}
 
 	if (cameraState_ != CameraState::Playing)
@@ -878,6 +1089,22 @@ void TestScene::Draw2D()
 {
 	// ゲームオブジェクトの2D描画
 	GameObjectManager::GetInstance()->Draw2D();
+
+	// 結果UI（演出終了後のオーバーレイ）：クリアかゲームオーバーのどちらかを表示
+	if (isClearUIVisible_)
+	{
+		DrawResultUI(clearTitleSprite_.get());
+	}
+	else if (isGameOverUIVisible_)
+	{
+		DrawResultUI(gameOverTitleSprite_.get());
+	}
+
+	// ポーズメニュー（ポーズ中のみ内部で描画。手前に重ねる）
+	if (pauseMenu_)
+	{
+		pauseMenu_->Draw();
+	}
 }
 
 #ifdef USE_IMGUI

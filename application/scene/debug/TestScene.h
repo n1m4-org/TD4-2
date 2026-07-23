@@ -5,6 +5,10 @@
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/camerawork/topdown/TopDownCamera.h"
 #include "engine/gameobject/component/collision/SphereColliderComponent.h"
+#include "application/scene/ui/MenuButton.h"
+#include "engine/graphics/2d/Sprite.h"
+#include "application/scene/ui/PauseMenu.h"
+
 
 /**
  * @brief ゲームオブジェクトの動作確認を行うデバッグ用シーン。
@@ -18,13 +22,12 @@ public:
 	void DrawShadow() override;
 	void DrawGBuffer() override;
 
-	void CommonUpdate() override;
-
 #ifdef USE_IMGUI
 	void DrawImGui();
 #endif
 
 protected:
+	void CommonUpdate() override;
 	void OnFinalize() override;
 
 private:
@@ -39,9 +42,17 @@ private:
 	void UpdateFollowCamera();
 	void UpdateGameOverCamera();
 
+	// ゲームオーバー演出
+	void GameOverDirection();
+
 	// クリア演出
 	void StartClearDirection();
 	void UpdateClearDirection();
+
+	// 結果UI（クリア／ゲームオーバー演出終了後に表示するオーバーレイ）
+	void InitializeResultUI();
+	void UpdateResultUI();
+	void DrawResultUI(Sprite* titleSprite);
 
 	// ディレクショナルライト設定
 	static constexpr Vector3 kLightDirection = { -0.2f, -1.0f, 0.3f };
@@ -49,12 +60,15 @@ private:
 	static constexpr Vector3 kBombEnemyPosition = { 50.0f, 2.0f, 0.0f };
 	static constexpr Vector3 kBombEnemyScale = { 2.0f, 2.0f, 2.0f };
 	static constexpr Vector3 kReflectHandLocalPosition = {0.0f, 0.0f, 1.25f};
-	static constexpr Vector3 kReflectHandLocalScale = {1.5f, 0.35f, 0.35f};
+	static constexpr Vector3 kReflectHandLocalScale = { 0.5f, 0.5f, 0.5f};
 
 	// デバッグカメラ
 	std::unique_ptr<DebugCamera> debugCamera_;
 	// 追従カメラ
 	std::unique_ptr<TopDownCamera> topDownCamera_;
+
+	// ポーズメニュー
+	std::unique_ptr<PauseMenu> pauseMenu_;
 
 	// テスト用のゲームオブジェクト
 	std::unique_ptr<GameObject> player_;
@@ -78,14 +92,13 @@ private:
 	// 演出時間
 	const float kIntroTime = 2.0f;
 	const float kGameOverTime = 2.5f;
-	// 演出中かどうかのフラグ
-	bool isIntroPlaying_ = true;
-	bool isGameOverPlaying_ = false;
+
+	// エフェクトタイマー
+	float effectTimer_ = 0.0f;
+	// RGBシフトの強さ
+	float rgbShiftStrength_ = 15.0f;
 
 	// --------- クリア演出用 --------- //
-	// クリア演出全体の時間
-	const float kClearDirectionTime = 2.2f;
-
 	// カメラが正面へ移動する時間
 	const float kClearCameraMoveTime = 0.8f;
 
@@ -109,4 +122,33 @@ private:
 	Vector3 clearPlayerBaseRotation_ = {};
 
 	bool isClearDirectionStarted_ = false;
+
+	// --------- 結果UI用（クリア／ゲームオーバー共通） --------- //
+	// 背景の暗幕（両方で共通利用）
+	std::unique_ptr<Sprite> resultBackground_;
+	// 「クリア！」の帯（仮画像・後で文字画像へ差し替え予定）
+	std::unique_ptr<Sprite> clearTitleSprite_;
+	// 「ゲームオーバー」の帯（仮画像・後で文字画像へ差し替え予定）
+	std::unique_ptr<Sprite> gameOverTitleSprite_;
+	// もう一度（TestSceneを再読み込み。両方で共通利用）
+	std::unique_ptr<MenuButton> retryButton_;
+	// ゲームを終了（アプリを閉じる。両方で共通利用）
+	std::unique_ptr<MenuButton> quitButton_;
+	// クリアUIを表示中かどうか（クリア演出終了で true）
+	bool isClearUIVisible_ = false;
+	// ゲームオーバーUIを表示中かどうか（ゲームオーバー演出終了で true）
+	bool isGameOverUIVisible_ = false;
+
+	// UIレイアウト（Sprite座標系 1920x1080 基準）
+	// 画面中央のX
+	static constexpr float kResultUICenterX = Sprite::kCoordinateWidth * 0.5f;
+	// タイトル帯
+	static constexpr Vector2 kResultTitlePos = { kResultUICenterX, 300.0f };
+	static constexpr Vector2 kResultTitleSize = { 640.0f, 180.0f };
+	// ボタン
+	static constexpr Vector2 kResultButtonSize = { 380.0f, 130.0f };
+	// ボタン行の中心Y
+	static constexpr float kResultButtonRowY = 640.0f;
+	// ボタン間の隙間
+	static constexpr float kResultButtonGap = 140.0f;
 };
