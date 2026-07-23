@@ -22,7 +22,7 @@ namespace GameObjectComponent
 		float triggerTime_ = 3.6f;
 
 		Vector3 dashDirection_ = {};
-		float speed_ = 50.f;
+		float speed_ = 70.f;
 
 		// 予測線演出: triggerTime_をダッシュまでの4拍に見立て、最初の3拍で透明な予測オブジェクトを飛ばし、
 		// 4拍目のタイミングで実際にダッシュする。
@@ -43,7 +43,7 @@ namespace GameObjectComponent
 
 		// 反射後の速度・寿命
 		Vector3 reflectedVelocity_ = {};
-		float reflectedSpeed_ = 40.f;
+		float reflectedSpeed_ = 55.f;
 		float reflectedLifetimeSeconds_ = 3.f;
 		float remainingReflectedTime_ = 0.f;
 
