@@ -7,6 +7,7 @@
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/gameobject/component/base/ICollisionComponent.h"
 #include "engine/time/TimeManager.h"
+#include "audio/Audio.h"
 
 #include <algorithm>
 #include <cmath>
@@ -91,6 +92,9 @@ namespace GameObjectComponent
 
 		isDying_ = true;
 		deathTimer_ = 0.0f;
+
+		// SEを再生
+		Audio::GetInstance()->PlayWave("se_enemyDead");
 
 		basePosition_ = owner->GetPosition();
 		baseRotation_ = owner->GetRotation();

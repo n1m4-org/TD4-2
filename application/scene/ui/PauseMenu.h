@@ -56,4 +56,10 @@ private:
 
 	// タイトルへ戻るボタン
 	std::unique_ptr<Sprite> titleButton_;
+
+	// ボタンのホバー状態
+	bool resumeHovered_ = false;
+	bool restartHovered_ = false;
+	bool titleHovered_ = false;
+
 };

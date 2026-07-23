@@ -57,6 +57,7 @@ void MyGame::LoadModels()
 	ModelManager::GetInstance()->LoadModel("chargeEnemy");
 	ModelManager::GetInstance()->LoadModel("chargeEnemy");
 	ModelManager::GetInstance()->LoadModel("HormingEnemy");
+	ModelManager::GetInstance()->LoadModel("missile");
 
 	// ====================
 	// ゲーム固有のリソース	

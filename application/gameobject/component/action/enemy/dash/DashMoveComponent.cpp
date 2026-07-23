@@ -10,6 +10,7 @@
 #include "gameobject/component/base/ICollisionComponent.h"
 #include "gameobject/GameObjectTag.h"
 #include "time/TimeManager.h"
+#include "audio/Audio.h"
 
 namespace
 {
@@ -128,6 +129,7 @@ namespace GameObjectComponent
 			Vector3 toPlayer = player_->GetPosition() - _owner->GetPosition();
 			dashDirection_ = toPlayer.Normalize();
 			currentSpd_ = speed_;
+			Audio::GetInstance()->PlayWave("se_spawn");
 			state_ = State::Dash;
 			return;
 		}

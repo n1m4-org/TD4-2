@@ -16,6 +16,7 @@
 #include "application/gameobject/component/action/enemy/dash/DashMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
+#include "audio/Audio.h"
 
 using namespace GameObjectComponent;
 
@@ -59,7 +60,12 @@ namespace
 		if (!(info.otherCollider->GetCollisionLayer() & CollisionLayer::PlayerBullet)) { return; }
 
 		auto status = enemy->GetComponent<StatusComponent>();
-		if (status) { status->ApplyDamage(10); }
+		if (status) 
+		{
+			status->ApplyDamage(10); 
+			Audio::GetInstance()->PlayWave("se_damage");
+		
+		}
 	}
 
 	void SetupCommonCollider(GameObject* enemy)
@@ -107,6 +113,9 @@ GameObject* EnemyFactory::Create(const SpawnCommand& command, GameObject* player
 		Logger::Log("[EnemyFactory] Unknown enemy type: " + command.type + "\n");
 		return nullptr;
 	}
+	// 敵生成時のSE再生
+	Audio::GetInstance()->PlayWave("se_spawn");
+
 	return it->second(command, player);
 }
 

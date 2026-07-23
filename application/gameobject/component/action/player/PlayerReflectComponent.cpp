@@ -13,6 +13,7 @@
 #include "math/Easing.h"
 #include "math/MatrixFunc.h"
 #include "time/TimeManager.h"
+#include "audio/Audio.h"
 
 #include <algorithm>
 #include <cmath>
@@ -93,6 +94,9 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 		reflectTimer_ = activationAnimationDuration_;
 		activationAnimationTimer_ = activationAnimationDuration_;
 
+		// 反射開始時にSEを再生する。
+		Audio::GetInstance()->PlayWave("se_swing");
+
 		// 反射中にロックが切り替わっても行き先が変わらないよう、入力時点で固定する。
 		hasReflectTarget_ = hasLockOnTarget_;
 		reflectTargetPosition_ = lockOnTargetPosition_;
@@ -124,6 +128,9 @@ void GameObjectComponent::PlayerReflectComponent::Update(GameObject* owner)
 
 void GameObjectComponent::PlayerReflectComponent::NotifyReflectSucceeded()
 {
+	// 反射成功時にSEを再生する。
+	Audio::GetInstance()->PlayWave("se_reflection");
+
 	TimeManager::GetInstance().StartHitStop(hitStopDuration_);
 	camera_->StartShake(cameraShakeIntensity_, cameraShakeDuration_);
 	camera_->StartZoom(cameraZoomFovOffset_, cameraZoomDuration_);
