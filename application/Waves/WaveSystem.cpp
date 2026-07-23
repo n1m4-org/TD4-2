@@ -80,6 +80,15 @@ void WaveSystem::Update(float deltaTime)
 	}
 }
 
+GameObject* WaveSystem::SpawnSingleEnemy(const std::string& type)
+{
+	SpawnCommand command;
+	command.timing = 0.0f;
+	command.type = type;
+	command.position = { 0.0f, 0.0f, 10.0f };
+	return spawner_.Spawn(command);
+}
+
 bool WaveSystem::IsCompleted() const
 {
 	return current_ >= waves_.size();
