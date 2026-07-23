@@ -33,6 +33,12 @@ public:
 	// ImGuiの「Start」ボタン等から呼ぶ。最初のWaveのスポーンを開始する
 	void Start();
 
+	// ImGuiの「Restart」ボタンから呼ぶ。全Waveを未開始状態に戻す(デバッグ用)
+	void Restart();
+
+	// ImGuiの「Force Complete」ボタンから呼ぶ。クリア済み状態を強制的に立てる(デバッグ用)
+	void ForceComplete();
+
 	void Update(float deltaTime);
 
 	bool IsCompleted() const;

@@ -4,6 +4,7 @@
 #include "engine/graphics/2d/Sprite.h"
 #include "jsonEditor/JsonEditableBase.h"
 #include "math/Vector3.h"
+#include "engine/effects/particle/ParticleEffect.h"
 
 #include <memory>
 
@@ -85,6 +86,8 @@ namespace GameObjectComponent
 		std::unique_ptr<Sprite> lockOnMarker_;
 		// GameObjectManagerが管理するロック対象。登録中だけ参照する（所有しない）。
 		GameObject* lockOnTarget_ = nullptr;
+		// パーティクルのポインタ
+		ParticleEffect* handEffect_ = nullptr;
 
 		bool isReflecting_ = false;
 		float reflectTimer_ = 0.0f;

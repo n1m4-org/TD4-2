@@ -46,3 +46,10 @@ void Wave::Update(float deltaTime, EnemySpawner* spawner)
 		state_ = WaveState::Completed;
 	}
 }
+
+void Wave::Reset()
+{
+	elapsedTime_ = 0.0f;
+	state_ = WaveState::Ready;
+	spawned_.assign(commands_.size(), false);
+}
