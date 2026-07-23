@@ -1,9 +1,13 @@
 #include "TitleWaitState.h"
 #include "engine/scene/interface/BaseScene.h"
 #include "input/Input.h"
+#include "audio/Audio.h"
 
 void TitleWaitState::OnEnter(BaseScene& scene)
 {
+	Audio::GetInstance()->PlayWave("TitleBGM", true);
+	// BGMの音量を調整（0.0f～1.0f）
+	Audio::GetInstance()->SetVolume("TitleBGM", 0.5f);
 }
 
 void TitleWaitState::OnUpdate(BaseScene& scene)
