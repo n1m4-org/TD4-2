@@ -127,9 +127,9 @@ namespace GameObjectComponent
 		float remainingLifetimeSeconds_ = 0.0f;
 
 		float chaseRange_ = 30.0f;
-		float chaseSpeed_ = 7.0f;
+		float chaseSpeed_ = 10.0f;
 		float chaseLifetimeSeconds_ = 5.0f;
-		float reflectedSpeed_ = 10.0f;
+		float reflectedSpeed_ = 25.0f;
 		float reflectedLifetimeSeconds_ = 1.0f;
 
 		// ドリフト用: 現在の進行方向
