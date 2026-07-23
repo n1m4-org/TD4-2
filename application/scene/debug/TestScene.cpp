@@ -1068,10 +1068,11 @@ void TestScene::Draw2D()
 	if (isClearUIVisible_)
 	{
 		DrawClearUI();
-	// 最後にポーズ背景を描画
-	if (pauseMenu_)
-	{
-		pauseMenu_->Draw();
+		// 最後にポーズ背景を描画
+		if (pauseMenu_)
+		{
+			pauseMenu_->Draw();
+		}
 	}
 }
 
