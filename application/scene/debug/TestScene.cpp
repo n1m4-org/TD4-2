@@ -32,8 +32,10 @@
 #include "engine/scene/factory/SceneFactory.h"
 
 #include "engine/scene/factory/SceneFactory.h"
+#include <Windows.h>
 #include "math/Easing.h"
 #include "time/TimeManager.h"
+
 REGISTER_SCENE(TestScene);
 
 using namespace GameObjectComponent;
@@ -541,7 +543,9 @@ void TestScene::Initialize()
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 
-	
+	// クリアUIの生成（演出終了まで非表示）
+	InitializeClearUI();
+
 	auto post = sceneManager_->GetPostProcessManager();
 	// 色収差(RGBシフト)を無効化
 	post->crtEffect_->SetChromaticAberrationEnabled(false);
@@ -659,6 +663,8 @@ void TestScene::StartClearDirection()
 		physics->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 		physics->SetExternalVelocity({0.0f, 0.0f, 0.0f});
 	}
+
+
 }
 
 void TestScene::UpdateClearDirection()
@@ -781,6 +787,95 @@ void TestScene::UpdateClearDirection()
 		cameraTimer_ =
 			kClearCameraMoveTime +
 			kClearPlayerActionTime;
+
+		// 演出が終わったのでクリアUIを表示する
+		isClearUIVisible_ = true;
+	}
+}
+
+void TestScene::InitializeClearUI()
+{
+	auto* spriteCommon = sceneManager_->GetSpriteCommon();
+
+	// 仮画像：白1x1テクスチャを色分けして使う（後で正式な画像へ差し替え予定）
+	const std::string kTexturePath = "./Resources/white1x1.png";
+
+	// 背景の暗幕（全画面・半透明。演出後の画面を少し暗くしてUIを見やすくする）
+	clearBackground_ = std::make_unique<Sprite>();
+	clearBackground_->Initialize(spriteCommon, kTexturePath);
+	clearBackground_->SetPosition({0.0f, 0.0f});
+	clearBackground_->SetSize({Sprite::kCoordinateWidth, Sprite::kCoordinateHeight});
+	clearBackground_->SetColor({0.0f, 0.05f, 0.15f, 0.5f});
+
+	// 「クリア！」帯（金色・中心アンカー。後で文字画像へ差し替え予定）
+	clearTitleSprite_ = std::make_unique<Sprite>();
+	clearTitleSprite_->Initialize(spriteCommon, kTexturePath);
+	clearTitleSprite_->SetAnchorPoint({0.5f, 0.5f});
+	clearTitleSprite_->SetPosition(kClearTitlePos);
+	clearTitleSprite_->SetSize(kClearTitleSize);
+	clearTitleSprite_->SetColor({1.0f, 0.85f, 0.2f, 0.95f});
+
+	// ボタンを横並びに配置（中央を挟んで左：もう一度／右：ゲームを終了）
+	const float halfSeparation = kClearButtonSize.x * 0.5f + kClearButtonGap * 0.5f;
+	const Vector2 retryPos = {kClearUICenterX - halfSeparation, kClearButtonRowY};
+	const Vector2 quitPos = {kClearUICenterX + halfSeparation, kClearButtonRowY};
+
+	// もう一度（緑）
+	retryButton_ = std::make_unique<MenuButton>();
+	retryButton_->Initialize(spriteCommon, kTexturePath, retryPos, kClearButtonSize);
+	retryButton_->SetColors({0.2f, 0.5f, 0.2f, 0.9f}, {0.4f, 1.0f, 0.4f, 1.0f});
+
+	// ゲームを終了（赤）
+	quitButton_ = std::make_unique<MenuButton>();
+	quitButton_->Initialize(spriteCommon, kTexturePath, quitPos, kClearButtonSize);
+	quitButton_->SetColors({0.5f, 0.2f, 0.2f, 0.9f}, {1.0f, 0.4f, 0.4f, 1.0f});
+}
+
+void TestScene::UpdateClearUI()
+{
+	if (clearBackground_)
+	{
+		clearBackground_->Update();
+	}
+	if (clearTitleSprite_)
+	{
+		clearTitleSprite_->Update();
+	}
+
+	const Vector2 mousePos = Input::GetInstance()->GetMousePosition();
+	const bool clicked = Input::GetInstance()->IsMouseButtonTriggered(0);
+
+	// もう一度：TestSceneを最初から読み込み直す
+	if (retryButton_ && retryButton_->Update(mousePos, clicked))
+	{
+		sceneManager_->ChangeScene("TestScene");
+		return; // 二重ChangeScene防止
+	}
+
+	// ゲームを終了：アプリケーションを閉じる
+	if (quitButton_ && quitButton_->Update(mousePos, clicked))
+	{
+		PostQuitMessage(0);
+	}
+}
+
+void TestScene::DrawClearUI()
+{
+	if (clearBackground_)
+	{
+		clearBackground_->Draw();
+	}
+	if (clearTitleSprite_)
+	{
+		clearTitleSprite_->Draw();
+	}
+	if (retryButton_)
+	{
+		retryButton_->Draw();
+	}
+	if (quitButton_)
+	{
+		quitButton_->Draw();
 	}
 }
 
@@ -863,6 +958,19 @@ void TestScene::OnFinalize()
 		DebugUIManager::GetInstance()->UnregisterDebugUI(this);
 	}
 #endif
+
+	player_.reset();
+	groundObject_.reset();
+	targetObject_.reset();
+	debugCamera_.reset();
+	topDownCamera_.reset();
+
+	// クリアUIの解放
+	clearBackground_.reset();
+	clearTitleSprite_.reset();
+	retryButton_.reset();
+	quitButton_.reset();
+
 }
 
 void TestScene::CommonUpdate()
@@ -924,6 +1032,12 @@ void TestScene::CommonUpdate()
 		UpdateCamera();
 	}
 
+	// クリア演出が終わってUIが出ている間はボタン入力を処理する
+	if (isClearUIVisible_)
+	{
+		UpdateClearUI();
+	}
+
 	if (cameraState_ != CameraState::Playing)
 	{
 		return;
@@ -950,10 +1064,15 @@ void TestScene::Draw2D()
 	// ゲームオブジェクトの2D描画
 	GameObjectManager::GetInstance()->Draw2D();
 
-	// 最後にポーズ背景を描画
-	if (pauseMenu_)
+	// クリアUI（演出終了後のオーバーレイ）
+	if (isClearUIVisible_)
 	{
-		pauseMenu_->Draw();
+		DrawClearUI();
+		// 最後にポーズ背景を描画
+		if (pauseMenu_)
+		{
+			pauseMenu_->Draw();
+		}
 	}
 }
 
