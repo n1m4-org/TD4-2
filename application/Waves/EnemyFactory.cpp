@@ -63,7 +63,7 @@ namespace
 		auto status = enemy->GetComponent<StatusComponent>();
 		if (status) 
 		{
-			status->ApplyDamage(40); 
+			status->SetHp(status->GetHp() - 40); 
 			Audio::GetInstance()->PlayWave("se_damage");
 		
 		}
@@ -172,10 +172,6 @@ void EnemyFactory::RegisterDefaultEnemies()
 		if (!enemy) { return nullptr; }
 		enemy->AddComponent("Move", std::make_unique<HormingMoveComponent>(player));
 		SetupCommonCollider(enemy);
-		// ホーミング敵は3発で倒れる(TestSceneの調整値を踏襲)
-		if (auto status = enemy->GetComponent<StatusComponent>())
-		{
-		}
 		return enemy;
 	});
 

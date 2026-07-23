@@ -114,7 +114,7 @@ void WaveScene::Initialize()
 	player_ = std::make_unique<GameObject>(GameObjectTag::Player);
 	player_->SetName("Player");
 	player_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-	player_->SetModel("cube");
+	player_->SetModel("player");
 	player_->SetPosition({0.0f, 2.0f, 0.0f});
 	player_->SetScale({2.0f, 2.0f, 2.0f});
 	player_->SetColor(VectorColorCodes::Cyan);
@@ -173,7 +173,7 @@ void WaveScene::Initialize()
 	{
 		collider->SetCollisionLayer(CollisionLayer::Player);
 		collider->SetCollisionMask(CollisionLayer::Enemy | CollisionLayer::Stage | CollisionLayer::Terrain | CollisionLayer::Bumpers | CollisionLayer::EnemyBullet);
-
+		collider->SetSizeOffset({0.0f, 1.0f, 0.0f});
 		auto handlePlayerCollision = [this](const CollisionInfo& info)
 		{
 			if (!info.otherCollider)

@@ -103,9 +103,10 @@ void TitleScene::Initialize()
 		playerModel_ = std::make_unique<Object3d>();
 		playerModel_->Initialize(objCommon, camera);
 		if (lightManager) playerModel_->SetLightManager(lightManager);
-		playerModel_->SetModel("cube");
+		playerModel_->SetModel("player");
 		playerModel_->SetTranslate({ 0.0f, 1.5f, 0.0f });
 		playerModel_->SetScale({ 2.0f, 2.0f, 2.0f });
+		playerModel_->SetColor(VectorColorCodes::Cyan);
 
 		// エネミーモデル（サイドアクセント）
 		enemyModel_ = std::make_unique<Object3d>();
