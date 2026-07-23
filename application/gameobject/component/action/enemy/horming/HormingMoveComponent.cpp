@@ -19,6 +19,7 @@
 #include <cmath>
 #include <numbers>
 #include <string>
+#include "effects/particle/ParticleManager.h"
 
 using namespace GameObjectComponent;
 
@@ -286,6 +287,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 			if ((info.otherCollider->GetCollisionLayer() & CollisionLayer::Player) ||
 				(info.otherCollider->GetCollisionLayer() & CollisionLayer::Bumpers))
 			{
+				ParticleManager::GetInstance()->Play("bullet_hit", bulletObject->GetPosition());
 				KillBullet(bulletObject);
 				return;
 			}
