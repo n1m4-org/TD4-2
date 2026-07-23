@@ -3,7 +3,7 @@
 #include "../../common/PhysicsComponent.h"
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
-#include "application/gameobject/component/action/common/SmashComponent.h"
+#include "application/gameobject/component/action/common/TrailComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
 #include "engine/gameobject/base/GameObject.h"
@@ -17,6 +17,7 @@
 
 #include "../bullet/BulletBehaviorComponent.h"
 #include "effects/particle/ParticleManager.h"
+#include "math/VectorColorCodes.h"
 
 GameObjectComponent::ChargeMoveComponent::ChargeMoveComponent(GameObject* _player)
 	: player_(_player)
@@ -215,7 +216,7 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(4.0f));
 
 	// 跳ね返した時に出すエフェクトコンポーネント
-	bullet->AddComponent("smash", std::make_unique<SmashComponent>());
+	bullet->AddComponent("trail", std::make_unique<TrailComponent>());
 
 	// 　物理コンポーネントの追加
 	auto physics = std::make_unique<PhysicsComponent>(bullet);
@@ -258,9 +259,9 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 				behavior->Reflect(bullet, direction, speed);
 
 				// 吹っ飛ばしエフェクトを再生
-				if (auto smash = bullet->GetComponent<SmashComponent>())
+				if (auto smash = bullet->GetComponent<TrailComponent>())
 				{
-					smash->Play(bullet);
+					smash->SetColor(VectorColorCodes::Blue);
 				}
 				return;
 			}

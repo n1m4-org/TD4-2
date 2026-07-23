@@ -8,6 +8,7 @@
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
+#include "application/gameobject/component/action/common/TrailComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/common/UIComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
@@ -74,7 +75,7 @@ namespace
 		if (!collider) { return; }
 
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
-		collider->SetCollisionMask(CollisionLayer::PlayerBullet | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerReflect | CollisionLayer::PlayerBullet | CollisionLayer::Terrain | CollisionLayer::Bumpers);
 
 		collider->SetOnEnter([enemy](const CollisionInfo& info)
 		{
@@ -147,6 +148,8 @@ void EnemyFactory::RegisterDefaultEnemies()
 		GameObject* enemy = CreateBaseEnemy(command, "cube");
 		if (!enemy) { return nullptr; }
 		enemy->AddComponent("Move", std::make_unique<DashMoveComponent>(player));
+		// 跳ね返した時に出すエフェクトコンポーネント
+		enemy->AddComponent("trail", std::make_unique<TrailComponent>());
 		SetupCommonCollider(enemy);
 		return enemy;
 	});

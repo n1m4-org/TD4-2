@@ -73,6 +73,9 @@
     <Filter Include="scene\play\title\state">
       <UniqueIdentifier>{59A26E78-117C-D4D7-621C-6511A4C9C91B}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scene\state">
+      <UniqueIdentifier>{00E80580-F9EF-9B0C-B63F-84B8DF75DDF3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="scene\ui">
       <UniqueIdentifier>{69E5C875-BCC1-6A96-6277-EDEF3879AD75}</UniqueIdentifier>
     </Filter>
@@ -102,10 +105,10 @@
     <ClCompile Include="gameobject\component\action\common\PhysicsComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
-    <ClCompile Include="gameobject\component\action\common\SmashComponent.cpp">
+    <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
-    <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
+    <ClCompile Include="gameobject\component\action\common\TrailComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\common\UIComponent.cpp">
@@ -187,6 +190,12 @@
     <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
       <Filter>scene\play\title\state</Filter>
     </ClCompile>
+    <ClCompile Include="scene\state\SceneEnterState.cpp">
+      <Filter>scene\state</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\state\SceneExitState.cpp">
+      <Filter>scene\state</Filter>
+    </ClCompile>
     <ClCompile Include="scene\ui\MenuButton.cpp">
       <Filter>scene\ui</Filter>
     </ClCompile>
@@ -225,10 +234,10 @@
     <ClInclude Include="gameobject\component\action\common\PhysicsComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
-    <ClInclude Include="gameobject\component\action\common\SmashComponent.h">
+    <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
-    <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
+    <ClInclude Include="gameobject\component\action\common\TrailComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\UIComponent.h">
@@ -305,6 +314,12 @@
     </ClInclude>
     <ClInclude Include="scene\play\title\state\TitleWaitState.h">
       <Filter>scene\play\title\state</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\state\SceneEnterState.h">
+      <Filter>scene\state</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\state\SceneExitState.h">
+      <Filter>scene\state</Filter>
     </ClInclude>
     <ClInclude Include="scene\ui\MenuButton.h">
       <Filter>scene\ui</Filter>

@@ -137,7 +137,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp" />
-    <ClCompile Include="gameobject\component\action\common\SmashComponent.cpp" />
+    <ClCompile Include="gameobject\component\action\common\TrailComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerSlowMotionComponent.cpp" />
     <ClCompile Include="scene\gameover\GameOverScene.cpp" />
@@ -149,6 +149,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="scene\play\title\state\TitleEnterState.cpp" />
     <ClCompile Include="scene\play\title\state\TitleWaitState.cpp" />
     <ClCompile Include="scene\play\title\state\TitleExitState.cpp" />
+    <ClCompile Include="scene\state\SceneEnterState.cpp" />
+    <ClCompile Include="scene\state\SceneExitState.cpp" />
     <ClCompile Include="scene\Wave\WaveScene.cpp" />
     <ClCompile Include="transition\SceneTransitionEffect.cpp" />
     <ClCompile Include="Waves\EnemyFactory.cpp" />
@@ -180,7 +182,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h" />
-    <ClInclude Include="gameobject\component\action\common\SmashComponent.h" />
+    <ClInclude Include="gameobject\component\action\common\TrailComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h" />
     <ClInclude Include="scene\gameover\GameOverScene.h" />
@@ -190,6 +192,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="scene\play\title\state\TitleEnterState.h" />
     <ClInclude Include="scene\play\title\state\TitleWaitState.h" />
     <ClInclude Include="scene\play\title\state\TitleExitState.h" />
+    <ClInclude Include="scene\state\SceneEnterState.h" />
+    <ClInclude Include="scene\state\SceneExitState.h" />
     <ClInclude Include="scene\Wave\WaveScene.h" />
     <ClInclude Include="transition\SceneTransitionEffect.h" />
     <ClInclude Include="Waves\EnemyFactory.h" />
