@@ -622,44 +622,53 @@ void WaveScene::InitializeResultUI()
 {
 	auto* spriteCommon = sceneManager_->GetSpriteCommon();
 
-	// 仮画像：白1x1テクスチャを色分けして使う（後で正式な画像へ差し替え予定）
-	const std::string kTexturePath = "./Resources/white1x1.png";
+	// 背景の暗幕は従来どおり白1x1を色付けして使う
+	const std::string kBackgroundTexturePath = "./Resources/white1x1.png";
+	// 結果UIの本画像（ui フォルダ）
+	const std::string kClearTitlePath = "ui/clear.png";
+	const std::string kGameOverTitlePath = "ui/gameover.png";
+	const std::string kRetryButtonPath = "ui/onemore.png";
+	const std::string kQuitButtonPath = "ui/end.png";
+
+	// ボタンの色（画像本来の見た目を活かし、ホバーで明るく光らせる）
+	const Vector4 buttonNormalColor = {1.0f, 1.0f, 1.0f, 1.0f};
+	const Vector4 buttonHoverColor = {1.0f, 1.0f, 0.5f, 1.0f};
 
 	// 背景の暗幕
 	resultBackground_ = std::make_unique<Sprite>();
-	resultBackground_->Initialize(spriteCommon, kTexturePath);
+	resultBackground_->Initialize(spriteCommon, kBackgroundTexturePath);
 	resultBackground_->SetPosition({0.0f, 0.0f});
 	resultBackground_->SetSize({Sprite::kCoordinateWidth, Sprite::kCoordinateHeight});
 	resultBackground_->SetColor({0.0f, 0.05f, 0.15f, 0.5f});
 
-	// 「クリア！」帯
+	// 「クリア」タイトル画像（中心アンカー）
 	clearTitleSprite_ = std::make_unique<Sprite>();
-	clearTitleSprite_->Initialize(spriteCommon, kTexturePath);
+	clearTitleSprite_->Initialize(spriteCommon, kClearTitlePath);
 	clearTitleSprite_->SetAnchorPoint({0.5f, 0.5f});
 	clearTitleSprite_->SetPosition(kResultTitlePos);
-	clearTitleSprite_->SetSize(kResultTitleSize);
-	clearTitleSprite_->SetColor({1.0f, 0.85f, 0.2f, 0.95f});
+	clearTitleSprite_->SetSize(kClearTitleSize);
 
-	// 「ゲームオーバー」帯
+	// 「ゲームオーバー」タイトル画像（中心アンカー）
 	gameOverTitleSprite_ = std::make_unique<Sprite>();
-	gameOverTitleSprite_->Initialize(spriteCommon, kTexturePath);
+	gameOverTitleSprite_->Initialize(spriteCommon, kGameOverTitlePath);
 	gameOverTitleSprite_->SetAnchorPoint({0.5f, 0.5f});
 	gameOverTitleSprite_->SetPosition(kResultTitlePos);
-	gameOverTitleSprite_->SetSize(kResultTitleSize);
-	gameOverTitleSprite_->SetColor({0.75f, 0.12f, 0.12f, 0.95f});
+	gameOverTitleSprite_->SetSize(kGameOverTitleSize);
 
 	// ボタンを横並びに配置（中央を挟んで左：もう一度／右：ゲームを終了）
 	const float halfSeparation = kResultButtonSize.x * 0.5f + kResultButtonGap * 0.5f;
 	const Vector2 retryPos = {kResultUICenterX - halfSeparation, kResultButtonRowY};
 	const Vector2 quitPos = {kResultUICenterX + halfSeparation, kResultButtonRowY};
 
+	// もう一度
 	retryButton_ = std::make_unique<MenuButton>();
-	retryButton_->Initialize(spriteCommon, kTexturePath, retryPos, kResultButtonSize);
-	retryButton_->SetColors({0.2f, 0.5f, 0.2f, 0.9f}, {0.4f, 1.0f, 0.4f, 1.0f});
+	retryButton_->Initialize(spriteCommon, kRetryButtonPath, retryPos, kResultButtonSize);
+	retryButton_->SetColors(buttonNormalColor, buttonHoverColor);
 
+	// ゲームを終了
 	quitButton_ = std::make_unique<MenuButton>();
-	quitButton_->Initialize(spriteCommon, kTexturePath, quitPos, kResultButtonSize);
-	quitButton_->SetColors({0.5f, 0.2f, 0.2f, 0.9f}, {1.0f, 0.4f, 0.4f, 1.0f});
+	quitButton_->Initialize(spriteCommon, kQuitButtonPath, quitPos, kResultButtonSize);
+	quitButton_->SetColors(buttonNormalColor, buttonHoverColor);
 }
 
 void WaveScene::UpdateResultUI()
@@ -798,6 +807,13 @@ void WaveScene::CommonUpdate()
 	// Intro/クリア/ゲームオーバー演出中はゲームプレイの更新を止める(TestSceneと同様)
 	if (cameraState_ != CameraState::Playing)
 	{
+		return;
+	}
+
+	// デバッグ機能：Cキーで即座にクリア演出を開始する(TestSceneと同様)
+	if (Input::GetInstance()->TriggerKey(DIK_C))
+	{
+		StartClearDirection();
 		return;
 	}
 
