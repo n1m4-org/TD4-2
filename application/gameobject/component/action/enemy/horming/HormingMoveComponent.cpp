@@ -34,6 +34,9 @@ HormingMoveComponent::HormingMoveComponent(GameObject* target)
 	Register("autoFireInterval", &autoFireInterval_);
 	Register("burstCount", &burstCount_);
 	Register("burstInterval", &burstInterval_);
+
+	Register("preFireRotationDuration", &preFireRotationDuration_);
+	Register("preFireRotationAmount", &preFireRotationAmount_);
 }
 
 void HormingMoveComponent::Update(GameObject* owner)
@@ -52,10 +55,19 @@ void HormingMoveComponent::Update(GameObject* owner)
 	{
 		KillAllBullets();
 
-		// 発射待ちのバーストも中止する
+		// 発射待ちのバーストを中止
 		pendingBurstCount_ = 0;
 		currentBurstIndex_ = 0;
 		burstTimer_ = 0.0f;
+
+		// 発射前回転も中止
+		if (isPreFireRotating_)
+		{
+			owner->SetRotation(preFireBaseRotation_);
+		}
+
+		isPreFireRotating_ = false;
+		preFireRotationTimer_ = 0.0f;
 
 		return;
 	}
@@ -69,9 +81,22 @@ void HormingMoveComponent::Update(GameObject* owner)
 
 void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 {
-	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
+	if (!owner)
+	{
+		return;
+	}
 
-	// バースト発射中なら、burstInterval_ ごとに1発ずつ撃つ
+	const float deltaTime =
+		TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	// 発射前の回転演出中
+	if (isPreFireRotating_)
+	{
+		UpdatePreFireRotation(owner, deltaTime);
+		return;
+	}
+
+	// バースト発射中
 	if (pendingBurstCount_ > 0)
 	{
 		burstTimer_ += deltaTime;
@@ -80,7 +105,10 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 		{
 			burstTimer_ = 0.0f;
 
-			FireBullet(owner, currentBurstIndex_, burstCount_);
+			FireBullet(
+				owner,
+				currentBurstIndex_,
+				burstCount_);
 
 			currentBurstIndex_++;
 			pendingBurstCount_--;
@@ -89,16 +117,77 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 		return;
 	}
 
-	// 次の攻撃開始までの時間を進める
+	// 次の攻撃開始までの時間
 	autoFireTimer_ += deltaTime;
 
 	if (autoFireTimer_ >= autoFireInterval_)
 	{
 		autoFireTimer_ = 0.0f;
 
-		// 複数弾の発射開始
+		// すぐに弾を撃たず、先に回転演出を開始
+		StartPreFireRotation(owner);
+	}
+}
+
+void HormingMoveComponent::StartPreFireRotation(GameObject* owner)
+{
+	if (!owner)
+	{
+		return;
+	}
+
+	isPreFireRotating_ = true;
+	preFireRotationTimer_ = 0.0f;
+
+	// 演出開始前の向きを保存
+	preFireBaseRotation_ = owner->GetRotation();
+}
+
+void HormingMoveComponent::UpdatePreFireRotation(
+	GameObject* owner,
+	float deltaTime)
+{
+	if (!owner)
+	{
+		return;
+	}
+
+	preFireRotationTimer_ += deltaTime;
+
+	float progress = 1.0f;
+
+	if (preFireRotationDuration_ > 0.0f)
+	{
+		progress =
+			preFireRotationTimer_ /
+			preFireRotationDuration_;
+	}
+
+	progress = std::clamp(progress, 0.0f, 1.0f);
+
+	Vector3 rotation = preFireBaseRotation_;
+
+	// Y軸を回転
+	rotation.y +=
+		preFireRotationAmount_ *
+		progress;
+
+	owner->SetRotation(rotation);
+
+	// 回転演出終了
+	if (progress >= 1.0f)
+	{
+		isPreFireRotating_ = false;
+		preFireRotationTimer_ = 0.0f;
+
+		// 1回転後なので元の向きに正確に戻す
+		owner->SetRotation(preFireBaseRotation_);
+
+		// 回転が終わったらバースト発射を開始
 		pendingBurstCount_ = burstCount_;
 		currentBurstIndex_ = 0;
+
+		// 次のフレームですぐ1発目を撃てるようにする
 		burstTimer_ = burstInterval_;
 	}
 }
