@@ -119,6 +119,11 @@ void WaveScene::Initialize()
 	player_->SetScale({2.0f, 2.0f, 2.0f});
 	player_->SetColor(VectorColorCodes::Cyan);
 	player_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
+	auto input = player_->GetComponent<PlayerInputComponent>();
+	if (input)
+	{
+		input->InitializeUI(sceneManager_->GetSpriteCommon());
+	}
 	player_->AddComponent("Move", std::make_unique<PlayerMoveComponent>(activeCamera));
 	player_->AddComponent("Status", std::make_unique<StatusComponent>(player_.get()));
 	player_->AddComponent("Physics", std::make_unique<PhysicsComponent>(player_.get()));

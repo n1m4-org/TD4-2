@@ -45,6 +45,18 @@ void MyGame::LoadTextures()
 	TextureManager::GetInstance()->LoadTexture("ui/end.png");
 	TextureManager::GetInstance()->LoadTexture("ui/toTitle.png");
 	TextureManager::GetInstance()->LoadTexture("ui/returnGame.png");
+
+	// ゲームプレイのUI
+	TextureManager::GetInstance()->LoadTexture("play/playUI.png");
+	TextureManager::GetInstance()->LoadTexture("play/shiftB.png");
+	TextureManager::GetInstance()->LoadTexture("play/spaceB.png");
+	TextureManager::GetInstance()->LoadTexture("play/mouseLeft.png");
+	TextureManager::GetInstance()->LoadTexture("play/mouseRight.png");
+	TextureManager::GetInstance()->LoadTexture("play/aB.png");
+	TextureManager::GetInstance()->LoadTexture("play/sB.png");
+	TextureManager::GetInstance()->LoadTexture("play/dB.png");
+	TextureManager::GetInstance()->LoadTexture("play/wB_.png");
+
 }
 
 void MyGame::LoadModels()
