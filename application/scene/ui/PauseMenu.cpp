@@ -201,14 +201,14 @@ bool PauseMenu::UpdateButton(
 	}
 
 	const float halfWidth = baseSize.x * 0.5f;
-	const float halfHeight = baseSize.y * 0.5f;
 
-	// スプライトは中心アンカーで描画しているので、判定も中心基準にそろえる
+	// 横は今までどおり中央基準
 	const float left = centerPosition.x - halfWidth;
 	const float right = centerPosition.x + halfWidth;
 
-	const float top = centerPosition.y - halfHeight;
-	const float bottom = centerPosition.y + halfHeight;
+	// 縦は実際に表示されている位置に合わせる
+	const float top = centerPosition.y;
+	const float bottom = centerPosition.y + baseSize.y;
 
 	const bool isHovered =
 		mousePosition.x >= left &&
