@@ -60,6 +60,8 @@ void MyGame::LoadModels()
 	ModelManager::GetInstance()->LoadModel("missile");
 
 	// ====================
-	// ゲーム固有のリソース	
+	// ゲーム固有のリソース
 	// ====================
+	// プレイヤーの反射時に表示するラケットモデル
+	ModelManager::GetInstance()->LoadModel("racket");
 }
