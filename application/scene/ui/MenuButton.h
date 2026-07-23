@@ -25,6 +25,11 @@ public:
 	 */
 	bool Update(const Vector2& mousePos, bool mouseTriggered);
 
+	/**
+	 * @brief ホバー開始した瞬間かどうかを取得
+	 */
+	bool IsHoveredEnter() const { return isHoverEnter_; }
+
 	void Draw();
 
 	void SetColors(const Vector4& normal, const Vector4& hovered)
@@ -33,6 +38,8 @@ public:
 		hoverColor_ = hovered;
 	}
 
+	
+
 private:
 	std::unique_ptr<Sprite> sprite_;
 	Vector2 center_{};
@@ -40,4 +47,5 @@ private:
 	Vector4 normalColor_{0.3f, 0.3f, 0.3f, 0.9f}; // 通常：暗いグレー
 	Vector4 hoverColor_{0.9f, 0.8f, 0.2f, 1.0f};  // ホバー：黄色
 	bool hovered_ = false;
+	bool isHoverEnter_ = false; // ホバー開始フラグ
 };

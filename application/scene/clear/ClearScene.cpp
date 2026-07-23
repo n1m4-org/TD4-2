@@ -5,6 +5,8 @@
 #include "input/Input.h"
 #include <Windows.h>
 
+#include "audio/Audio.h"
+
 #ifdef USE_IMGUI
 #include "manager/editor/DebugUIManager.h"
 #endif
@@ -37,6 +39,10 @@ void ClearScene::Initialize()
 							{960.0f, 640.0f}, {360.0f, 100.0f});
 	quitButton_->SetColors({0.5f, 0.2f, 0.2f, 0.9f}, {1.0f, 0.4f, 0.4f, 1.0f});
 
+	// サウンドのロード
+	Audio::GetInstance()->LoadWave("select", "select.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("check", "check.wav", SoundGroup::SE);
+
 #ifdef USE_IMGUI
 	DebugUIManager::GetInstance()->RegisterDebugUI(this, "Clear Scene", [this]()
 	{ this->DrawImGui(); }, DebugUIArea::Hierarchy);
@@ -45,6 +51,10 @@ void ClearScene::Initialize()
 
 void ClearScene::OnFinalize()
 {
+	// サウンドの解放
+	Audio::GetInstance()->UnloadWave("select");
+	Audio::GetInstance()->UnloadWave("check");
+
 #ifdef USE_IMGUI
 	if (DebugUIManager::HasInstance())
 	{
@@ -64,16 +74,42 @@ void ClearScene::CommonUpdate()
 	const bool clicked = Input::GetInstance()->IsMouseButtonTriggered(0); 
 
 	// もう一度：ゲーム本編へ
-	if (retryButton_ && retryButton_->Update(mousePos, clicked))
+	if (retryButton_)
 	{
-		sceneManager_->ChangeScene("WaveScene");
-		return; // 二重ChangeScene防止
+		if (retryButton_->Update(mousePos, clicked))
+		{
+			// サウンド再生 音量を調整
+			Audio::GetInstance()->PlayWave("check");
+			Audio::GetInstance()->SetVolume("check", 1.0f);
+
+			sceneManager_->ChangeScene("WaveScene");
+			return; // 二重ChangeScene防止
+		}
+		if (retryButton_->IsHoveredEnter())
+		{
+			// サウンド再生 音量を調整
+			Audio::GetInstance()->PlayWave("select");
+			Audio::GetInstance()->SetVolume("select", 1.0f);
+		}
 	}
 
 	// 終了：アプリケーションを閉じる
-	if (quitButton_ && quitButton_->Update(mousePos, clicked))
+	if (quitButton_)
 	{
-		PostQuitMessage(0);
+		if (quitButton_->Update(mousePos, clicked))
+		{
+			// サウンド再生 音量を調整
+			Audio::GetInstance()->PlayWave("check");
+			Audio::GetInstance()->SetVolume("check", 1.0f);
+
+			PostQuitMessage(0);
+		}
+		if (quitButton_->IsHoveredEnter())
+		{
+			// サウンド再生 音量を調整
+			Audio::GetInstance()->PlayWave("select");
+			Audio::GetInstance()->SetVolume("select", 1.0f);
+		}
 	}
 }
 

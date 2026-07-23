@@ -11,6 +11,7 @@
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
+#include "audio/Audio.h"
 
 #include "../../common/TrailComponent.h"
 #include "math/VectorColorCodes.h"
@@ -339,6 +340,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 		bullet.startPos,
 		bullet.controlPos1);
 
+	Audio::GetInstance()->PlayWave("se_missile");
 	GameObjectManager::GetInstance()->Register(bulletObject);
 
 	bullets_.push_back(bullet);
