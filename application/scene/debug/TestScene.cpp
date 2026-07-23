@@ -116,6 +116,11 @@ void TestScene::Initialize()
 
 	// アクション・物理・ステータスコンポーネントの追加
 	player_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
+	auto input = player_->GetComponent<PlayerInputComponent>();
+	if (input)
+	{
+		input->InitializeUI(sceneManager_->GetSpriteCommon());
+	}
 	player_->AddComponent("Move", std::make_unique<PlayerMoveComponent>(sceneManager_->GetCameraManager()->GetActiveCamera()));
 
 	// targetObject_はこの時点ではまだ作られていないので、nullptrで追加しておく
