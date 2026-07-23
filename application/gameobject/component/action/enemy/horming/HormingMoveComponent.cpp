@@ -350,6 +350,9 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 			CollisionLayer::Bumpers |
 			CollisionLayer::PlayerReflect);
 
+		// 当たり判定を大きくする
+		collider->SetSizeOffset({ 1.5f, 2.0f, 1.5f });
+
 		// ホーミング弾自身のコールバックでは、この弾の生存状態だけを変更する。
 		collider->SetOnEnter([this, bulletObject](const CollisionInfo& info)
 		{

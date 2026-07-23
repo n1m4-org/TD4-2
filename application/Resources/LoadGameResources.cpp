@@ -68,4 +68,5 @@ void MyGame::LoadModels()
 	// プレイヤーの反射時に表示するラケットモデル
 	ModelManager::GetInstance()->LoadModel("racket");
 	ModelManager::GetInstance()->LoadModel("ground");
+	ModelManager::GetInstance()->LoadModel("player");
 }
