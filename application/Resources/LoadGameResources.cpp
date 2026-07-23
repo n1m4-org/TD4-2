@@ -43,6 +43,8 @@ void MyGame::LoadTextures()
 	TextureManager::GetInstance()->LoadTexture("ui/clear.png");
 	TextureManager::GetInstance()->LoadTexture("ui/onemore.png");
 	TextureManager::GetInstance()->LoadTexture("ui/end.png");
+	TextureManager::GetInstance()->LoadTexture("ui/toTitle.png");
+	TextureManager::GetInstance()->LoadTexture("ui/returnGame.png");
 }
 
 void MyGame::LoadModels()
@@ -65,4 +67,5 @@ void MyGame::LoadModels()
 	// ====================
 	// プレイヤーの反射時に表示するラケットモデル
 	ModelManager::GetInstance()->LoadModel("racket");
+	ModelManager::GetInstance()->LoadModel("ground");
 }

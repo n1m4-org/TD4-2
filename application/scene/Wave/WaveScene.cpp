@@ -93,8 +93,8 @@ void WaveScene::Initialize()
 	groundObject_ = std::make_unique<GameObject>("GroundCube");
 	groundObject_->SetName("GroundCube");
 	groundObject_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-	groundObject_->SetModel("cube");
-	groundObject_->GetModel()->SetUVScale({300.0f, 300.0f, 1.0f});
+	groundObject_->SetModel("ground");
+	groundObject_->GetModel()->SetUVScale({600.0f, 600.0f, 1.0f});
 	groundObject_->SetPosition({0.0f, -10.0f, 0.0f});
 	groundObject_->SetScale({150.0f, 10.0f, 150.0f});
 	if (auto* obj3d = groundObject_->GetObject3d())

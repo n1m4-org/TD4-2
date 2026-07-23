@@ -47,34 +47,31 @@ void PauseMenu::Initialize(SpriteCommon* spriteCommon)
 	resumeButton_ = std::make_unique<Sprite>();
 	resumeButton_->Initialize(
 		spriteCommon,
-		kPauseBackgroundTexturePath);
+		"ui/returnGame.png");
 
 	resumeButton_->SetAnchorPoint({0.5f, 0.5f});
 	resumeButton_->SetPosition(kResumeButtonPosition);
 	resumeButton_->SetSize(kButtonSize);
-	resumeButton_->SetColor({0.15f, 0.55f, 0.25f, 0.95f});
 
 	// リスタートボタン
 	restartButton_ = std::make_unique<Sprite>();
 	restartButton_->Initialize(
 		spriteCommon,
-		kPauseBackgroundTexturePath);
+		"ui/onemore.png");
 
 	restartButton_->SetAnchorPoint({0.5f, 0.5f});
 	restartButton_->SetPosition(kRestartButtonPosition);
 	restartButton_->SetSize(kButtonSize);
-	restartButton_->SetColor({0.15f, 0.55f, 0.25f, 0.95f});
 
 	// タイトルへ戻るボタン
 	titleButton_ = std::make_unique<Sprite>();
 	titleButton_->Initialize(
 		spriteCommon,
-		kPauseBackgroundTexturePath);
+		"ui/toTitle.png");
 
 	titleButton_->SetAnchorPoint({0.5f, 0.5f});
 	titleButton_->SetPosition(kTitleButtonPosition);
 	titleButton_->SetSize(kButtonSize);
-	titleButton_->SetColor({0.15f, 0.55f, 0.25f, 0.95f});
 }
 
 PauseMenu::Result PauseMenu::Update()

@@ -63,7 +63,7 @@ namespace
 		auto status = enemy->GetComponent<StatusComponent>();
 		if (status) 
 		{
-			status->ApplyDamage(10); 
+			status->ApplyDamage(40); 
 			Audio::GetInstance()->PlayWave("se_damage");
 		
 		}
@@ -175,7 +175,6 @@ void EnemyFactory::RegisterDefaultEnemies()
 		// ホーミング敵は3発で倒れる(TestSceneの調整値を踏襲)
 		if (auto status = enemy->GetComponent<StatusComponent>())
 		{
-			status->SetHp(3);
 		}
 		return enemy;
 	});
