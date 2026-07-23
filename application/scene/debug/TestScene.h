@@ -5,6 +5,8 @@
 #include "engine/gameobject/base/GameObject.h"
 #include "engine/camerawork/topdown/TopDownCamera.h"
 #include "engine/gameobject/component/collision/SphereColliderComponent.h"
+#include "application/scene/ui/MenuButton.h"
+#include "engine/graphics/2d/Sprite.h"
 
 /**
  * @brief ゲームオブジェクトの動作確認を行うデバッグ用シーン。
@@ -42,6 +44,11 @@ private:
 	// クリア演出
 	void StartClearDirection();
 	void UpdateClearDirection();
+
+	// クリアUI（演出終了後に表示するオーバーレイ）
+	void InitializeClearUI();
+	void UpdateClearUI();
+	void DrawClearUI();
 
 	// ディレクショナルライト設定
 	static constexpr Vector3 kLightDirection = { -0.2f, -1.0f, 0.3f };
@@ -109,4 +116,29 @@ private:
 	Vector3 clearPlayerBaseRotation_ = {};
 
 	bool isClearDirectionStarted_ = false;
+
+	// --------- クリアUI用 --------- //
+	// 背景の暗幕
+	std::unique_ptr<Sprite> clearBackground_;
+	// 「クリア！」の帯（仮画像・後で文字画像へ差し替え予定）
+	std::unique_ptr<Sprite> clearTitleSprite_;
+	// もう一度（TestSceneを再読み込み）
+	std::unique_ptr<MenuButton> retryButton_;
+	// ゲームを終了（アプリを閉じる）
+	std::unique_ptr<MenuButton> quitButton_;
+	// クリアUIを表示中かどうか（演出終了で true）
+	bool isClearUIVisible_ = false;
+
+	// UIレイアウト（Sprite座標系 1920x1080 基準）
+	// 画面中央のX
+	static constexpr float kClearUICenterX = Sprite::kCoordinateWidth * 0.5f;
+	// 「クリア！」帯
+	static constexpr Vector2 kClearTitlePos = { kClearUICenterX, 300.0f };
+	static constexpr Vector2 kClearTitleSize = { 640.0f, 180.0f };
+	// ボタン
+	static constexpr Vector2 kClearButtonSize = { 380.0f, 130.0f };
+	// ボタン行の中心Y
+	static constexpr float kClearButtonRowY = 640.0f;
+	// ボタン間の隙間
+	static constexpr float kClearButtonGap = 140.0f;
 };
