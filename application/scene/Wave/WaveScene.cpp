@@ -201,6 +201,9 @@ void WaveScene::Initialize()
 				if (status)
 				{
 					status->SetHp(status->GetHp() - 10);
+					// ダメージ音の再生
+					Audio::GetInstance()->PlayWave("se_playerDamage");
+
 					if (status->GetHp() <= 0)
 					{
 						// プレイヤー死亡時のSE
@@ -243,10 +246,13 @@ void WaveScene::Initialize()
 	Audio::GetInstance()->LoadWave("se_reflection", "reflection.wav", SoundGroup::SE);
 	Audio::GetInstance()->LoadWave("se_swing", "swing.wav", SoundGroup::SE);
 	Audio::GetInstance()->LoadWave("se_playerDead", "playerDead.wav", SoundGroup::SE);
-
+	Audio::GetInstance()->LoadWave("se_skill", "skill.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_playerDamage", "playerDamage.wav", SoundGroup::SE);
 	Audio::GetInstance()->LoadWave("pause", "pause.wav", SoundGroup::SE);
 	Audio::GetInstance()->LoadWave("select", "select.wav", SoundGroup::SE);
 	Audio::GetInstance()->LoadWave("check", "check.wav", SoundGroup::SE);
+
+	Audio::GetInstance()->LoadWave("clear", "clear.wav", SoundGroup::SE);
 
 	// --- BGM Start ---
 	Audio::GetInstance()->PlayWave("game_BGM", true);
@@ -278,7 +284,9 @@ void WaveScene::OnFinalize()
 	Audio::GetInstance()->UnloadWave("se_reflection");
 	Audio::GetInstance()->UnloadWave("se_swing");
 	Audio::GetInstance()->UnloadWave("se_playerDead");
-
+	Audio::GetInstance()->UnloadWave("clear");
+	Audio::GetInstance()->UnloadWave("se_skill");
+	Audio::GetInstance()->UnloadWave("se_playerDamage");
 	Audio::GetInstance()->UnloadWave("pause");
 	Audio::GetInstance()->UnloadWave("select");
 	Audio::GetInstance()->UnloadWave("check");
@@ -382,6 +390,12 @@ void WaveScene::CommonUpdate()
 
 	if (isWaveClear || gameOverRequested_)
 	{
+		if (isWaveClear)// 一旦これでゆるして
+		{
+			// ゲームクリア時のSE
+			Audio::GetInstance()->PlayWave("clear");
+		}
+
 		sceneChangeRequested_ = true;
 		sceneManager_->ChangeScene("Wave");
 	}

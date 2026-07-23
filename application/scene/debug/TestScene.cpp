@@ -223,6 +223,8 @@ void TestScene::Initialize()
 				if (status)
 				{
 					status->SetHp(status->GetHp() - 10);
+					// ダメージ音の再生
+					Audio::GetInstance()->PlayWave("se_playerDamage");
 
 					if (status->GetHp() <= 0)
 					{
@@ -591,7 +593,9 @@ void TestScene::Initialize()
 	Audio::GetInstance()->LoadWave("se_reflection", "reflection.wav", SoundGroup::SE);
 	Audio::GetInstance()->LoadWave("se_swing", "swing.wav", SoundGroup::SE);
 	Audio::GetInstance()->LoadWave("se_playerDead", "playerDead.wav", SoundGroup::SE);
-
+	Audio::GetInstance()->LoadWave("se_skill", "skill.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_playerDamage", "playerDamage.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("clear", "clear.wav", SoundGroup::SE);
 
 	// BGMのロードと再生
 	Audio::GetInstance()->LoadWave("game_BGM", "gameplayBGM.wav", SoundGroup::BGM);
@@ -695,6 +699,8 @@ void TestScene::StartClearDirection()
 	isClearDirectionStarted_ = true;
 	cameraState_ = CameraState::Clear;
 	cameraTimer_ = 0.0f;
+
+	Audio::GetInstance()->PlayWave("clear");
 
 	auto camera =
 		sceneManager_->GetCameraManager()->GetActiveCamera();
@@ -1060,8 +1066,10 @@ void TestScene::OnFinalize()
 
 	Audio::GetInstance()->UnloadWave("se_bullet");
 	Audio::GetInstance()->UnloadWave("se_enemyDead");
-
 	Audio::GetInstance()->UnloadWave("se_missile");
+	Audio::GetInstance()->UnloadWave("clear");
+	Audio::GetInstance()->UnloadWave("se_skill");
+	Audio::GetInstance()->UnloadWave("se_playerDamage");
 
 	// BGMの解放
 	Audio::GetInstance()->StopWave("game_BGM");
