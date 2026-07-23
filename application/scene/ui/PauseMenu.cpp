@@ -5,13 +5,16 @@
 #include "input/Input.h"
 #include "audio/Audio.h"
 
+#include <chrono>
+#include <cmath>
+
 namespace
 {
 	constexpr char kPauseBackgroundTexturePath[] = "./Resources/white1x1.png";
 
 	// ボタンの基本サイズ
 	constexpr Vector2 kButtonSize =
-		{360.0f, 120.0f};
+		{432.0f, 216.0f};
 
 	// ボタンのY座標
 	constexpr float kButtonY = 540.0f;
@@ -42,6 +45,25 @@ void PauseMenu::Initialize(SpriteCommon* spriteCommon)
 							   Sprite::kCoordinateHeight});
 
 	pauseBackground_->SetColor({0.0f, 0.0f, 0.0f, 0.5f}); // 半透明の黒
+
+	// ポーズテキストスプライト][
+	pauseText_ = std::make_unique<Sprite>();
+	pauseText_->Initialize(
+		spriteCommon,
+		"ui/pause.png");
+
+	pauseText_->SetAnchorPoint({0.5f, 0.5f});
+
+	// 画面上部中央
+	pauseText_->SetPosition(pauseTextPosition_);
+
+	// ボタンより少し大きめ
+	pauseText_->SetSize({500.0f, 180.0f});
+
+	pauseText_->SetColor(pauseTextColor_);
+	pauseText_->SetAnchorPoint({0.5f, 0.5f});
+	pauseText_->SetPosition(kResumeButtonPosition);
+	pauseText_->SetSize(kButtonSize);
 
 	// ゲーム再開ボタン
 	resumeButton_ = std::make_unique<Sprite>();
@@ -93,6 +115,35 @@ PauseMenu::Result PauseMenu::Update()
 	if (pauseBackground_)
 	{
 		pauseBackground_->Update();
+	}
+
+	// ポーズ中だけSpriteを更新
+	if (pauseBackground_)
+	{
+		pauseBackground_->Update();
+	}
+
+	// 「PAUSE」文字をゆっくり点滅させる
+	if (pauseText_)
+	{
+		using Clock = std::chrono::steady_clock;
+
+		const float elapsedTime =
+			std::chrono::duration<float>(
+				Clock::now().time_since_epoch())
+				.count();
+
+		// 0～1の範囲で繰り返す
+		const float blinkRate =
+			(std::sin(elapsedTime * 6.0f) + 1.0f) * 0.5f;
+
+		// 完全に消えると見失いやすいので、透明度は0.25～1.0
+		pauseTextColor_.w =
+			0.25f + blinkRate * 0.75f;
+
+		pauseText_->SetPosition(pauseTextPosition_);
+		pauseText_->SetColor(pauseTextColor_);
+		pauseText_->Update();
 	}
 
 	const Vector2 mousePosition =
@@ -195,6 +246,12 @@ void PauseMenu::Draw()
 	if (pauseBackground_)
 	{
 		pauseBackground_->Draw();
+	}
+
+	// 画面上部のポーズ文字
+	if (pauseText_)
+	{
+		pauseText_->Draw();
 	}
 
 	// その上に3つのボタンを描画

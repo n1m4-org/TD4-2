@@ -45,6 +45,7 @@ void MyGame::LoadTextures()
 	TextureManager::GetInstance()->LoadTexture("ui/end.png");
 	TextureManager::GetInstance()->LoadTexture("ui/toTitle.png");
 	TextureManager::GetInstance()->LoadTexture("ui/returnGame.png");
+	TextureManager::GetInstance()->LoadTexture("ui/pause.png");
 }
 
 void MyGame::LoadModels()
