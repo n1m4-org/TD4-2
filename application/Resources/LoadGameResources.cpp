@@ -49,6 +49,8 @@ void MyGame::LoadModels()
 	ModelManager::GetInstance()->LoadModel("plane", ".gltf");
 	ModelManager::GetInstance()->LoadModel("bombenemy");
 	ModelManager::GetInstance()->LoadModel("chargeEnemy");
+	ModelManager::GetInstance()->LoadModel("chargeEnemy");
+	ModelManager::GetInstance()->LoadModel("HormingEnemy");
 
 	// ====================
 	// ゲーム固有のリソース	
