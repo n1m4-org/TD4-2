@@ -18,18 +18,24 @@
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
-#include "engine/math/MathUtils.h"
 #include "engine/graphics/3d/Object3dCommon.h"
-#include "engine/time/TimeManager.h"
 #include "engine/math/Easing.h"
+#include "engine/math/MathUtils.h"
+#include "engine/time/TimeManager.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
 #include "scene/manager/SceneManager.h"
+#include "engine/manager/effect/PostProcessManager.h"
+#include "engine/effects/postprocess/CRTEffect.h"
+#include "engine/scene/factory/SceneFactory.h"
 
 #include "engine/scene/factory/SceneFactory.h"
 #include <Windows.h>
+#include "math/Easing.h"
+#include "time/TimeManager.h"
+
 REGISTER_SCENE(TestScene);
 
 using namespace GameObjectComponent;
@@ -84,6 +90,8 @@ void TestScene::Initialize()
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 	ParticleManager::GetInstance()->Load("bullet_hit", "Resources/json/particle/hit.json");
+	ParticleManager::GetInstance()->Load("hand", "Resources/json/particle/hand.json");
+	ParticleManager::GetInstance()->Load("smash", "Resources/json/particle/smash.json");
 
 	// 1. テスト用キューブオブジェクトの作成
 	player_ = std::make_unique<GameObject>(GameObjectTag::Player);
@@ -127,6 +135,7 @@ void TestScene::Initialize()
 	reflectCollider->SetActive(false); // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
+	reflectCollider->SetSizeOffset({ 2.0f, 2.0f, 2.0f });
 	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
 	{
 		if (!info.otherCollider)
@@ -206,16 +215,14 @@ void TestScene::Initialize()
 				if (status)
 				{
 					status->SetHp(status->GetHp() - 10);
-				
-				  if (status->GetHp() <= 0)
+
+					if (status->GetHp() <= 0)
 					{
 						cameraState_ = CameraState::GameOver;
 						cameraTimer_ = 0.0f;
 					}
 				}
 			}
-
-
 		});
 		collider->SetOnStay([handleCubeCollision](const CollisionInfo& info)
 		{
@@ -223,8 +230,6 @@ void TestScene::Initialize()
 			handleCubeCollision(info);
 		});
 		collider->SetOnExit([](const CollisionInfo& info) {});
-
-
 	}
 
 	// こいつに追従カメラを追従させる
@@ -361,7 +366,6 @@ void TestScene::Initialize()
 
 	// ボムエネミーの生成
 	InitializeBombEnemy();
-
 
 	// チャージ敵
 	chargeEnemy_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
@@ -533,11 +537,18 @@ void TestScene::Initialize()
 	// 死亡演出をつける
 	hormingTest_->AddComponent("DeathEffect", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
 
+	// ポーズメニュー
+	pauseMenu_ = std::make_unique<PauseMenu>();
+	pauseMenu_->Initialize(sceneManager_->GetSpriteCommon());
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 
 	// クリアUIの生成（演出終了まで非表示）
 	InitializeClearUI();
+
+	auto post = sceneManager_->GetPostProcessManager();
+	// 色収差(RGBシフト)を無効化
+	post->crtEffect_->SetChromaticAberrationEnabled(false);
 }
 
 void TestScene::InitializeBombEnemy()
@@ -583,6 +594,7 @@ void TestScene::UpdateCamera()
 
 	case CameraState::GameOver:
 		UpdateGameOverCamera();
+		GameOverDirection();
 		break;
 	}
 }
@@ -870,7 +882,6 @@ void TestScene::DrawClearUI()
 void TestScene::UpdateFollowCamera()
 {
 	topDownCamera_->Update();
-
 }
 
 
@@ -879,7 +890,7 @@ void TestScene::UpdateGameOverCamera()
 	float deltaTime = TimeManager::GetInstance().GetGameContext().deltaTime;
 
 	cameraTimer_ += deltaTime;
-	
+
 	float t = cameraTimer_ / kGameOverTime;
 	t = std::clamp(t, 0.0f, 1.0f);
 
@@ -899,6 +910,35 @@ void TestScene::UpdateGameOverCamera()
 	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
 }
 
+void TestScene::GameOverDirection()
+{
+	auto post = sceneManager_->GetPostProcessManager();
+
+	// エフェクト自体を有効化
+	post->crtEffect_->SetEnabled(true);
+	// CRTエフェクト自体を有効化
+	post->crtEffect_->SetCrtEnabled(true);
+	// 色収差(RGBシフト)を有効化
+	post->crtEffect_->SetChromaticAberrationEnabled(true);
+
+	effectTimer_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+
+	// 0.35秒周期で色収差をON/OFFする
+	float interval = 0.35f;
+	float time = fmod(effectTimer_, interval);
+
+	if (time < 0.25f)
+	{
+		post->crtEffect_->SetChromaticAberrationOffset(rgbShiftStrength_);
+	}
+	else
+	{
+		post->crtEffect_->SetChromaticAberrationOffset(0.0f);
+	}
+
+
+}
+
 void TestScene::OnFinalize()
 {
 	// 登録されたオブジェクトの登録解除とクリア
@@ -908,12 +948,17 @@ void TestScene::OnFinalize()
 	{
 		GameObjectEditor::GetInstance()->Finalize();
 	}
+
+	// スポットライトの削除
+	sceneManager_->GetLightManager()->Clear();
+
 #ifdef USE_IMGUI
 	if (DebugUIManager::HasInstance())
 	{
 		DebugUIManager::GetInstance()->UnregisterDebugUI(this);
 	}
 #endif
+
 	player_.reset();
 	groundObject_.reset();
 	targetObject_.reset();
@@ -925,11 +970,45 @@ void TestScene::OnFinalize()
 	clearTitleSprite_.reset();
 	retryButton_.reset();
 	quitButton_.reset();
+
 }
 
 void TestScene::CommonUpdate()
 {
 	static bool isDebugCameraActive = false;
+
+	// ESCでポーズメニューの切り替え
+	if (pauseMenu_)
+	{
+		const PauseMenu::Result pauseResult =
+			pauseMenu_->Update();
+
+		// 中央ボタン：現在のシーンを最初からやり直す
+		if (pauseResult == PauseMenu::Result::Restart)
+		{
+			// ポーズ状態を次のシーンへ残さない
+			TimeManager::GetInstance().Resume();
+
+			sceneManager_->ChangeScene("Test");
+			return;
+		}
+
+		// 右ボタン：タイトルへ戻る
+		if (pauseResult == PauseMenu::Result::GoToTitle)
+		{
+			// ポーズ状態を次のシーンへ残さない
+			TimeManager::GetInstance().Resume();
+
+			sceneManager_->ChangeScene("Title");
+			return;
+		}
+	}
+
+	// ポーズ中は通常のゲーム更新を止める
+	if (pauseMenu_ && pauseMenu_->IsPaused())
+	{
+		return;
+	}
 
 	if (Input::GetInstance()->TriggerKey(DIK_F7))
 	{
@@ -989,6 +1068,10 @@ void TestScene::Draw2D()
 	if (isClearUIVisible_)
 	{
 		DrawClearUI();
+	// 最後にポーズ背景を描画
+	if (pauseMenu_)
+	{
+		pauseMenu_->Draw();
 	}
 }
 

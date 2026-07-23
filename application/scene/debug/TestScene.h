@@ -7,6 +7,8 @@
 #include "engine/gameobject/component/collision/SphereColliderComponent.h"
 #include "application/scene/ui/MenuButton.h"
 #include "engine/graphics/2d/Sprite.h"
+#include "application/scene/ui/PauseMenu.h"
+
 
 /**
  * @brief ゲームオブジェクトの動作確認を行うデバッグ用シーン。
@@ -20,13 +22,12 @@ public:
 	void DrawShadow() override;
 	void DrawGBuffer() override;
 
-	void CommonUpdate() override;
-
 #ifdef USE_IMGUI
 	void DrawImGui();
 #endif
 
 protected:
+	void CommonUpdate() override;
 	void OnFinalize() override;
 
 private:
@@ -40,6 +41,9 @@ private:
 	void UpdateIntroCamera();
 	void UpdateFollowCamera();
 	void UpdateGameOverCamera();
+
+	// ゲームオーバー演出
+	void GameOverDirection();
 
 	// クリア演出
 	void StartClearDirection();
@@ -56,12 +60,15 @@ private:
 	static constexpr Vector3 kBombEnemyPosition = { 50.0f, 2.0f, 0.0f };
 	static constexpr Vector3 kBombEnemyScale = { 2.0f, 2.0f, 2.0f };
 	static constexpr Vector3 kReflectHandLocalPosition = {0.0f, 0.0f, 1.25f};
-	static constexpr Vector3 kReflectHandLocalScale = {1.5f, 0.35f, 0.35f};
+	static constexpr Vector3 kReflectHandLocalScale = { 0.5f, 0.5f, 0.5f};
 
 	// デバッグカメラ
 	std::unique_ptr<DebugCamera> debugCamera_;
 	// 追従カメラ
 	std::unique_ptr<TopDownCamera> topDownCamera_;
+
+	// ポーズメニュー
+	std::unique_ptr<PauseMenu> pauseMenu_;
 
 	// テスト用のゲームオブジェクト
 	std::unique_ptr<GameObject> player_;
@@ -88,6 +95,11 @@ private:
 	// 演出中かどうかのフラグ
 	bool isIntroPlaying_ = true;
 	bool isGameOverPlaying_ = false;
+
+	// エフェクトタイマー
+	float effectTimer_ = 0.0f;
+	// RGBシフトの強さ
+	float rgbShiftStrength_ = 15.0f;
 
 	// --------- クリア演出用 --------- //
 	// クリア演出全体の時間

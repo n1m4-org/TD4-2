@@ -13,6 +13,9 @@ public:
 	void Draw3D() override;
 	void Draw2D() override;
 
+	/**
+	 * @brief シーン全体の共通更新処理
+	 */
 	void CommonUpdate() override;
 
 protected:

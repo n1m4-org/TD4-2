@@ -67,8 +67,17 @@
     <Filter Include="scene\play">
       <UniqueIdentifier>{70549714-C486-8BD1-27AB-5E9361D090E7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scene\play\title">
+      <UniqueIdentifier>{049E5710-6DAA-B6AB-07A8-40C40F20C526}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\play\title\state">
+      <UniqueIdentifier>{59A26E78-117C-D4D7-621C-6511A4C9C91B}</UniqueIdentifier>
+    </Filter>
     <Filter Include="scene\ui">
       <UniqueIdentifier>{69E5C875-BCC1-6A96-6277-EDEF3879AD75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="transition">
+      <UniqueIdentifier>{1E305752-7650-F36A-BC8C-FA0131920CDA}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -91,6 +100,9 @@
       <Filter>Waves</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\common\PhysicsComponent.cpp">
+      <Filter>gameobject\component\action\common</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\component\action\common\SmashComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
@@ -163,11 +175,26 @@
     <ClCompile Include="scene\gameover\GameOverScene.cpp">
       <Filter>scene\gameover</Filter>
     </ClCompile>
-    <ClCompile Include="scene\play\TitleScene.cpp">
-      <Filter>scene\play</Filter>
+    <ClCompile Include="scene\play\title\TitleScene.cpp">
+      <Filter>scene\play\title</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\play\title\state\TitleEnterState.cpp">
+      <Filter>scene\play\title\state</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\play\title\state\TitleExitState.cpp">
+      <Filter>scene\play\title\state</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
+      <Filter>scene\play\title\state</Filter>
     </ClCompile>
     <ClCompile Include="scene\ui\MenuButton.cpp">
       <Filter>scene\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\ui\PauseMenu.cpp">
+      <Filter>scene\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="transition\SceneTransitionEffect.cpp">
+      <Filter>transition</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -196,6 +223,9 @@
       <Filter>gameobject</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\PhysicsComponent.h">
+      <Filter>gameobject\component\action\common</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\component\action\common\SmashComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
@@ -264,11 +294,26 @@
     <ClInclude Include="scene\gameover\GameOverScene.h">
       <Filter>scene\gameover</Filter>
     </ClInclude>
-    <ClInclude Include="scene\play\TitleScene.h">
-      <Filter>scene\play</Filter>
+    <ClInclude Include="scene\play\title\TitleScene.h">
+      <Filter>scene\play\title</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\play\title\state\TitleEnterState.h">
+      <Filter>scene\play\title\state</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\play\title\state\TitleExitState.h">
+      <Filter>scene\play\title\state</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\play\title\state\TitleWaitState.h">
+      <Filter>scene\play\title\state</Filter>
     </ClInclude>
     <ClInclude Include="scene\ui\MenuButton.h">
       <Filter>scene\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\ui\PauseMenu.h">
+      <Filter>scene\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="transition\SceneTransitionEffect.h">
+      <Filter>transition</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
