@@ -68,7 +68,7 @@ namespace
 		if (!collider) { return; }
 
 		collider->SetCollisionLayer(CollisionLayer::Enemy);
-		collider->SetCollisionMask(CollisionLayer::PlayerBullet | CollisionLayer::Terrain | CollisionLayer::Bumpers);
+		collider->SetCollisionMask(CollisionLayer::Player | CollisionLayer::PlayerReflect | CollisionLayer::PlayerBullet | CollisionLayer::Terrain | CollisionLayer::Bumpers);
 
 		collider->SetOnEnter([enemy](const CollisionInfo& info)
 		{
