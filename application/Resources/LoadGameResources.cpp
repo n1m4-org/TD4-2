@@ -37,6 +37,12 @@ void MyGame::LoadTextures()
 
 	TextureManager::GetInstance()->LoadTexture("title/logo.png");
 	TextureManager::GetInstance()->LoadTexture("title/start.png");
+
+	// ゲームオーバー / クリア UI
+	TextureManager::GetInstance()->LoadTexture("ui/gameover.png");
+	TextureManager::GetInstance()->LoadTexture("ui/clear.png");
+	TextureManager::GetInstance()->LoadTexture("ui/onemore.png");
+	TextureManager::GetInstance()->LoadTexture("ui/end.png");
 }
 
 void MyGame::LoadModels()
@@ -55,6 +61,8 @@ void MyGame::LoadModels()
 	ModelManager::GetInstance()->LoadModel("missile");
 
 	// ====================
-	// ゲーム固有のリソース	
+	// ゲーム固有のリソース
 	// ====================
+	// プレイヤーの反射時に表示するラケットモデル
+	ModelManager::GetInstance()->LoadModel("racket");
 }

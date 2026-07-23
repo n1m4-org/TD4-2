@@ -76,6 +76,12 @@ namespace GameObjectComponent
 		// 一定間隔での自動発射処理
 		void UpdateAutoFire(GameObject* owner);
 
+		// プレイヤーを中心に左右移動する
+		void StrafeMove(GameObject* owner, float deltaTime);
+
+		// 指定範囲の乱数を取得
+		float Random(float min, float max);
+
 		// 発射前の回転演出を開始する
 		void StartPreFireRotation(GameObject* owner);
 
@@ -95,6 +101,9 @@ namespace GameObjectComponent
 		GameObject* FindReflectTarget(
 			const Vector3& sourcePosition,
 			const Vector3& reflectDirection) const;
+
+		// ターゲットが現在もGameObjectManagerに存在し、使用可能か確認する
+		bool IsValidTarget(GameObject* target) const;
 
 		// 弾のベジェ曲線用の初期情報を作成する
 		void InitializeBulletCurve(HomingBullet& bullet);
@@ -188,5 +197,29 @@ namespace GameObjectComponent
 
 		// 今のバースト内で何発目か
 		int32_t currentBurstIndex_ = 0;
+
+		// 左右移動の経過時間
+		float strafeTimer_ = 0.0f;
+
+		// 左右を切り替えるまでの時間
+		float strafeChangeTime_ = 0.5f;
+
+		// 右方向へ移動中か
+		bool strafeMoveRight_ = true;
+
+		// 現在の左右移動速度
+		float currentStrafeSpeed_ = 5.0f;
+
+		// 左右移動速度の最小値
+		float strafeMinSpeed_ = 4.5f;
+
+		// 左右移動速度の最大値
+		float strafeMaxSpeed_ = 6.5f;
+
+		// 方向を切り替える最短時間
+		float strafeMinChangeTime_ = 1.0f;
+
+		// 方向を切り替える最長時間
+		float strafeMaxChangeTime_ = 2.5f;
 	};
 } // namespace GameObjectComponent

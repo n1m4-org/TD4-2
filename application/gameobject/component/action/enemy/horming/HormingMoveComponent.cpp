@@ -1,5 +1,6 @@
 #include "HormingMoveComponent.h"
 #include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
+#include "application/gameobject/component/action/enemy/EnemySpawnDirectionComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 
 #include "application/collision/CollisionLayer.h"
@@ -52,6 +53,17 @@ void HormingMoveComponent::Update(GameObject* owner)
 		return;
 	}
 
+	// 登場演出中はホーミング弾を発射しない
+	auto spawnDirection =
+		owner->GetComponent<
+			EnemySpawnDirectionComponent>();
+
+	if (spawnDirection &&
+		spawnDirection->IsAppearing())
+	{
+		return;
+	}
+
 	auto deathEffect =
 		owner->GetComponent<EnemyDeathDirectionComponent>();
 
@@ -92,9 +104,12 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 	}
 
 	const float deltaTime =
-		TimeManager::GetInstance().GetGameContext().deltaTime;
+		TimeManager::GetInstance()
+			.GetGameContext()
+			.deltaTime;
 
 	// 発射前の回転演出中
+	// この間は左右移動しない
 	if (isPreFireRotating_)
 	{
 		UpdatePreFireRotation(owner, deltaTime);
@@ -102,6 +117,7 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 	}
 
 	// バースト発射中
+	// この間も左右移動しない
 	if (pendingBurstCount_ > 0)
 	{
 		burstTimer_ += deltaTime;
@@ -122,6 +138,9 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 		return;
 	}
 
+	// 攻撃していない間だけ左右移動
+	StrafeMove(owner, deltaTime);
+
 	// 次の攻撃開始までの時間
 	autoFireTimer_ += deltaTime;
 
@@ -129,9 +148,97 @@ void HormingMoveComponent::UpdateAutoFire(GameObject* owner)
 	{
 		autoFireTimer_ = 0.0f;
 
-		// すぐに弾を撃たず、先に回転演出を開始
+		// 左右移動を止めて発射前回転へ
 		StartPreFireRotation(owner);
 	}
+}
+
+void HormingMoveComponent::StrafeMove(
+	GameObject* owner,
+	float deltaTime)
+{
+	if (!owner || !target_)
+	{
+		return;
+	}
+
+	strafeTimer_ += deltaTime;
+
+	// 一定時間ごとに左右方向と速度を変更
+	if (strafeTimer_ >= strafeChangeTime_)
+	{
+		// チャージ敵と同じように、
+		// 完全な五分五分ではなく少し右へ行きやすくする
+		strafeMoveRight_ =
+			Random(0.0f, 1.0f) > 0.3f;
+
+		strafeChangeTime_ =
+			Random(
+				strafeMinChangeTime_,
+				strafeMaxChangeTime_);
+
+		currentStrafeSpeed_ =
+			Random(
+				strafeMinSpeed_,
+				strafeMaxSpeed_);
+
+		strafeTimer_ = 0.0f;
+	}
+
+	// ホーミング対象、つまりプレイヤーへの方向
+	Vector3 toTarget =
+		target_->GetPosition() -
+		owner->GetPosition();
+
+	// 高さ方向は左右移動に使わない
+	toTarget.y = 0.0f;
+
+	if (toTarget.LengthSquared() <= 0.000001f)
+	{
+		return;
+	}
+
+	toTarget.NormalizeSelf();
+
+	// プレイヤー方向に対して右方向のベクトル
+	Vector3 side = {
+		-toTarget.z,
+		0.0f,
+		toTarget.x};
+
+	if (!strafeMoveRight_)
+	{
+		side *= -1.0f;
+	}
+
+	// プレイヤーの方を向く
+	const float yaw =
+		std::atan2(
+			toTarget.x,
+			toTarget.z);
+
+	owner->SetRotation({0.0f,
+						yaw,
+						0.0f});
+
+	// 左右へ移動
+	const Vector3 nextPosition =
+		owner->GetPosition() +
+		side *
+			currentStrafeSpeed_ *
+			deltaTime;
+
+	owner->SetPosition(nextPosition);
+}
+
+float HormingMoveComponent::Random(
+	float min,
+	float max)
+{
+	return min +
+		   static_cast<float>(rand()) /
+			   static_cast<float>(RAND_MAX) *
+			   (max - min);
 }
 
 void HormingMoveComponent::StartPreFireRotation(GameObject* owner)
@@ -369,11 +476,20 @@ void HormingMoveComponent::InitializeBulletCurve(HomingBullet& bullet)
 	// 終点を決める
 	if (bullet.useVirtualTarget)
 	{
-		bullet.endPos = bullet.virtualTargetPosition;
+		bullet.endPos =
+			bullet.virtualTargetPosition;
 	}
 	else
 	{
-		bullet.endPos = bullet.target->GetPosition();
+		// targetがnullptrではなくても、
+		// 破棄済みの可能性がある
+		if (!IsValidTarget(bullet.target))
+		{
+			return;
+		}
+
+		bullet.endPos =
+			bullet.target->GetPosition();
 	}
 
 	// 開始点からターゲットへの方向
@@ -482,8 +598,10 @@ void HormingMoveComponent::UpdateBullets()
 			continue;
 		}
 
-		// この弾が狙う対象がない場合は削除する
-		if (!bullet.target && !bullet.useVirtualTarget)
+		// ホーミング中なのに対象がない場合だけ削除する
+		if (!bullet.isStraight &&
+			!bullet.target &&
+			!bullet.useVirtualTarget)
 		{
 			KillBullet(bullet.object);
 			continue;
@@ -500,50 +618,17 @@ void HormingMoveComponent::UpdateBullets()
 			continue;
 		}
 
-		// 現在の弾位置とターゲット位置
-		Vector3 bulletPos = bullet.object->GetPosition();
+		// 現在の弾位置
+		Vector3 bulletPos =
+			bullet.object->GetPosition();
 
-		Vector3 targetPos = {};
-		if (bullet.useVirtualTarget)
-		{
-			targetPos = bullet.virtualTargetPosition;
-		}
-		else
-		{
-			targetPos = bullet.target->GetPosition();
-		}
-
-		// まだホーミング中なら、一定距離以内でホーミング解除
-		if (!bullet.isStraight && !bullet.isReflected)
-		{
-			Vector3 toTarget = targetPos - bulletPos;
-			float distance = toTarget.Length();
-
-			if (distance <= homingReleaseDistance_)
-			{
-				// この瞬間のターゲット方向を保存して、以降はその方向に直進する
-				if (distance > 0.001f)
-				{
-					toTarget.NormalizeSelf();
-					bullet.straightDir = toTarget;
-				}
-				else
-				{
-					// ほぼ重なっている場合の保険
-					bullet.straightDir = {0.0f, 0.0f, 1.0f};
-				}
-
-				bullet.isStraight = true;
-			}
-		}
-
-		// ホーミング解除後は、その時点の方向へまっすぐ進む
+		// 直進中はtargetを使用しない
 		if (bullet.isStraight)
 		{
 			const Vector3 currentPosition =
 				bullet.object->GetPosition();
 
-			Vector3 nextPosition =
+			const Vector3 nextPosition =
 				currentPosition +
 				bullet.straightDir *
 					straightSpeed_ *
@@ -554,7 +639,6 @@ void HormingMoveComponent::UpdateBullets()
 				continue;
 			}
 
-			// 直進方向へミサイルの先端を向ける
 			UpdateBulletRotation(
 				bullet.object,
 				currentPosition,
@@ -562,6 +646,56 @@ void HormingMoveComponent::UpdateBullets()
 
 			bullet.object->SetPosition(nextPosition);
 			continue;
+		}
+
+		// ここから先はホーミング弾だけ
+		Vector3 targetPos = {};
+
+		if (bullet.useVirtualTarget)
+		{
+			// 仮の座標を狙っている場合
+			targetPos = bullet.virtualTargetPosition;
+		}
+		else
+		{
+			// nullptrだけでなく、GameObjectManagerに現在も存在するか確認する
+			if (!IsValidTarget(bullet.target))
+			{
+				// 反射後のロックオン対象が消えた場合は、最後に記録していた位置へ直進させる
+				if (bullet.isReflected)
+				{
+					Vector3 direction =
+						bullet.endPos -
+						bullet.object->GetPosition();
+
+					direction.y = 0.0f;
+
+					if (direction.LengthSquared() >
+						0.000001f)
+					{
+						direction.NormalizeSelf();
+					}
+					else
+					{
+						// 方向が取れない場合の保険
+						direction = {0.0f, 0.0f, 1.0f};
+					}
+
+					bullet.target = nullptr;
+					bullet.useVirtualTarget = false;
+					bullet.isStraight = true;
+					bullet.straightDir = direction;
+
+					continue;
+				}
+
+				// 通常の敵弾で追尾対象が消えた場合は削除
+				KillBullet(bullet.object);
+				continue;
+			}
+
+			// 有効性を確認した後にだけアクセスする
+			targetPos = bullet.target->GetPosition();
 		}
 
 		// ホーミング処理
@@ -661,32 +795,35 @@ void HormingMoveComponent::ReflectBullet(
 
 		if (reflectTarget)
 		{
-			// ロックオン方向と一致する敵が見つかった場合
-			// その敵を実際のホーミング対象にする
+			// ロックオン対象がある場合は、その敵へホーミング
 			bullet.target = reflectTarget;
 			bullet.useVirtualTarget = false;
 			bullet.virtualTargetPosition = {};
+
+			bullet.isStraight = false;
+			bullet.straightDir = {};
+
+			// 反射地点からロックオン対象への曲線を作り直す
+			bullet.timer = 0.0f;
+			bullet.lifeTime = reflectedBulletLifeTime_;
+
+			InitializeBulletCurve(bullet);
 		}
 		else
 		{
-			// ロックオン対象を復元できなかった場合は、プレイヤーから渡された方向へ曲線移動する
+			// ロックオンしていない場合は、
+			// targetを使わず反射方向へ直進させる
 			bullet.target = nullptr;
-			bullet.useVirtualTarget = true;
+			bullet.useVirtualTarget = false;
+			bullet.virtualTargetPosition = {};
 
-			// 直進速度×寿命を曲線の到達距離にする
-			const float travelDistance =
-				straightSpeed_ * bulletLifeTime_;
+			bullet.isStraight = true;
+			bullet.straightDir = direction;
 
-			bullet.virtualTargetPosition =
-				bulletObject->GetPosition() +
-				direction * travelDistance;
+			// 直進弾として使うためタイマーだけリセット
+			bullet.timer = 0.0f;
+			bullet.lifeTime = bulletLifeTime_;
 		}
-
-		// 反射地点から、敵が撃った時と同じ曲線を作り直す
-		bullet.timer = 0.0f;
-		bullet.lifeTime = reflectedBulletLifeTime_;
-
-		InitializeBulletCurve(bullet);
 
 		if (auto collider =
 				bullet.object->GetComponent<AABBColliderComponent>())
@@ -773,6 +910,34 @@ GameObject* HormingMoveComponent::FindReflectTarget(
 	}
 
 	return bestTarget;
+}
+
+bool HormingMoveComponent::IsValidTarget(
+	GameObject* target) const
+{
+	if (!target)
+	{
+		return false;
+	}
+
+	const auto& gameObjects =
+		GameObjectManager::GetInstance()
+			->GetGameObjects();
+
+	// 先にポインタ値だけを比較する
+	// 一覧に存在しないポインタは触らない
+	for (GameObject* object : gameObjects)
+	{
+		if (object != target)
+		{
+			continue;
+		}
+
+		return object->IsActive() &&
+			   !object->IsPendingDestroy();
+	}
+
+	return false;
 }
 
 void HormingMoveComponent::KillBullet(GameObject* bulletObject)
