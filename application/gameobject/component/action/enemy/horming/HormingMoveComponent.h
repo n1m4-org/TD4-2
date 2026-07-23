@@ -102,6 +102,9 @@ namespace GameObjectComponent
 			const Vector3& sourcePosition,
 			const Vector3& reflectDirection) const;
 
+		// ターゲットが現在もGameObjectManagerに存在し、使用可能か確認する
+		bool IsValidTarget(GameObject* target) const;
+
 		// 弾のベジェ曲線用の初期情報を作成する
 		void InitializeBulletCurve(HomingBullet& bullet);
 
