@@ -16,6 +16,7 @@
 #include "application/gameobject/component/action/enemy/dash/DashMoveComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
+#include "math/VectorColorCodes.h"
 #include "audio/Audio.h"
 
 using namespace GameObjectComponent;
@@ -149,7 +150,9 @@ void EnemyFactory::RegisterDefaultEnemies()
 		if (!enemy) { return nullptr; }
 		enemy->AddComponent("Move", std::make_unique<DashMoveComponent>(player));
 		// 跳ね返した時に出すエフェクトコンポーネント
-		enemy->AddComponent("trail", std::make_unique<TrailComponent>());
+		auto trail = std::make_unique<TrailComponent>();
+		trail->SetColor(VectorColorCodes::Red);
+		enemy->AddComponent("trail", move(trail));
 		SetupCommonCollider(enemy);
 		return enemy;
 	});

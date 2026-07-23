@@ -6,11 +6,16 @@
 #include "gameobject/component/action/common/PhysicsComponent.h"
 #include "gameobject/component/action/common/TrailComponent.h"
 #include "gameobject/component/action/common/StatusComponent.h"
+#include "gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "gameobject/component/action/player/PlayerReflectComponent.h"
 #include "gameobject/component/base/ICollisionComponent.h"
 #include "gameobject/GameObjectTag.h"
+#include "gameobject/manager/GameObjectManager.h"
+#include "math/VectorColorCodes.h"
 #include "time/TimeManager.h"
 #include "audio/Audio.h"
+
+#include <string>
 
 namespace
 {
@@ -122,9 +127,22 @@ namespace GameObjectComponent
 
 	void DashMoveComponent::Idle(const GameObject* _owner)
 	{
+		// triggerTime_をダッシュまでの4拍に見立て、最初の3拍で予測オブジェクトを飛ばす
+		const float beatInterval = triggerTime_ / static_cast<float>(PREDICTION_COUNT + 1);
+		const int32_t currentBeat = beatInterval > 0.f
+			? static_cast<int32_t>(elapsedTime_ / beatInterval)
+			: PREDICTION_COUNT;
+
+		if (currentBeat > predictionsFired_ && predictionsFired_ < PREDICTION_COUNT)
+		{
+			SpawnPredictionObject(_owner);
+			++predictionsFired_;
+		}
+
 		if (elapsedTime_ > triggerTime_)
 		{
 			elapsedTime_ = 0.f;
+			predictionsFired_ = 0;
 
 			Vector3 toPlayer = player_->GetPosition() - _owner->GetPosition();
 			dashDirection_ = toPlayer.Normalize();
@@ -135,6 +153,39 @@ namespace GameObjectComponent
 		}
 
 		elapsedTime_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+	}
+
+	void DashMoveComponent::SpawnPredictionObject(const GameObject* _owner)
+	{
+		if (!player_ || !_owner)
+		{
+			return;
+		}
+
+		Vector3 toPlayer = player_->GetPosition() - _owner->GetPosition();
+		Vector3 direction = toPlayer.Normalize();
+
+		static uint32_t predictionNameCount = 0;
+		std::string name = "DashPrediction_" + std::to_string(predictionNameCount++);
+
+		// ロックオン等の敵専用処理に拾われないよう、汎用タグで生成する
+		GameObject* prediction = GameObjectManager::GetInstance()->CreateGameObject(name, GameObjectTag::GameObject);
+		if (!prediction)
+		{
+			return;
+		}
+
+		prediction->SetPosition(_owner->GetPosition());
+		// 見た目上は透明にし、"prediction"トレイルのみを見せる
+		prediction->SetScale({0.001f, 0.001f, 0.001f});
+
+		auto physics = std::make_unique<PhysicsComponent>(prediction);
+		physics->SetUseGravity(false);
+		physics->SetMovementVelocity(direction * predictionSpeed_);
+		prediction->AddComponent("physics", std::move(physics));
+
+		prediction->AddComponent("lifetime", std::make_unique<BulletBehaviorComponent>(predictionLifetime_));
+		prediction->AddComponent("trail", std::make_unique<TrailComponent>("prediction"));
 	}
 
 	void DashMoveComponent::Dash(const GameObject* _owner)
@@ -197,6 +248,7 @@ namespace GameObjectComponent
 				// 吹っ飛ばしエフェクトを再生
 				if (auto trail = owner_->GetComponent<TrailComponent>())
 				{
+					trail->SetColor(VectorColorCodes::Blue);
 					trail->Play(owner_);
 				}
 			}
