@@ -205,6 +205,7 @@
     <ClCompile Include="transition\SceneTransitionEffect.cpp">
       <Filter>transition</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\component\action\enemy\EnemySpawnDirectionComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Waves\EnemyFactory.h">
@@ -330,6 +331,7 @@
     <ClInclude Include="transition\SceneTransitionEffect.h">
       <Filter>transition</Filter>
     </ClInclude>
+    <ClInclude Include="gameobject\component\action\enemy\EnemySpawnDirectionComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">

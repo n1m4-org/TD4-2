@@ -7,34 +7,35 @@
 #include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
+#include "application/gameobject/component/action/enemy/EnemySpawnDirectionComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
 #include "application/gameobject/GameObjectTag.h"
+#include "application/scene/state/SceneEnterState.h"
+#include "application/scene/state/SceneExitState.h"
 #include "engine/effects/particle/ParticleManager.h"
+#include "engine/effects/postprocess/CRTEffect.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
+#include "engine/manager/effect/PostProcessManager.h"
 #include "engine/math/Easing.h"
 #include "engine/math/MathUtils.h"
+#include "engine/scene/factory/SceneFactory.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
-#include "scene/manager/SceneManager.h"
-#include "engine/manager/effect/PostProcessManager.h"
-#include "engine/effects/postprocess/CRTEffect.h"
-#include "engine/scene/factory/SceneFactory.h"
-#include "application/scene/state/SceneEnterState.h"
-#include "application/scene/state/SceneExitState.h"
-#include <Windows.h>
 #include "math/Easing.h"
+#include "scene/manager/SceneManager.h"
 #include "time/TimeManager.h"
+#include <Windows.h>
 
 REGISTER_SCENE(TestScene);
 
@@ -140,7 +141,7 @@ void TestScene::Initialize()
 	reflectCollider->SetActive(false); // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
-	reflectCollider->SetSizeOffset({ 2.0f, 2.0f, 2.0f });
+	reflectCollider->SetSizeOffset({2.0f, 2.0f, 2.0f});
 	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
 	{
 		if (!info.otherCollider)
@@ -479,6 +480,15 @@ void TestScene::Initialize()
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
 
+	auto chargeSpawnDirection =
+		std::make_unique<EnemySpawnDirectionComponent>();
+
+	chargeSpawnDirection->Start(chargeEnemy_.get());
+
+	chargeEnemy_->AddComponent(
+		"SpawnDirection",
+		std::move(chargeSpawnDirection));
+
 	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
 
 	// ホーミング敵
@@ -537,6 +547,16 @@ void TestScene::Initialize()
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
 
+	// 生成時の登場演出
+	auto spawnDirection =
+		std::make_unique<EnemySpawnDirectionComponent>();
+
+	// GameObjectへ登録する前に登場開始状態へ変更
+	spawnDirection->Start(hormingTest_.get());
+
+	hormingTest_->AddComponent(
+		"SpawnDirection",
+		std::move(spawnDirection));
 	// 一定間隔でプレイヤーに向かってホーミング弾を発射する
 	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 	// 死亡演出をつける
@@ -578,6 +598,16 @@ void TestScene::InitializeBombEnemy()
 			));
 	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
 	bombEnemy_->AddComponent("ExplosionCollider", std::make_unique<SphereColliderComponent>(bombEnemy_.get()));
+
+	// 描画・登録前に登場状態へ変更
+	auto spawnDirection =
+		std::make_unique<EnemySpawnDirectionComponent>();
+
+	spawnDirection->Start(bombEnemy_.get());
+
+	bombEnemy_->AddComponent(
+		"SpawnDirection",
+		std::move(spawnDirection));
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 }
@@ -668,8 +698,6 @@ void TestScene::StartClearDirection()
 		physics->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 		physics->SetExternalVelocity({0.0f, 0.0f, 0.0f});
 	}
-
-
 }
 
 void TestScene::UpdateClearDirection()
@@ -962,8 +990,6 @@ void TestScene::GameOverDirection()
 	{
 		post->crtEffect_->SetChromaticAberrationOffset(0.0f);
 	}
-
-
 }
 
 void TestScene::OnFinalize()
@@ -998,7 +1024,6 @@ void TestScene::OnFinalize()
 	gameOverTitleSprite_.reset();
 	retryButton_.reset();
 	quitButton_.reset();
-
 }
 
 void TestScene::CommonUpdate()
