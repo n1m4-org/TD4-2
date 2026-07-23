@@ -76,6 +76,12 @@ namespace GameObjectComponent
 		// 一定間隔での自動発射処理
 		void UpdateAutoFire(GameObject* owner);
 
+		// 発射前の回転演出を開始する
+		void StartPreFireRotation(GameObject* owner);
+
+		// 発射前の回転演出を更新する
+		void UpdatePreFireRotation(GameObject* owner, float deltaTime);
+
 		// 指定した弾を削除する
 		void KillBullet(GameObject* bulletObject);
 
@@ -140,6 +146,24 @@ namespace GameObjectComponent
 
 		// 自動発射用タイマー
 		float autoFireTimer_ = 0.0f;
+
+		// 発射前の回転演出中か
+		bool isPreFireRotating_ = false;
+
+		// 発射前回転の経過時間
+		float preFireRotationTimer_ = 0.0f;
+
+		// 発射前回転の長さ
+		float preFireRotationDuration_ = 0.7f;
+
+		// 一回転の角度
+		float rotationAmount_ = 6.283185f;
+
+		// 発射前に回転する角度
+		float preFireRotationAmount_ = 3.0f * rotationAmount_;
+
+		// 回転開始前の向き
+		Vector3 preFireBaseRotation_ = {};
 
 		// 一度の攻撃で撃つ弾数
 		int32_t burstCount_ = 3;

@@ -473,7 +473,7 @@ void TestScene::Initialize()
 	hormingTest_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
 	hormingTest_->SetName("HormingTestCube");
 	hormingTest_->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
-	hormingTest_->SetModel("cube");
+	hormingTest_->SetModel("HormingEnemy");
 	hormingTest_->SetPosition({0.0f, 2.0f, 4.0f});
 	hormingTest_->SetScale({2.0f, 2.0f, 2.0f});
 
