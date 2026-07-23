@@ -23,10 +23,6 @@
 #include "scene/factory/SceneFactory.h"
 #include "scene/manager/SceneManager.h"
 #include "time/TimeManager.h"
-#include "application/gameobject/GameObjectTag.h"
-#include "application/gameobject/component/action/common/StatusComponent.h"
-#include "engine/scene/factory/SceneFactory.h"
-
 
 #include <algorithm>
 
