@@ -53,13 +53,6 @@ void TestScene::Initialize()
 	dirLight.intensity = kLightIntensity;
 	lightManager->SetDirectionalLight(dirLight);
 
-	// スポットライトの作成
-	lightManager->AddSpotLight("player_spot_light");
-	// スポットライトの初期設定 (明るさを０にしておく)
-	lightManager->SetSpotLightIntensity("player_spot_light", 0.0f);
-	lightManager->SetSpotLightDirection("player_spot_light", {0.0f, -1.0f, -0.3f});
-	lightManager->SetSpotLightDistance("player_spot_light", 50.0);
-
 	// デフォルトライトマネージャーの設定（Object3d描画用）
 	sceneManager_->GetObject3dCommon()->SetDefaultLightManager(sceneManager_->GetLightManager());
 

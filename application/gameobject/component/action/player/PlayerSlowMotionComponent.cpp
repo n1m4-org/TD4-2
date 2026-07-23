@@ -44,19 +44,6 @@ void GameObjectComponent::PlayerSlowMotionComponent::Update(GameObject* owner)
 			dirLight.intensity = 0.0f;
 			dirLight.ambient = VectorColorCodes::Black;
 			lightManager_->SetDirectionalLight(dirLight);
-
-			// スポットライトの位置更新
-			lightManager_->SetSpotLightPosition("player_spot_light", owner->GetPosition() + spotLightOffset_);
-			// スポットライトの明るさを4にする
-			lightManager_->SetSpotLightIntensity("player_spot_light", 4.0f);
-			// スポットライトの距離を50にする
-			lightManager_->SetSpotLightDistance("player_spot_light", 50.0f);
-		});
-
-		slowMotionTimer->SetOnTick([this, owner](float)
-		{
-			// スポットライトの位置を更新
-			lightManager_->SetSpotLightPosition("player_spot_light", owner->GetPosition() + spotLightOffset_);
 		});
 
 		// slowMotionTimerの終了時に新たなタイマーを作成して徐々に元のタイムスケールに戻す
@@ -84,12 +71,6 @@ void GameObjectComponent::PlayerSlowMotionComponent::Update(GameObject* owner)
 				dirLight.intensity = EasingToEnd(0.0f, 0.6f, EaseInSine<float>, fadeBackTimerPtr->GetProgress());
 				dirLight.ambient = EasingToEnd(VectorColorCodes::Black, VectorColorCodes::White, EaseInSine, fadeBackTimerPtr->GetProgress());
 				lightManager_->SetDirectionalLight(dirLight);
-
-				// スポットライト設定を戻す
-				float spotLightIntensity = EasingToEnd(4.0f, 0.0f, EaseInSine<float>, fadeBackTimerPtr->GetProgress());
-				float spotLightDistance = EasingToEnd(50.0f, 100.0f, EaseInSine<float>, fadeBackTimerPtr->GetProgress());
-				lightManager_->SetSpotLightIntensity("player_spot_light", spotLightIntensity);
-				lightManager_->SetSpotLightDistance("player_spot_light", spotLightDistance);
 			});
 
 			fadeBackTimer->SetOnFinish([this]()
