@@ -225,7 +225,9 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 	bulletObject->SetPosition(spawnPos);
 
 	// 跳ね返した時のエフェクト再生コンポーネント
-	bulletObject->AddComponent("trail", std::make_unique<TrailComponent>());
+	auto trail = std::make_unique<TrailComponent>();
+	trail->SetColor(VectorColorCodes::Red);
+	bulletObject->AddComponent("trail", move(trail));
 
 	// AABBコライダーの追加
 	bulletObject->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bulletObject));

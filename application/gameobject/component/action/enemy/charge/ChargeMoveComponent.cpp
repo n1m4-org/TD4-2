@@ -216,7 +216,9 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(4.0f));
 
 	// 跳ね返した時に出すエフェクトコンポーネント
-	bullet->AddComponent("trail", std::make_unique<TrailComponent>());
+	auto trail = std::make_unique<TrailComponent>();
+	trail->SetColor(VectorColorCodes::Red);
+	bullet->AddComponent("trail", move(trail));
 
 	// 　物理コンポーネントの追加
 	auto physics = std::make_unique<PhysicsComponent>(bullet);

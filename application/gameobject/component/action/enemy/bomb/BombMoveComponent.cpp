@@ -10,6 +10,9 @@
 #include "engine/time/TimeManager.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "engine/gameobject/component/collision/SphereColliderComponent.h"
+#include "gameobject/component/action/common/TrailComponent.h"
+#include "math/VectorColorCodes.h"
+
 #include "audio/Audio.h"
 #include <algorithm>
 #include <cmath>
@@ -85,6 +88,10 @@ bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
 	reflectedVelocity_ = normalizedDirection * reflectedSpeed_;
 	remainingLifetimeSeconds_ = reflectedLifetimeSeconds_;
 	state_ = State::Reflected;
+
+	auto trail = std::make_unique<TrailComponent>();
+	trail->SetColor(VectorColorCodes::SkyBlue);
+	owner_->AddComponent("trail", move(trail));
 
 	// 反射後はプレイヤー側の攻撃として敵へ当たるレイヤーに切り替える。
 	physics_->SetMovementVelocity(reflectedVelocity_);
