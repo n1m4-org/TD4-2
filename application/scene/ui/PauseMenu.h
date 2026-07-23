@@ -48,6 +48,9 @@ private:
 	// 背景スプライト
 	std::unique_ptr<Sprite> pauseBackground_;
 
+	// ポーズスプライト
+	std::unique_ptr<Sprite> pauseText_;
+
 	// ゲーム再開ボタン
 	std::unique_ptr<Sprite> resumeButton_;
 
@@ -61,5 +64,10 @@ private:
 	bool resumeHovered_ = false;
 	bool restartHovered_ = false;
 	bool titleHovered_ = false;
+
+	// ポーズのテキストの色
+	Vector4 pauseTextColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+	// ポーズのテキストの座標
+	Vector2 pauseTextPosition_ = {960.0f, 200.0f};
 
 };

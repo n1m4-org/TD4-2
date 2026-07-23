@@ -260,7 +260,7 @@ namespace GameObjectComponent
 		{
 			if (auto status = owner_->GetComponent<StatusComponent>())
 			{
-				status->ApplyDamage(10);
+				status->ApplyDamage(30);
 			}
 			return;
 		}

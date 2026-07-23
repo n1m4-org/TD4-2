@@ -90,13 +90,23 @@ class WaveScene : public BaseScene
 	// ゲームオーバーUIを表示中かどうか（ゲームオーバー演出終了で true）
 	bool isGameOverUIVisible_ = false;
 
-	// UIレイアウト（Sprite座標系 1920x1080 基準）
+	// UIレイアウト（Sprite座標系 1920x1080 基準。画面内で大きく見えるよう調整）
+	// 画面中央のX
 	static constexpr float kResultUICenterX = Sprite::kCoordinateWidth * 0.5f;
-	static constexpr Vector2 kResultTitlePos = { kResultUICenterX, 300.0f };
-	static constexpr Vector2 kResultTitleSize = { 640.0f, 180.0f };
-	static constexpr Vector2 kResultButtonSize = { 380.0f, 130.0f };
-	static constexpr float kResultButtonRowY = 640.0f;
-	static constexpr float kResultButtonGap = 140.0f;
+	// タイトル画像の中心位置
+	static constexpr Vector2 kResultTitlePos = { kResultUICenterX, 330.0f };
+	// タイトル画像の表示高さ（幅は元画像のアスペクト比を保って算出する）
+	static constexpr float kResultTitleHeight = 420.0f;
+	// クリア画像 (ui/clear.png : 256x181)
+	static constexpr Vector2 kClearTitleSize = { kResultTitleHeight * (256.0f / 181.0f), kResultTitleHeight };
+	// ゲームオーバー画像 (ui/gameover.png : 483x181)
+	static constexpr Vector2 kGameOverTitleSize = { kResultTitleHeight * (483.0f / 181.0f), kResultTitleHeight };
+	// ボタン (ui/onemore.png, ui/end.png : 342x181 ≒ 1.89:1)。タイトル拡大に合わせて大きめに
+	static constexpr Vector2 kResultButtonSize = { 460.0f, 243.0f };
+	// ボタン行の中心Y
+	static constexpr float kResultButtonRowY = 800.0f;
+	// ボタン間の隙間
+	static constexpr float kResultButtonGap = 160.0f;
 
 	// 現在のウェーブ数を表示するUI
 	std::unique_ptr<FontSprite> waveText_;
