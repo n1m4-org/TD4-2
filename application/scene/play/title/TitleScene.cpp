@@ -73,7 +73,7 @@ void TitleScene::Initialize()
 
 	// BGMの読み込みと再生（ループ再生）
 	Audio::GetInstance()->LoadWave("TitleBGM", "titleBGM.wav", SoundGroup::BGM);
-
+	Audio::GetInstance()->LoadWave("check", "check.wav", SoundGroup::SE);
 
 }
 

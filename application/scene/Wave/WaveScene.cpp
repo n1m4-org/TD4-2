@@ -23,6 +23,7 @@
 #include "scene/factory/SceneFactory.h"
 #include "scene/manager/SceneManager.h"
 #include "time/TimeManager.h"
+#include "audio/Audio.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "engine/scene/factory/SceneFactory.h"
@@ -196,6 +197,8 @@ void WaveScene::Initialize()
 					status->SetHp(status->GetHp() - 10);
 					if (status->GetHp() <= 0)
 					{
+						// プレイヤー死亡時のSE
+						Audio::GetInstance()->PlayWave("se_playerDead");
 						gameOverRequested_ = true;
 					}
 				}
@@ -220,6 +223,29 @@ void WaveScene::Initialize()
 	waveSystem_->Initialize(sceneManager_->GetSpriteCommon(), activeCamera);
 	waveSystem_->SetPlayer(player_.get());
 
+	// --- Audio Load ---
+	Audio::GetInstance()->LoadWave("game_BGM", "gameplayBGM.wav", SoundGroup::BGM);
+
+	Audio::GetInstance()->LoadWave("se_spawn", "spawn.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_damage", "damage.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_enemyDead", "enemyDead.wav", SoundGroup::SE);
+
+	Audio::GetInstance()->LoadWave("se_bomb", "bomb.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_bullet", "bullet.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_missile", "missile.wav", SoundGroup::SE);
+
+	Audio::GetInstance()->LoadWave("se_reflection", "reflection.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_swing", "swing.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_playerDead", "playerDead.wav", SoundGroup::SE);
+
+	Audio::GetInstance()->LoadWave("pause", "pause.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("select", "select.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("check", "check.wav", SoundGroup::SE);
+
+	// --- BGM Start ---
+	Audio::GetInstance()->PlayWave("game_BGM", true);
+	Audio::GetInstance()->SetVolume("game_BGM", 0.2f);
+
 #ifdef USE_IMGUI
 	DebugUIManager::GetInstance()->RegisterDebugUI(this, "Wave Scene", [this]() { this->DrawImGui(); }, DebugUIArea::Inspector);
 #endif
@@ -233,6 +259,23 @@ void WaveScene::OnFinalize()
 	groundObject_.reset();
 	player_.reset();
 	topDownCamera_.reset();
+
+	Audio::GetInstance()->StopWave("game_BGM");
+	Audio::GetInstance()->UnloadWave("game_BGM");
+
+	Audio::GetInstance()->UnloadWave("se_spawn");
+	Audio::GetInstance()->UnloadWave("se_damage");
+	Audio::GetInstance()->UnloadWave("se_enemyDead");
+	Audio::GetInstance()->UnloadWave("se_bomb");
+	Audio::GetInstance()->UnloadWave("se_bullet");
+	Audio::GetInstance()->UnloadWave("se_missile");
+	Audio::GetInstance()->UnloadWave("se_reflection");
+	Audio::GetInstance()->UnloadWave("se_swing");
+	Audio::GetInstance()->UnloadWave("se_playerDead");
+
+	Audio::GetInstance()->UnloadWave("pause");
+	Audio::GetInstance()->UnloadWave("select");
+	Audio::GetInstance()->UnloadWave("check");
 
 #ifdef USE_IMGUI
 	if (DebugUIManager::HasInstance())

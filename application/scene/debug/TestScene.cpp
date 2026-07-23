@@ -30,6 +30,7 @@
 #include "engine/manager/effect/PostProcessManager.h"
 #include "engine/effects/postprocess/CRTEffect.h"
 #include "engine/scene/factory/SceneFactory.h"
+#include "audio/Audio.h"
 
 #include "engine/scene/factory/SceneFactory.h"
 #include <Windows.h>
@@ -211,6 +212,9 @@ void TestScene::Initialize()
 
 					if (status->GetHp() <= 0)
 					{
+						// プレイヤー死亡時の処理
+						Audio::GetInstance()->PlayWave("se_playerDead");
+
 						cameraState_ = CameraState::GameOver;
 						cameraTimer_ = 0.0f;
 					}
@@ -444,6 +448,9 @@ void TestScene::Initialize()
 				{
 					status->SetHp(status->GetHp() - 1);
 
+					// ダメージ音の再生
+					Audio::GetInstance()->PlayWave("se_damage");
+
 					// 攻撃を食らったらシェイクする
 					auto move = chargeEnemy_->GetComponent<ChargeMoveComponent>();
 					if (move && status->GetHp() > 0)
@@ -468,6 +475,9 @@ void TestScene::Initialize()
 	}
 
 	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
+
+	// サウンドの再生（スポーンSE）
+	Audio::GetInstance()->PlayWave("se_spawn");
 
 	// ホーミング敵
 	hormingTest_ = std::make_unique<GameObject>(GameObjectTag::Enemy);
@@ -516,6 +526,9 @@ void TestScene::Initialize()
 				// 1ダメージ
 				status->ApplyDamage(1);
 
+				// ダメージ音の再生
+				Audio::GetInstance()->PlayWave("se_damage");
+
 				// 弾の削除は HormingMoveComponent 側の KillBullet に任せる
 				// ここで info.other->Destroy() はしない
 			}
@@ -536,12 +549,40 @@ void TestScene::Initialize()
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 
+	// サウンドの再生（スポーンSE）
+	Audio::GetInstance()->PlayWave("se_spawn");
+
 	// 結果UI（クリア／ゲームオーバー）の生成（演出終了まで非表示）
 	InitializeResultUI();
 
 	auto post = sceneManager_->GetPostProcessManager();
 	// 色収差(RGBシフト)を無効化
 	post->crtEffect_->SetChromaticAberrationEnabled(false);
+
+	// サウンドのロード
+	Audio::GetInstance()->LoadWave("result_select", "select.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("result_check", "check.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("pause", "pause.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("select", "select.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("check", "check.wav", SoundGroup::SE);
+
+	Audio::GetInstance()->LoadWave("se_spawn", "spawn.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_damage", "damage.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_enemyDead", "enemyDead.wav", SoundGroup::SE);
+
+	Audio::GetInstance()->LoadWave("se_bomb", "bomb.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_bullet", "bullet.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_missile", "missile.wav", SoundGroup::SE);
+
+	Audio::GetInstance()->LoadWave("se_reflection", "reflection.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_swing", "swing.wav", SoundGroup::SE);
+	Audio::GetInstance()->LoadWave("se_playerDead", "playerDead.wav", SoundGroup::SE);
+
+
+	// BGMのロードと再生
+	Audio::GetInstance()->LoadWave("game_BGM", "gameplayBGM.wav", SoundGroup::BGM);
+	Audio::GetInstance()->PlayWave("game_BGM", true); // ループ再生
+	Audio::GetInstance()->SetVolume("game_BGM", 0.2f);
 }
 
 void TestScene::InitializeBombEnemy()
@@ -568,6 +609,9 @@ void TestScene::InitializeBombEnemy()
 	bombEnemy_->AddComponent("ExplosionCollider", std::make_unique<SphereColliderComponent>(bombEnemy_.get()));
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
+
+	// サウンド再生
+	Audio::GetInstance()->PlayWave("se_spawn");
 }
 
 void TestScene::UpdateCamera()
@@ -850,16 +894,34 @@ void TestScene::UpdateResultUI()
 	const Vector2 mousePos = Input::GetInstance()->GetMousePosition();
 	const bool clicked = Input::GetInstance()->IsMouseButtonTriggered(0);
 
-	// もう一度：TestSceneを最初から読み込み直す（ChangeSceneは末尾に"Scene"を自動付与するため"Test"を渡す）
-	if (retryButton_ && retryButton_->Update(mousePos, clicked))
+	// ホバー開始時SE
+	if (retryButton_ && retryButton_->IsHoveredEnter())
 	{
-		sceneManager_->ChangeScene("Test");
-		return; // 二重ChangeScene防止
+		Audio::GetInstance()->SetVolume("result_select", 1.0f);
+		Audio::GetInstance()->PlayWave("result_select");
+	}
+	if (quitButton_ && quitButton_->IsHoveredEnter())
+	{
+		Audio::GetInstance()->SetVolume("result_select", 1.0f);
+		Audio::GetInstance()->PlayWave("result_select");
 	}
 
-	// ゲームを終了：アプリケーションを閉じる
+	// もう一度
+	if (retryButton_ && retryButton_->Update(mousePos, clicked))
+	{
+		Audio::GetInstance()->SetVolume("result_check", 1.0f);
+		Audio::GetInstance()->PlayWave("result_check");
+
+		sceneManager_->ChangeScene("Test");
+		return;
+	}
+
+	// 終了
 	if (quitButton_ && quitButton_->Update(mousePos, clicked))
 	{
+		Audio::GetInstance()->SetVolume("result_check", 1.0f);
+		Audio::GetInstance()->PlayWave("result_check");
+
 		PostQuitMessage(0);
 	}
 }
@@ -962,6 +1024,32 @@ void TestScene::OnFinalize()
 
 	// スポットライトの削除
 	sceneManager_->GetLightManager()->Clear();
+
+	// サウンドの解放
+	Audio::GetInstance()->UnloadWave("result_select");
+	Audio::GetInstance()->UnloadWave("result_check");
+	Audio::GetInstance()->UnloadWave("pause");
+	Audio::GetInstance()->UnloadWave("select");
+	Audio::GetInstance()->UnloadWave("check");
+
+	Audio::GetInstance()->UnloadWave("se_swing");
+	Audio::GetInstance()->UnloadWave("se_reflection");
+	Audio::GetInstance()->UnloadWave("se_playerDead");
+
+	Audio::GetInstance()->UnloadWave("se_spawn");
+	Audio::GetInstance()->UnloadWave("se_bomb");
+	Audio::GetInstance()->UnloadWave("se_damage");
+
+	Audio::GetInstance()->UnloadWave("se_bullet");
+	Audio::GetInstance()->UnloadWave("se_enemyDead");
+
+	Audio::GetInstance()->UnloadWave("se_missile");
+
+	// BGMの解放
+	Audio::GetInstance()->StopWave("game_BGM");
+	Audio::GetInstance()->UnloadWave("game_BGM");
+
+
 
 #ifdef USE_IMGUI
 	if (DebugUIManager::HasInstance())

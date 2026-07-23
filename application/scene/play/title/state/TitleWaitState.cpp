@@ -21,11 +21,15 @@ void TitleWaitState::CheckTransition(BaseScene& scene)
 	#ifdef _DEBUG
 	if (input && (input->TriggerKey(DIK_SPACE)))
 	{
+		Audio::GetInstance()->PlayWave("check");
+		Audio::GetInstance()->SetVolume("check", 1.0f);
 		scene.ChangeState("Exit");
 	}
 	#else
 	if (input && (input->TriggerKey(DIK_SPACE) || input->IsMouseButtonTriggered(1)))
 	{
+		Audio::GetInstance()->PlayWave("check");
+		Audio::GetInstance()->SetVolume("check", 1.0f);
 		scene.ChangeState("Exit");
 	}
 	#endif

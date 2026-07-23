@@ -11,6 +11,7 @@
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
+#include "audio/Audio.h"
 
 #include <algorithm>
 #include <string>
@@ -241,6 +242,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 	// ベジェ曲線用の開始点・終点・制御点を作成
 	InitializeBulletCurve(bullet);
 
+	Audio::GetInstance()->PlayWave("se_missile");
 	GameObjectManager::GetInstance()->Register(bulletObject);
 
 	bullets_.push_back(bullet);
