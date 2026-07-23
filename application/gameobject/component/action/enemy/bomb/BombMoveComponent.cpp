@@ -93,8 +93,9 @@ bool GameObjectComponent::BombMoveComponent::Reflect(const Vector3& direction)
 	trail->SetColor(VectorColorCodes::SkyBlue);
 	owner_->AddComponent("trail", move(trail));
 
-	// 反射後はプレイヤー側の攻撃として敵へ当たるレイヤーに切り替える。
+	// 反射後は蓄積された重力などの外部下向き物理速度をリセットし、地面への沈み込みを防ぐ
 	physics_->SetMovementVelocity(reflectedVelocity_);
+	physics_->SetExternalVelocity({ 0.0f, 0.0f, 0.0f });
 	physics_->SetUseGravity(false);
 	collider_->SetCollisionLayer(CollisionLayer::PlayerBullet);
 	collider_->SetCollisionMask(
@@ -236,6 +237,14 @@ void GameObjectComponent::BombMoveComponent::UpdateReflected(float deltaTime)
 	}
 
 	physics_->SetMovementVelocity(reflectedVelocity_);
+
+	// 反射中に重力等の下向き外部物理速度が残って地面に沈むのを防ぐ
+	Vector3 extVel = physics_->GetExternalVelocity();
+	if (extVel.y < 0.0f)
+	{
+		extVel.y = 0.0f;
+		physics_->SetExternalVelocity(extVel);
+	}
 
 	// 反射後も残り時間に応じて赤点滅
 	UpdateBlink(remainingLifetimeSeconds_ / reflectedLifetimeSeconds_);

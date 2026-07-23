@@ -114,12 +114,12 @@ class WaveScene : public BaseScene
 	std::unique_ptr<FontSprite> waveTextShadow_;
 	void UpdateWaveText();
 
-	static constexpr Vector2 WAVE_TEXT_POSITION = { 56.0f, 40.0f };
-	static constexpr float WAVE_TEXT_SCALE = 0.4f;
-	static constexpr float WAVE_TEXT_SPACING = 2.0f;
+	static constexpr Vector2 WAVE_TEXT_POSITION = { 60.0f, 45.0f };
+	static constexpr float WAVE_TEXT_SCALE = 0.65f;
+	static constexpr float WAVE_TEXT_SPACING = 4.0f;
 	static constexpr Vector4 WAVE_TEXT_COLOR = { 1.0f, 0.95f, 0.75f, 1.0f };
 	static constexpr Vector4 WAVE_TEXT_SHADOW_COLOR = { 0.0f, 0.0f, 0.0f, 0.5f };
-	static constexpr Vector2 WAVE_TEXT_SHADOW_OFFSET = { 3.0f, 3.0f };
+	static constexpr Vector2 WAVE_TEXT_SHADOW_OFFSET = { 4.0f, 4.0f };
 
 	// ポーズメニュー
 	std::unique_ptr<PauseMenu> pauseMenu_;

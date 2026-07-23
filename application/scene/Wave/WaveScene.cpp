@@ -249,12 +249,12 @@ void WaveScene::Initialize()
 	}
 	GameObjectManager::GetInstance()->Register(player_.get());
 
-	// 追従カメラの初期化(TestSceneと同様)
+	// 追従カメラの初期化（引き気味の見下ろしアングル）
 	topDownCamera_ = std::make_unique<TopDownCamera>();
 	topDownCamera_->Initialize(activeCamera);
 	topDownCamera_->SetPitch(1.2f);
-	topDownCamera_->SetOffset({0.0f, 0.0f, -40.0f});
-	topDownCamera_->Start(105.0f, &player_->GetPosition());
+	topDownCamera_->SetOffset({ 0.0f, 0.0f, -60.0f });
+	topDownCamera_->Start(140.0f, &player_->GetPosition());
 
 	waveSystem_ = std::make_unique<WaveSystem>();
 	waveSystem_->Initialize(sceneManager_->GetSpriteCommon(), activeCamera);
@@ -386,15 +386,15 @@ void WaveScene::Draw2D()
 	if (!isResultSequence)
 	{
 		GameObjectManager::GetInstance()->Draw2D();
-	}
 
-	if (waveTextShadow_)
-	{
-		waveTextShadow_->Draw();
-	}
-	if (waveText_)
-	{
-		waveText_->Draw();
+		if (waveTextShadow_)
+		{
+			waveTextShadow_->Draw();
+		}
+		if (waveText_)
+		{
+			waveText_->Draw();
+		}
 	}
 
 	// 結果UI（演出終了後のオーバーレイ）：クリアかゲームオーバーのどちらかを表示
@@ -419,7 +419,8 @@ void WaveScene::Draw2D()
 
 void WaveScene::UpdateWaveText()
 {
-	const std::string text = "WAVE " + std::to_string(waveSystem_->GetCurrentWaveIndex() + 1) + "OF" + std::to_string(waveSystem_->GetWaveCount());
+	// "WAVE 1 OF 5" のようにスペースをしっかり挟んで可読性を確保（"1OF5"で"10"に見えてしまうのを防ぐ）
+	const std::string text = "WAVE " + std::to_string(waveSystem_->GetCurrentWaveIndex() + 1) + " OF " + std::to_string(waveSystem_->GetWaveCount());
 	waveText_->SetText(text);
 	waveTextShadow_->SetText(text);
 }
@@ -859,13 +860,6 @@ void WaveScene::CommonUpdate()
 	// Intro/クリア/ゲームオーバー演出中はゲームプレイの更新を止める(TestSceneと同様)
 	if (cameraState_ != CameraState::Playing)
 	{
-		return;
-	}
-
-	// デバッグ機能：Cキーで即座にクリア演出を開始する(TestSceneと同様)
-	if (Input::GetInstance()->TriggerKey(DIK_C))
-	{
-		StartClearDirection();
 		return;
 	}
 

@@ -258,8 +258,8 @@ void TestScene::Initialize()
 
 	// こいつに追従カメラを追従させる
 	topDownCamera_->SetPitch(1.2f);
-	topDownCamera_->SetOffset({0.0f, 0.0f, -40.0f});
-	topDownCamera_->Start(105.0f, &player_->GetPosition());
+	topDownCamera_->SetOffset({ 0.0f, 0.0f, -60.0f });
+	topDownCamera_->Start(140.0f, &player_->GetPosition());
 	// マネージャーに登録
 	GameObjectManager::GetInstance()->Register(player_.get());
 
