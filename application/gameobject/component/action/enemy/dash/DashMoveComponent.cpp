@@ -13,6 +13,7 @@
 #include "gameobject/manager/GameObjectManager.h"
 #include "math/VectorColorCodes.h"
 #include "time/TimeManager.h"
+#include "audio/Audio.h"
 
 #include <string>
 
@@ -146,6 +147,7 @@ namespace GameObjectComponent
 			Vector3 toPlayer = player_->GetPosition() - _owner->GetPosition();
 			dashDirection_ = toPlayer.Normalize();
 			currentSpd_ = speed_;
+			Audio::GetInstance()->PlayWave("se_spawn");
 			state_ = State::Dash;
 			return;
 		}

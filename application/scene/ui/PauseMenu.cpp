@@ -3,6 +3,7 @@
 #include "engine/graphics/2d/SpriteCommon.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
+#include "audio/Audio.h"
 
 namespace
 {
@@ -100,6 +101,37 @@ PauseMenu::Result PauseMenu::Update()
 	const Vector2 mousePosition =
 		Input::GetInstance()->GetMousePosition();
 
+	auto IsHoveredRect = [](const Vector2& mouse, const Vector2& center, const Vector2& size)
+	{
+		const float halfW = size.x * 0.5f;
+		const float halfH = size.y * 0.5f;
+		return (mouse.x >= center.x - halfW && mouse.x <= center.x + halfW &&
+				mouse.y >= center.y - halfH && mouse.y <= center.y + halfH);
+	};
+
+	const bool isResumeHoveredNow = IsHoveredRect(mousePosition, kResumeButtonPosition, kButtonSize);
+	const bool isRestartHoveredNow = IsHoveredRect(mousePosition, kRestartButtonPosition, kButtonSize);
+	const bool isTitleHoveredNow = IsHoveredRect(mousePosition, kTitleButtonPosition, kButtonSize);
+
+	// ホバー開始瞬間だけ select 再生
+	if (!resumeHovered_ && isResumeHoveredNow)
+	{
+		Audio::GetInstance()->PlayWave("select");
+	}
+	if (!restartHovered_ && isRestartHoveredNow)
+	{
+		Audio::GetInstance()->PlayWave("select");
+	}
+	if (!titleHovered_ && isTitleHoveredNow)
+	{
+		Audio::GetInstance()->PlayWave("select");
+	}
+
+	// 前回状態を更新
+	resumeHovered_ = isResumeHoveredNow;
+	restartHovered_ = isRestartHoveredNow;
+	titleHovered_ = isTitleHoveredNow;
+
 	const bool mouseTriggered =
 		Input::GetInstance()->IsMouseButtonTriggered(0);
 
@@ -112,6 +144,10 @@ PauseMenu::Result PauseMenu::Update()
 			mousePosition,
 			mouseTriggered))
 	{
+		// 効果音を鳴らす
+		Audio::GetInstance()->SetVolume("check", 1.0f);
+		Audio::GetInstance()->PlayWave("check");
+
 		TogglePause();
 		return Result::None;
 	}
@@ -125,6 +161,10 @@ PauseMenu::Result PauseMenu::Update()
 			mousePosition,
 			mouseTriggered))
 	{
+		// 効果音を鳴らす
+		Audio::GetInstance()->SetVolume("check", 1.0f);
+		Audio::GetInstance()->PlayWave("check");
+
 		return Result::Restart;
 	}
 
@@ -137,6 +177,10 @@ PauseMenu::Result PauseMenu::Update()
 			mousePosition,
 			mouseTriggered))
 	{
+		// 効果音を鳴らす
+		Audio::GetInstance()->SetVolume("check", 1.0f);
+		Audio::GetInstance()->PlayWave("check");
+
 		return Result::GoToTitle;
 	}
 
@@ -177,6 +221,9 @@ void PauseMenu::Draw()
 void PauseMenu::TogglePause()
 {
 	isPaused_ = !isPaused_;
+	// ポーズ切り替え時に効果音を鳴らす
+	Audio::GetInstance()->SetVolume("pause", 1.0f);
+	Audio::GetInstance()->PlayWave("pause");
 
 	if (isPaused_)
 	{
@@ -201,14 +248,14 @@ bool PauseMenu::UpdateButton(
 	}
 
 	const float halfWidth = baseSize.x * 0.5f;
+	const float halfHeight = baseSize.y * 0.5f;
 
-	// 横は今までどおり中央基準
+	// スプライトは中心アンカーで描画しているので、判定も中心基準にそろえる
 	const float left = centerPosition.x - halfWidth;
 	const float right = centerPosition.x + halfWidth;
 
-	// 縦は実際に表示されている位置に合わせる
-	const float top = centerPosition.y;
-	const float bottom = centerPosition.y + baseSize.y;
+	const float top = centerPosition.y - halfHeight;
+	const float bottom = centerPosition.y + halfHeight;
 
 	const bool isHovered =
 		mousePosition.x >= left &&
