@@ -30,8 +30,8 @@
 #include "engine/manager/effect/PostProcessManager.h"
 #include "engine/effects/postprocess/CRTEffect.h"
 #include "engine/scene/factory/SceneFactory.h"
-
-#include "engine/scene/factory/SceneFactory.h"
+#include "application/scene/state/SceneEnterState.h"
+#include "application/scene/state/SceneExitState.h"
 #include <Windows.h>
 #include "math/Easing.h"
 #include "time/TimeManager.h"
@@ -85,6 +85,18 @@ void TestScene::Initialize()
 	ParticleManager::GetInstance()->Load("bullet_hit", "Resources/json/particle/hit.json");
 	ParticleManager::GetInstance()->Load("hand", "Resources/json/particle/hand.json");
 	ParticleManager::GetInstance()->Load("smash", "Resources/json/particle/smash.json");
+
+	// シーン遷移演出の初期化
+	transitionEffect_.Initialize(sceneManager_->GetSpriteCommon(), "./Resources/white1x1.png", 30, 30, WinApp::kClientWidth, WinApp::kClientHeight);
+
+	// ステート登録（Enter / Exit）
+	RegisterState("Enter", std::make_unique<SceneEnterState>(&transitionEffect_, ""));
+	auto exitState = std::make_unique<SceneExitState>(&transitionEffect_, "Title");
+	exitState_ = exitState.get();
+	RegisterState("Exit", std::move(exitState));
+
+	// 初期ステートを登場演出（Enter）に設定
+	ChangeState("Enter");
 
 	// 1. テスト用キューブオブジェクトの作成
 	player_ = std::make_unique<GameObject>(GameObjectTag::Player);
@@ -850,10 +862,14 @@ void TestScene::UpdateResultUI()
 	const Vector2 mousePos = Input::GetInstance()->GetMousePosition();
 	const bool clicked = Input::GetInstance()->IsMouseButtonTriggered(0);
 
-	// もう一度：TestSceneを最初から読み込み直す（ChangeSceneは末尾に"Scene"を自動付与するため"Test"を渡す）
+	// もう一度：TestSceneを最初から読み込み直す
 	if (retryButton_ && retryButton_->Update(mousePos, clicked))
 	{
-		sceneManager_->ChangeScene("Test");
+		if (exitState_)
+		{
+			exitState_->SetNextSceneName("Test");
+		}
+		ChangeState("Exit");
 		return; // 二重ChangeScene防止
 	}
 
@@ -987,6 +1003,8 @@ void TestScene::OnFinalize()
 
 void TestScene::CommonUpdate()
 {
+	transitionEffect_.Update();
+
 	static bool isDebugCameraActive = false;
 
 	// クリア/ゲームオーバーの演出中・結果画面ではポーズを開けないようにする
@@ -1008,7 +1026,11 @@ void TestScene::CommonUpdate()
 			// ポーズ状態を次のシーンへ残さない
 			TimeManager::GetInstance().Resume();
 
-			sceneManager_->ChangeScene("Test");
+			if (exitState_)
+			{
+				exitState_->SetNextSceneName("Test");
+			}
+			ChangeState("Exit");
 			return;
 		}
 
@@ -1018,7 +1040,11 @@ void TestScene::CommonUpdate()
 			// ポーズ状態を次のシーンへ残さない
 			TimeManager::GetInstance().Resume();
 
-			sceneManager_->ChangeScene("Title");
+			if (exitState_)
+			{
+				exitState_->SetNextSceneName("Title");
+			}
+			ChangeState("Exit");
 			return;
 		}
 	}
@@ -1098,6 +1124,9 @@ void TestScene::Draw2D()
 	{
 		pauseMenu_->Draw();
 	}
+
+	// シーン遷移演出を描画（最前列）
+	transitionEffect_.Draw();
 }
 
 #ifdef USE_IMGUI

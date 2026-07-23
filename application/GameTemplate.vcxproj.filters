@@ -73,6 +73,9 @@
     <Filter Include="scene\play\title\state">
       <UniqueIdentifier>{59A26E78-117C-D4D7-621C-6511A4C9C91B}</UniqueIdentifier>
     </Filter>
+    <Filter Include="scene\state">
+      <UniqueIdentifier>{00E80580-F9EF-9B0C-B63F-84B8DF75DDF3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="scene\ui">
       <UniqueIdentifier>{69E5C875-BCC1-6A96-6277-EDEF3879AD75}</UniqueIdentifier>
     </Filter>
@@ -186,6 +189,12 @@
     </ClCompile>
     <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
       <Filter>scene\play\title\state</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\state\SceneEnterState.cpp">
+      <Filter>scene\state</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\state\SceneExitState.cpp">
+      <Filter>scene\state</Filter>
     </ClCompile>
     <ClCompile Include="scene\ui\MenuButton.cpp">
       <Filter>scene\ui</Filter>
@@ -305,6 +314,12 @@
     </ClInclude>
     <ClInclude Include="scene\play\title\state\TitleWaitState.h">
       <Filter>scene\play\title\state</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\state\SceneEnterState.h">
+      <Filter>scene\state</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\state\SceneExitState.h">
+      <Filter>scene\state</Filter>
     </ClInclude>
     <ClInclude Include="scene\ui\MenuButton.h">
       <Filter>scene\ui</Filter>

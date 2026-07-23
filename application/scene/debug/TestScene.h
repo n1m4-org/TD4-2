@@ -8,6 +8,7 @@
 #include "application/scene/ui/MenuButton.h"
 #include "engine/graphics/2d/Sprite.h"
 #include "application/scene/ui/PauseMenu.h"
+#include "transition/SceneTransitionEffect.h"
 
 
 /**
@@ -21,6 +22,8 @@ public:
 	void Draw2D() override;
 	void DrawShadow() override;
 	void DrawGBuffer() override;
+
+	SceneTransitionEffect& GetTransitionEffect() { return transitionEffect_; }
 
 #ifdef USE_IMGUI
 	void DrawImGui();
@@ -151,4 +154,9 @@ private:
 	static constexpr float kResultButtonRowY = 640.0f;
 	// ボタン間の隙間
 	static constexpr float kResultButtonGap = 140.0f;
+
+	// シーン遷移時にフェード演出
+	SceneTransitionEffect transitionEffect_;
+	// 退出演出ステート参照（所有しない）
+	class SceneExitState* exitState_ = nullptr;
 };
