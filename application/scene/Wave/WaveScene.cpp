@@ -49,7 +49,7 @@ namespace
 	constexpr Vector3 kLightDirection = {-0.2f, -1.0f, 0.3f};
 	constexpr float kLightIntensity = 0.6f;
 	constexpr Vector3 kReflectHandLocalPosition = {0.0f, 0.0f, 1.25f};
-	constexpr Vector3 kReflectHandLocalScale = {1.5f, 0.35f, 0.35f};
+	constexpr Vector3 kReflectHandLocalScale = {1.5f, 1.125f, 1.125f};
 }
 
 void WaveScene::Initialize()
@@ -138,6 +138,7 @@ void WaveScene::Initialize()
 	auto reflectHand = std::make_unique<GameObject>(GameObjectTag::Player);
 	reflectHand->SetName("ReflectHand");
 	reflectHand->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	reflectHand->SetModel("racket");
 	reflectHand->SetActive(false);
 	reflectHand->SetPosition(kReflectHandLocalPosition);
 	reflectHand->SetScale(kReflectHandLocalScale);

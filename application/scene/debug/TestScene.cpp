@@ -7,25 +7,32 @@
 #include "application/gameobject/component/action/enemy/bullet/BulletBehaviorComponent.h"
 #include "application/gameobject/component/action/enemy/charge/ChargeMoveComponent.h"
 #include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
+#include "application/gameobject/component/action/enemy/EnemySpawnDirectionComponent.h"
 #include "application/gameobject/component/action/enemy/horming/HormingMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerInputComponent.h"
 #include "application/gameobject/component/action/player/PlayerMoveComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/player/PlayerSlowMotionComponent.h"
 #include "application/gameobject/GameObjectTag.h"
+#include "application/scene/state/SceneEnterState.h"
+#include "application/scene/state/SceneExitState.h"
 #include "engine/effects/particle/ParticleManager.h"
+#include "engine/effects/postprocess/CRTEffect.h"
 #include "engine/gameobject/component/collision/AABBColliderComponent.h"
 #include "engine/gameobject/component/collision/CollisionManager.h"
 #include "engine/gameobject/component/collision/OBBColliderComponent.h"
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/graphics/3d/Object3dCommon.h"
+#include "engine/manager/effect/PostProcessManager.h"
 #include "engine/math/Easing.h"
 #include "engine/math/MathUtils.h"
+#include "engine/scene/factory/SceneFactory.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
 #include "manager/editor/GameObjectEditor.h"
 #include "manager/scene/CameraManager.h"
 #include "manager/scene/LightManager.h"
+#include "math/Easing.h"
 #include "scene/manager/SceneManager.h"
 #include "engine/manager/effect/PostProcessManager.h"
 #include "engine/effects/postprocess/CRTEffect.h"
@@ -36,8 +43,6 @@
 
 #include "engine/scene/factory/SceneFactory.h"
 #include <Windows.h>
-#include "math/Easing.h"
-#include "time/TimeManager.h"
 
 REGISTER_SCENE(TestScene);
 
@@ -136,6 +141,7 @@ void TestScene::Initialize()
 	auto reflectHand = std::make_unique<GameObject>(GameObjectTag::Player);
 	reflectHand->SetName("ReflectHand");
 	reflectHand->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	reflectHand->SetModel("racket");
 	reflectHand->SetActive(false);
 	reflectHand->SetPosition(kReflectHandLocalPosition);
 	reflectHand->SetScale(kReflectHandLocalScale);
@@ -143,7 +149,7 @@ void TestScene::Initialize()
 	reflectCollider->SetActive(false); // 初期状態は非アクティブ（反射発動時のみ有効化）
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
-	reflectCollider->SetSizeOffset({ 2.0f, 2.0f, 2.0f });
+	reflectCollider->SetSizeOffset({2.0f, 2.0f, 2.0f});
 	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
 	{
 		if (!info.otherCollider)
@@ -490,6 +496,15 @@ void TestScene::Initialize()
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
 
+	auto chargeSpawnDirection =
+		std::make_unique<EnemySpawnDirectionComponent>();
+
+	chargeSpawnDirection->Start(chargeEnemy_.get());
+
+	chargeEnemy_->AddComponent(
+		"SpawnDirection",
+		std::move(chargeSpawnDirection));
+
 	GameObjectManager::GetInstance()->Register(chargeEnemy_.get());
 
 	// サウンドの再生（スポーンSE）
@@ -554,6 +569,16 @@ void TestScene::Initialize()
 		collider->SetOnExit([](const CollisionInfo& info) {});
 	}
 
+	// 生成時の登場演出
+	auto spawnDirection =
+		std::make_unique<EnemySpawnDirectionComponent>();
+
+	// GameObjectへ登録する前に登場開始状態へ変更
+	spawnDirection->Start(hormingTest_.get());
+
+	hormingTest_->AddComponent(
+		"SpawnDirection",
+		std::move(spawnDirection));
 	// 一定間隔でプレイヤーに向かってホーミング弾を発射する
 	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 	// 死亡演出をつける
@@ -625,6 +650,16 @@ void TestScene::InitializeBombEnemy()
 			));
 	bombEnemy_->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bombEnemy_.get()));
 	bombEnemy_->AddComponent("ExplosionCollider", std::make_unique<SphereColliderComponent>(bombEnemy_.get()));
+
+	// 描画・登録前に登場状態へ変更
+	auto spawnDirection =
+		std::make_unique<EnemySpawnDirectionComponent>();
+
+	spawnDirection->Start(bombEnemy_.get());
+
+	bombEnemy_->AddComponent(
+		"SpawnDirection",
+		std::move(spawnDirection));
 
 	GameObjectManager::GetInstance()->Register(bombEnemy_.get());
 
@@ -720,8 +755,6 @@ void TestScene::StartClearDirection()
 		physics->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 		physics->SetExternalVelocity({0.0f, 0.0f, 0.0f});
 	}
-
-
 }
 
 void TestScene::UpdateClearDirection()
@@ -854,46 +887,53 @@ void TestScene::InitializeResultUI()
 {
 	auto* spriteCommon = sceneManager_->GetSpriteCommon();
 
-	// 仮画像：白1x1テクスチャを色分けして使う（後で正式な画像へ差し替え予定）
-	const std::string kTexturePath = "./Resources/white1x1.png";
+	// 背景の暗幕は従来どおり白1x1を色付けして使う
+	const std::string kBackgroundTexturePath = "./Resources/white1x1.png";
+	// 結果UIの本画像（ui フォルダ）
+	const std::string kClearTitlePath = "ui/clear.png";
+	const std::string kGameOverTitlePath = "ui/gameover.png";
+	const std::string kRetryButtonPath = "ui/onemore.png";
+	const std::string kQuitButtonPath = "ui/end.png";
+
+	// ボタンの色（画像本来の見た目を活かし、ホバーで明るく光らせる）
+	const Vector4 buttonNormalColor = {1.0f, 1.0f, 1.0f, 1.0f};
+	const Vector4 buttonHoverColor = {1.0f, 1.0f, 0.5f, 1.0f};
 
 	// 背景の暗幕（全画面・半透明。演出後の画面を少し暗くしてUIを見やすくする）
 	resultBackground_ = std::make_unique<Sprite>();
-	resultBackground_->Initialize(spriteCommon, kTexturePath);
+	resultBackground_->Initialize(spriteCommon, kBackgroundTexturePath);
 	resultBackground_->SetPosition({0.0f, 0.0f});
 	resultBackground_->SetSize({Sprite::kCoordinateWidth, Sprite::kCoordinateHeight});
 	resultBackground_->SetColor({0.0f, 0.05f, 0.15f, 0.5f});
 
-	// 「クリア！」帯（金色・中心アンカー。後で文字画像へ差し替え予定）
+	// 「クリア」タイトル画像（中心アンカー）
 	clearTitleSprite_ = std::make_unique<Sprite>();
-	clearTitleSprite_->Initialize(spriteCommon, kTexturePath);
+	clearTitleSprite_->Initialize(spriteCommon, kClearTitlePath);
 	clearTitleSprite_->SetAnchorPoint({0.5f, 0.5f});
 	clearTitleSprite_->SetPosition(kResultTitlePos);
-	clearTitleSprite_->SetSize(kResultTitleSize);
-	clearTitleSprite_->SetColor({1.0f, 0.85f, 0.2f, 0.95f});
+	clearTitleSprite_->SetSize(kClearTitleSize);
 
-	// 「ゲームオーバー」帯（赤・中心アンカー。後で文字画像へ差し替え予定）
+	// 「ゲームオーバー」タイトル画像（中心アンカー）
 	gameOverTitleSprite_ = std::make_unique<Sprite>();
-	gameOverTitleSprite_->Initialize(spriteCommon, kTexturePath);
+	gameOverTitleSprite_->Initialize(spriteCommon, kGameOverTitlePath);
 	gameOverTitleSprite_->SetAnchorPoint({0.5f, 0.5f});
 	gameOverTitleSprite_->SetPosition(kResultTitlePos);
-	gameOverTitleSprite_->SetSize(kResultTitleSize);
-	gameOverTitleSprite_->SetColor({0.75f, 0.12f, 0.12f, 0.95f});
+	gameOverTitleSprite_->SetSize(kGameOverTitleSize);
 
 	// ボタンを横並びに配置（中央を挟んで左：もう一度／右：ゲームを終了）
 	const float halfSeparation = kResultButtonSize.x * 0.5f + kResultButtonGap * 0.5f;
 	const Vector2 retryPos = {kResultUICenterX - halfSeparation, kResultButtonRowY};
 	const Vector2 quitPos = {kResultUICenterX + halfSeparation, kResultButtonRowY};
 
-	// もう一度（緑）
+	// もう一度
 	retryButton_ = std::make_unique<MenuButton>();
-	retryButton_->Initialize(spriteCommon, kTexturePath, retryPos, kResultButtonSize);
-	retryButton_->SetColors({0.2f, 0.5f, 0.2f, 0.9f}, {0.4f, 1.0f, 0.4f, 1.0f});
+	retryButton_->Initialize(spriteCommon, kRetryButtonPath, retryPos, kResultButtonSize);
+	retryButton_->SetColors(buttonNormalColor, buttonHoverColor);
 
-	// ゲームを終了（赤）
+	// ゲームを終了
 	quitButton_ = std::make_unique<MenuButton>();
-	quitButton_->Initialize(spriteCommon, kTexturePath, quitPos, kResultButtonSize);
-	quitButton_->SetColors({0.5f, 0.2f, 0.2f, 0.9f}, {1.0f, 0.4f, 0.4f, 1.0f});
+	quitButton_->Initialize(spriteCommon, kQuitButtonPath, quitPos, kResultButtonSize);
+	quitButton_->SetColors(buttonNormalColor, buttonHoverColor);
 }
 
 void TestScene::UpdateResultUI()
@@ -1032,8 +1072,6 @@ void TestScene::GameOverDirection()
 	{
 		post->crtEffect_->SetChromaticAberrationOffset(0.0f);
 	}
-
-
 }
 
 void TestScene::OnFinalize()
@@ -1096,7 +1134,6 @@ void TestScene::OnFinalize()
 	gameOverTitleSprite_.reset();
 	retryButton_.reset();
 	quitButton_.reset();
-
 }
 
 void TestScene::CommonUpdate()

@@ -145,11 +145,16 @@ private:
 	// UIレイアウト（Sprite座標系 1920x1080 基準）
 	// 画面中央のX
 	static constexpr float kResultUICenterX = Sprite::kCoordinateWidth * 0.5f;
-	// タイトル帯
+	// タイトル画像の中心位置
 	static constexpr Vector2 kResultTitlePos = { kResultUICenterX, 300.0f };
-	static constexpr Vector2 kResultTitleSize = { 640.0f, 180.0f };
-	// ボタン
-	static constexpr Vector2 kResultButtonSize = { 380.0f, 130.0f };
+	// タイトル画像の表示高さ（幅は元画像のアスペクト比を保って算出する）
+	static constexpr float kResultTitleHeight = 300.0f;
+	// クリア画像 (ui/clear.png : 256x181)
+	static constexpr Vector2 kClearTitleSize = { kResultTitleHeight * (256.0f / 181.0f), kResultTitleHeight };
+	// ゲームオーバー画像 (ui/gameover.png : 483x181)
+	static constexpr Vector2 kGameOverTitleSize = { kResultTitleHeight * (483.0f / 181.0f), kResultTitleHeight };
+	// ボタン (ui/onemore.png, ui/end.png : 342x181 ≒ 1.89:1)
+	static constexpr Vector2 kResultButtonSize = { 340.0f, 180.0f };
 	// ボタン行の中心Y
 	static constexpr float kResultButtonRowY = 640.0f;
 	// ボタン間の隙間
