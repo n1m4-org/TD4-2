@@ -1,11 +1,10 @@
 #include "TrailComponent.h"
 
-#include "engine/effects/particle/ParticleManager.h"
 #include "engine/effects/particle/ParticleEmitter.h"
+#include "engine/effects/particle/ParticleManager.h"
 #include "engine/effects/particle/renderer/IRenderer.h"
 #include "engine/gameobject/base/GameObject.h"
-
-static uint32_t trailEffectCounter = 0;
+#include "math/VectorColorCodes.h"
 
 namespace GameObjectComponent
 {
@@ -30,7 +29,8 @@ namespace GameObjectComponent
 		else
 		{
 			// エフェクトの再生を行う
-			currentEffect_ = ParticleManager::GetInstance()->Play(effectName_ + std::to_string(trailEffectCounter++), owner->GetPosition());
+			currentEffect_ = ParticleManager::GetInstance()->Play(effectName_, owner->GetPosition());
+			SetColor(VectorColorCodes::Red);
 		}
 	}
 
@@ -40,7 +40,8 @@ namespace GameObjectComponent
 		if (owner && currentEffect_ && !currentEffect_->IsPlaying())
 		{
 			// ParticleManager経由でワンショット再生
-			currentEffect_ = ParticleManager::GetInstance()->Play(effectName_ + std::to_string(trailEffectCounter++), owner->GetPosition());
+			currentEffect_ = ParticleManager::GetInstance()->Play(effectName_, owner->GetPosition());
+			SetColor(VectorColorCodes::Red);
 		}
 	}
 
