@@ -1,0 +1,76 @@
+{
+    "deltaTimeType": 0,
+    "emitters": [
+        {
+            "duration": 0.0,
+            "followEmitterIndex": -1,
+            "followOffset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "inactiveResponse": 0,
+            "loopBehavior": 1,
+            "loopCount": 1,
+            "maxParticles": 1000,
+            "minMoveDistance": 0.05000000074505806,
+            "modules": [
+                {
+                    "rate": 40.599998474121094,
+                    "type": "SpawnRate"
+                },
+                {
+                    "max": 0.30000001192092896,
+                    "min": 0.30000001192092896,
+                    "type": "InitialLifetime"
+                },
+                {
+                    "easingType": 0,
+                    "end": {
+                        "a": 0.0,
+                        "b": 0.06280981749296188,
+                        "g": 0.7357723712921143,
+                        "r": 0.21053339540958405
+                    },
+                    "start": {
+                        "a": 1.0,
+                        "b": 0.8328375220298767,
+                        "g": 0.9756097793579102,
+                        "r": 0.0
+                    },
+                    "type": "ColorFade",
+                    "useInitialColor": false
+                }
+            ],
+            "name": "e1",
+            "position": {
+                "x": 3.768639326095581,
+                "y": 5.2631120681762695,
+                "z": 1.34065580368042
+            },
+            "renderer": {
+                "alphaFade": true,
+                "billboard": true,
+                "blendMode": 0,
+                "minSegmentDistance": 0.05000000074505806,
+                "recordInterval": 0.01600000075995922,
+                "texture": "resources/white1x1.png",
+                "textureMode": 0,
+                "tileScale": 1.0,
+                "trailLifetime": 1.0,
+                "trailWidth": 2.0,
+                "type": "Ribbon",
+                "widthFade": true
+            },
+            "simulationMode": 0,
+            "spawnOnlyWhenMoving": true,
+            "startDelay": 0.0
+        }
+    ],
+    "name": "smash",
+    "position": {
+        "x": 3.768639326095581,
+        "y": 5.2631120681762695,
+        "z": 1.34065580368042
+    }
+}
