@@ -42,6 +42,8 @@ void MyGame::LoadTextures()
 	TextureManager::GetInstance()->LoadTexture("ui/clear.png");
 	TextureManager::GetInstance()->LoadTexture("ui/onemore.png");
 	TextureManager::GetInstance()->LoadTexture("ui/end.png");
+	TextureManager::GetInstance()->LoadTexture("ui/toTitle.png");
+	TextureManager::GetInstance()->LoadTexture("ui/returnGame.png");
 }
 
 void MyGame::LoadModels()

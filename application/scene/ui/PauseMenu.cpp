@@ -1,9 +1,9 @@
 #include "PauseMenu.h"
 
+#include "audio/Audio.h"
 #include "engine/graphics/2d/SpriteCommon.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
-#include "audio/Audio.h"
 
 namespace
 {
@@ -47,34 +47,34 @@ void PauseMenu::Initialize(SpriteCommon* spriteCommon)
 	resumeButton_ = std::make_unique<Sprite>();
 	resumeButton_->Initialize(
 		spriteCommon,
-		kPauseBackgroundTexturePath);
+		"./Resources/returnGame.png");
 
 	resumeButton_->SetAnchorPoint({0.5f, 0.5f});
 	resumeButton_->SetPosition(kResumeButtonPosition);
 	resumeButton_->SetSize(kButtonSize);
-	resumeButton_->SetColor({0.15f, 0.55f, 0.25f, 0.95f});
+	resumeButton_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 
 	// リスタートボタン
 	restartButton_ = std::make_unique<Sprite>();
 	restartButton_->Initialize(
 		spriteCommon,
-		kPauseBackgroundTexturePath);
+		"./Resources/onemore.png");
 
 	restartButton_->SetAnchorPoint({0.5f, 0.5f});
 	restartButton_->SetPosition(kRestartButtonPosition);
 	restartButton_->SetSize(kButtonSize);
-	restartButton_->SetColor({0.15f, 0.55f, 0.25f, 0.95f});
+	restartButton_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 
 	// タイトルへ戻るボタン
 	titleButton_ = std::make_unique<Sprite>();
 	titleButton_->Initialize(
 		spriteCommon,
-		kPauseBackgroundTexturePath);
+		"./Resources/toTitle.png");
 
 	titleButton_->SetAnchorPoint({0.5f, 0.5f});
 	titleButton_->SetPosition(kTitleButtonPosition);
 	titleButton_->SetSize(kButtonSize);
-	titleButton_->SetColor({0.15f, 0.55f, 0.25f, 0.95f});
+	titleButton_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 PauseMenu::Result PauseMenu::Update()
