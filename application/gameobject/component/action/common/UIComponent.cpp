@@ -107,6 +107,12 @@ namespace GameObjectComponent
 
 	void UIComponent::Draw2D()
 	{
+		// 非表示フラグがセットされている場合は描画しない
+		if (!isVisible_)
+		{
+			return;
+		}
+
 		// 非生存時、またはステータスがない場合は描画しない
 		if (cachedStatus_ && !cachedStatus_->IsAlive())
 		{
