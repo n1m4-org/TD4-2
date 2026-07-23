@@ -117,7 +117,7 @@ void WaveScene::Initialize()
 	player_->SetModel("cube");
 	player_->SetPosition({0.0f, 2.0f, 0.0f});
 	player_->SetScale({2.0f, 2.0f, 2.0f});
-
+	player_->SetColor(VectorColorCodes::Cyan);
 	player_->AddComponent("Input", std::make_unique<PlayerInputComponent>());
 	player_->AddComponent("Move", std::make_unique<PlayerMoveComponent>(activeCamera));
 	player_->AddComponent("Status", std::make_unique<StatusComponent>(player_.get()));
@@ -146,6 +146,7 @@ void WaveScene::Initialize()
 	reflectCollider->SetActive(false);
 	reflectCollider->SetCollisionLayer(CollisionLayer::None);
 	reflectCollider->SetCollisionMask(CollisionLayer::EnemyBullet | CollisionLayer::Enemy);
+	reflectCollider->SetSizeOffset({0.5f, 1.0f, 1.5f});
 	reflectCollider->SetOnEnter([this](const CollisionInfo& info)
 	{
 		if (!info.otherCollider)
@@ -350,7 +351,17 @@ void WaveScene::Draw3D()
 
 void WaveScene::Draw2D()
 {
-	GameObjectManager::GetInstance()->Draw2D();
+	// クリア/ゲームオーバー演出中および結果画面ではゲーム用UI/スプライト（HPバー、ロックオンマーカー等）を描画しない
+	const bool isResultSequence =
+		cameraState_ == CameraState::Clear ||
+		cameraState_ == CameraState::GameOver ||
+		isClearUIVisible_ ||
+		isGameOverUIVisible_;
+
+	if (!isResultSequence)
+	{
+		GameObjectManager::GetInstance()->Draw2D();
+	}
 
 	// 結果UI（演出終了後のオーバーレイ）：クリアかゲームオーバーのどちらかを表示
 	if (isClearUIVisible_)
