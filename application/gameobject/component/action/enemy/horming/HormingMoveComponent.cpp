@@ -350,6 +350,9 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 			CollisionLayer::Bumpers |
 			CollisionLayer::PlayerReflect);
 
+		// 当たり判定を大きくする
+		collider->SetSizeOffset({ 1.5f, 2.0f, 1.5f });
+
 		// ホーミング弾自身のコールバックでは、この弾の生存状態だけを変更する。
 		collider->SetOnEnter([this, bulletObject](const CollisionInfo& info)
 		{
@@ -793,9 +796,9 @@ void HormingMoveComponent::ReflectBullet(
 		bullet.isStraight = false;
 		bullet.straightDir = {};
 
-		if (reflectTarget)
+		if (IsValidTarget(reflectTarget))
 		{
-			// ロックオン対象がある場合は、その敵へホーミング
+			// ロックオン対象がある場合
 			bullet.target = reflectTarget;
 			bullet.useVirtualTarget = false;
 			bullet.virtualTargetPosition = {};
@@ -803,7 +806,6 @@ void HormingMoveComponent::ReflectBullet(
 			bullet.isStraight = false;
 			bullet.straightDir = {};
 
-			// 反射地点からロックオン対象への曲線を作り直す
 			bullet.timer = 0.0f;
 			bullet.lifeTime = reflectedBulletLifeTime_;
 
@@ -811,8 +813,7 @@ void HormingMoveComponent::ReflectBullet(
 		}
 		else
 		{
-			// ロックオンしていない場合は、
-			// targetを使わず反射方向へ直進させる
+			// ロックオン対象がない、または既に無効
 			bullet.target = nullptr;
 			bullet.useVirtualTarget = false;
 			bullet.virtualTargetPosition = {};
@@ -820,7 +821,6 @@ void HormingMoveComponent::ReflectBullet(
 			bullet.isStraight = true;
 			bullet.straightDir = direction;
 
-			// 直進弾として使うためタイマーだけリセット
 			bullet.timer = 0.0f;
 			bullet.lifeTime = bulletLifeTime_;
 		}

@@ -46,6 +46,7 @@ void MyGame::LoadTextures()
 	TextureManager::GetInstance()->LoadTexture("ui/toTitle.png");
 	TextureManager::GetInstance()->LoadTexture("ui/returnGame.png");
 
+
 	// ゲームプレイのUI
 	TextureManager::GetInstance()->LoadTexture("play/playUI.png");
 	TextureManager::GetInstance()->LoadTexture("play/shiftB.png");
@@ -56,6 +57,8 @@ void MyGame::LoadTextures()
 	TextureManager::GetInstance()->LoadTexture("play/sB.png");
 	TextureManager::GetInstance()->LoadTexture("play/dB.png");
 	TextureManager::GetInstance()->LoadTexture("play/wB_.png");
+
+	TextureManager::GetInstance()->LoadTexture("ui/pause.png");
 
 }
 
@@ -80,4 +83,5 @@ void MyGame::LoadModels()
 	// プレイヤーの反射時に表示するラケットモデル
 	ModelManager::GetInstance()->LoadModel("racket");
 	ModelManager::GetInstance()->LoadModel("ground");
+	ModelManager::GetInstance()->LoadModel("player");
 }
