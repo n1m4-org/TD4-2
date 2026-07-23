@@ -61,6 +61,7 @@ void WaveScene::Initialize()
 	ParticleManager::GetInstance()->Load("bullet_hit", "Resources/json/particle/hit.json");
 	ParticleManager::GetInstance()->Load("hand", "Resources/json/particle/hand.json");
 	ParticleManager::GetInstance()->Load("smash", "Resources/json/particle/smash.json");
+	ParticleManager::GetInstance()->Load("prediction", "Resources/json/particle/prediction.json");
 
 	// デフォルトライトマネージャーの設定（Object3d描画用）
 	sceneManager_->GetObject3dCommon()->SetDefaultLightManager(lightManager);
