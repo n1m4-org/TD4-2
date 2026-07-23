@@ -118,6 +118,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="scene\ui\PauseMenu.cpp" />
     <ClCompile Include="scene\ui\MenuButton.cpp" />
     <ClCompile Include="scene\clear\ClearScene.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.cpp" />
@@ -136,15 +137,20 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp" />
+    <ClCompile Include="gameobject\component\action\common\SmashComponent.cpp" />
     <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp" />
     <ClCompile Include="gameobject\component\action\player\PlayerSlowMotionComponent.cpp" />
     <ClCompile Include="scene\gameover\GameOverScene.cpp" />
     <ClCompile Include="resources\LoadGameResources.cpp" />
     <ClCompile Include="scene\debug\ParticleTestScene.cpp" />
     <ClCompile Include="scene\debug\TestScene.cpp" />
-    <ClCompile Include="scene\play\TitleScene.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="scene\play\title\TitleScene.cpp" />
+    <ClCompile Include="scene\play\title\state\TitleEnterState.cpp" />
+    <ClCompile Include="scene\play\title\state\TitleWaitState.cpp" />
+    <ClCompile Include="scene\play\title\state\TitleExitState.cpp" />
     <ClCompile Include="scene\Wave\WaveScene.cpp" />
+    <ClCompile Include="transition\SceneTransitionEffect.cpp" />
     <ClCompile Include="Waves\EnemyFactory.cpp" />
     <ClCompile Include="Waves\Wave.cpp" />
     <ClCompile Include="Waves\WaveSystem.cpp" />
@@ -153,6 +159,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Waves\EnemySpawner.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="scene\ui\PauseMenu.h" />
     <ClInclude Include="scene\ui\MenuButton.h" />
     <ClInclude Include="scene\clear\ClearScene.h" />
     <ClInclude Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.h" />
@@ -173,13 +180,18 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h" />
+    <ClInclude Include="gameobject\component\action\common\SmashComponent.h" />
     <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h" />
     <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h" />
     <ClInclude Include="scene\gameover\GameOverScene.h" />
     <ClInclude Include="scene\debug\ParticleTestScene.h" />
     <ClInclude Include="scene\debug\TestScene.h" />
-    <ClInclude Include="scene\play\TitleScene.h" />
+    <ClInclude Include="scene\play\title\TitleScene.h" />
+    <ClInclude Include="scene\play\title\state\TitleEnterState.h" />
+    <ClInclude Include="scene\play\title\state\TitleWaitState.h" />
+    <ClInclude Include="scene\play\title\state\TitleExitState.h" />
     <ClInclude Include="scene\Wave\WaveScene.h" />
+    <ClInclude Include="transition\SceneTransitionEffect.h" />
     <ClInclude Include="Waves\EnemyFactory.h" />
     <ClInclude Include="Waves\Wave.h" />
     <ClInclude Include="Waves\WaveSystem.h" />

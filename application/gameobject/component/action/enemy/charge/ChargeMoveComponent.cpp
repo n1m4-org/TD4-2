@@ -3,6 +3,7 @@
 #include "../../common/PhysicsComponent.h"
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
+#include "application/gameobject/component/action/common/SmashComponent.h"
 #include "application/gameobject/component/action/player/PlayerReflectComponent.h"
 #include "application/gameobject/component/action/enemy/EnemyDeathDirectionComponent.h"
 #include "engine/gameobject/base/GameObject.h"
@@ -207,6 +208,9 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 	// 挙動のコンポーネント
 	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(4.0f));
 
+	// 跳ね返した時に出すエフェクトコンポーネント
+	bullet->AddComponent("smash", std::make_unique<SmashComponent>());
+
 	// 　物理コンポーネントの追加
 	auto physics = std::make_unique<PhysicsComponent>(bullet);
 	physics->SetUseGravity(false);
@@ -246,6 +250,12 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 				const Vector3 direction = reflect->GetReflectDirectionFrom(bullet->GetPosition());
 				const float speed = bulletPhysics->GetMovementVelocity().Length() * kMoveSpeedRate_;
 				behavior->Reflect(bullet, direction, speed);
+
+				// 吹っ飛ばしエフェクトを再生
+				if (auto smash = bullet->GetComponent<SmashComponent>())
+				{
+					smash->Play(bullet);
+				}
 				return;
 			}
 
