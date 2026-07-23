@@ -60,6 +60,12 @@ void WaveScene::Initialize()
 	dirLight.intensity = kLightIntensity;
 	lightManager->SetDirectionalLight(dirLight);
 
+	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
+	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
+	ParticleManager::GetInstance()->Load("bullet_hit", "Resources/json/particle/hit.json");
+	ParticleManager::GetInstance()->Load("hand", "Resources/json/particle/hand.json");
+	ParticleManager::GetInstance()->Load("smash", "Resources/json/particle/smash.json");
+
 	// デフォルトライトマネージャーの設定（Object3d描画用）
 	sceneManager_->GetObject3dCommon()->SetDefaultLightManager(lightManager);
 
@@ -382,5 +388,18 @@ void WaveScene::DrawImGui()
 			enemy->Destroy();
 		}
 	}
+
+	ImGui::Separator();
+	ImGui::Text("Spawn 1 Enemy");
+	static const char* kDebugSpawnEnemyTypes[] = { "Dash", "Charge", "Homing", "Bomb" };
+	for (const char* type : kDebugSpawnEnemyTypes)
+	{
+		if (ImGui::Button(type))
+		{
+			waveSystem_->SpawnSingleEnemy(type);
+		}
+		ImGui::SameLine();
+	}
+	ImGui::NewLine();
 }
 #endif
