@@ -119,6 +119,7 @@ namespace GameObjectComponent
 	  // 発射時間
 	  const float kFireTime = 0.5f;
 	  float fireTime_ = 0.0f;
+	  bool hasFired_ = false;
 
 	   // 左右移動のタイマー
 	  float strafeTimer_ = 0.0f;
@@ -137,6 +138,7 @@ namespace GameObjectComponent
 
 	  // 弾の向き
 	  Vector3 bulletDirection_ = {0.0f, 0.0f, 1.0f};
+	  const float bulletSpeed_ = 20.0f;
 
 	  enum class State
 	  {
