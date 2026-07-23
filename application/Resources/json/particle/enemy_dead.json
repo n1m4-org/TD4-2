@@ -1,0 +1,128 @@
+{
+    "deltaTimeType": 0,
+    "emitters": [
+        {
+            "duration": 0.0,
+            "followEmitterIndex": -1,
+            "followOffset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "inactiveResponse": 0,
+            "loopBehavior": 1,
+            "loopCount": 1,
+            "maxParticles": 1000,
+            "minMoveDistance": 0.05000000074505806,
+            "modules": [
+                {
+                    "count": 30,
+                    "delay": 0.0,
+                    "interval": 0.0,
+                    "loops": 1,
+                    "type": "SpawnBurst"
+                },
+                {
+                    "max": 0.699999988079071,
+                    "min": 0.699999988079071,
+                    "type": "InitialLifetime"
+                },
+                {
+                    "max": {
+                        "x": 6.0,
+                        "y": 8.0,
+                        "z": 6.0
+                    },
+                    "min": {
+                        "x": -6.0,
+                        "y": 0.0,
+                        "z": -6.0
+                    },
+                    "type": "InitialVelocity"
+                },
+                {
+                    "easingType": 1,
+                    "end": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "start": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    },
+                    "type": "ScaleOverLifetime"
+                },
+                {
+                    "easeIn": false,
+                    "easeOut": true,
+                    "endAlpha": 0.0,
+                    "startAlpha": 1.0,
+                    "type": "AlphaFade"
+                },
+                {
+                    "frequency": 10.0,
+                    "maxAlpha": 1.0,
+                    "minAlpha": 0.30000001192092896,
+                    "randomPhase": true,
+                    "type": "Flicker",
+                    "useNoise": false
+                }
+            ],
+            "name": "e1",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "renderer": {
+                "billboard": false,
+                "blendMode": 1,
+                "primitiveOptions": {
+                    "cubeFaceVisible": [
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true
+                    ],
+                    "cubeSize": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    },
+                    "doubleSided": true,
+                    "innerRadius": 0.5,
+                    "outerRadius": 1.0,
+                    "points": 5,
+                    "rings": 8,
+                    "segments": 16,
+                    "tubeRadius": 0.30000001192092896,
+                    "turns": 2.0,
+                    "withCaps": true
+                },
+                "primitiveType": 0,
+                "scale": 3.0,
+                "texture": "resources/star.png",
+                "tintColor": {
+                    "a": 1.0,
+                    "b": 0.13756690919399261,
+                    "g": 0.8198698163032532,
+                    "r": 0.9146341681480408
+                },
+                "type": "Mesh"
+            },
+            "simulationMode": 0,
+            "spawnOnlyWhenMoving": false,
+            "startDelay": 0.0
+        }
+    ],
+    "name": "enemy_dead",
+    "position": {
+        "x": -2.123706579208374,
+        "y": 2.2003331184387207,
+        "z": 3.3896710872650146
+    }
+}
