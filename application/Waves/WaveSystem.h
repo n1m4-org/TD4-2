@@ -41,6 +41,9 @@ public:
 
 	void Update(float deltaTime);
 
+	// ImGuiのデバッグボタンから呼ぶ。指定した敵タイプを1体だけ即時スポーンする(デバッグ用)
+	GameObject* SpawnSingleEnemy(const std::string& type);
+
 	bool IsCompleted() const;
 	bool HasStarted() const { return started_; }
 
