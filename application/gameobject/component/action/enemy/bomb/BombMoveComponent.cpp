@@ -10,6 +10,7 @@
 #include "engine/time/TimeManager.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "engine/gameobject/component/collision/SphereColliderComponent.h"
+#include "audio/Audio.h"
 #include <algorithm>
 #include <cmath>
 
@@ -155,6 +156,9 @@ bool GameObjectComponent::BombMoveComponent::InitializeComponents(GameObject* ow
 			if (auto status = info.other->GetComponent<StatusComponent>())
 			{
 				status->ApplyDamage(explosionDamage_);
+				
+				// ダメージ音を再生
+				Audio::GetInstance()->PlayWave("se_damage");
 			}
 		});
 	}
@@ -240,6 +244,8 @@ void GameObjectComponent::BombMoveComponent::Explode()
 	physics_->SetMovementVelocity({0.0f, 0.0f, 0.0f});
 	physics_->SetUseGravity(false); 
 	ParticleManager::GetInstance()->Play("bomber", owner_->GetPosition());
+	// 爆発音を再生
+	Audio::GetInstance()->PlayWave("se_bomb");
 	collider_->SetActive(false);		 
 	owner_->SetScale({0.0f, 0.0f, 0.0f}); 
 

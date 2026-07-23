@@ -11,10 +11,13 @@
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
+#include "audio/Audio.h"
 
 #include "../../common/TrailComponent.h"
 #include "math/VectorColorCodes.h"
 #include <algorithm>
+#include <cmath>
+#include <numbers>
 #include <string>
 #include "effects/particle/ParticleManager.h"
 
@@ -214,7 +217,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 	}
 
 	bulletObject->SetName(bulletName);
-	bulletObject->SetModel("cube");
+	bulletObject->SetModel("missile");
 	bulletObject->SetScale({bulletScale_, bulletScale_, bulletScale_});
 
 	Vector3 spawnPos = owner->GetPosition();
@@ -333,6 +336,13 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 	// ベジェ曲線用の開始点・終点・制御点を作成
 	InitializeBulletCurve(bullet);
 
+	// 発射直後から、最初に進む方向へ向ける
+	UpdateBulletRotation(
+		bullet.object,
+		bullet.startPos,
+		bullet.controlPos1);
+
+	Audio::GetInstance()->PlayWave("se_missile");
 	GameObjectManager::GetInstance()->Register(bulletObject);
 
 	bullets_.push_back(bullet);
@@ -409,6 +419,51 @@ void HormingMoveComponent::InitializeBulletCurve(HomingBullet& bullet)
 	bullet.sideDir = bullet.sideDir * slidePowerOffset;
 }
 
+void HormingMoveComponent::UpdateBulletRotation(
+	GameObject* bulletObject,
+	const Vector3& currentPosition,
+	const Vector3& nextPosition)
+{
+	if (!bulletObject)
+	{
+		return;
+	}
+
+	// 現在位置から次の位置への移動方向
+	Vector3 moveDirection =
+		nextPosition - currentPosition;
+
+	if (moveDirection.LengthSquared() <= 0.000001f)
+	{
+		return;
+	}
+
+	moveDirection.NormalizeSelf();
+
+	// 水平方向の長さ
+	const float horizontalLength =
+		std::sqrt(
+			moveDirection.x * moveDirection.x +
+			moveDirection.z * moveDirection.z);
+
+	// 左右方向
+	const float yaw =
+		std::atan2(
+			moveDirection.x,
+			moveDirection.z);
+
+	// 上下方向
+	const float pitch =
+		-std::atan2(
+			moveDirection.y,
+			horizontalLength);
+
+	// X軸を90度倒してから移動方向へ向ける
+	const float modelDirectionOffset = std::numbers::pi_v<float> * 0.5f;
+
+	bulletObject->SetRotation({pitch + modelDirectionOffset, yaw, 0.0f});
+}
+
 void HormingMoveComponent::UpdateBullets()
 {
 	if (!target_)
@@ -483,15 +538,27 @@ void HormingMoveComponent::UpdateBullets()
 		// ホーミング解除後は、その時点の方向へまっすぐ進む
 		if (bullet.isStraight)
 		{
-			Vector3 pos = bullet.object->GetPosition();
-			pos += bullet.straightDir * straightSpeed_ * deltaTime;
+			const Vector3 currentPosition =
+				bullet.object->GetPosition();
+
+			Vector3 nextPosition =
+				currentPosition +
+				bullet.straightDir *
+					straightSpeed_ *
+					deltaTime;
 
 			if (!bullet.object || bullet.isDead)
 			{
 				continue;
 			}
 
-			bullet.object->SetPosition(pos);
+			// 直進方向へミサイルの先端を向ける
+			UpdateBulletRotation(
+				bullet.object,
+				currentPosition,
+				nextPosition);
+
+			bullet.object->SetPosition(nextPosition);
 			continue;
 		}
 
@@ -538,6 +605,12 @@ void HormingMoveComponent::UpdateBullets()
 		{
 			continue;
 		}
+
+		// 移動前の位置から、計算した位置へ向ける
+		UpdateBulletRotation(
+			bullet.object,
+			bulletPos,
+			pos);
 
 		bullet.object->SetPosition(pos);
 	}
@@ -598,7 +671,6 @@ void HormingMoveComponent::ReflectBullet(
 			bullet.target = nullptr;
 			bullet.useVirtualTarget = true;
 
-			// 35のような固定値ではなく、
 			// 直進速度×寿命を曲線の到達距離にする
 			const float travelDistance =
 				straightSpeed_ * bulletLifeTime_;
@@ -610,7 +682,7 @@ void HormingMoveComponent::ReflectBullet(
 
 		// 反射地点から、敵が撃った時と同じ曲線を作り直す
 		bullet.timer = 0.0f;
-		bullet.lifeTime = bulletLifeTime_;
+		bullet.lifeTime = reflectedBulletLifeTime_;
 
 		InitializeBulletCurve(bullet);
 

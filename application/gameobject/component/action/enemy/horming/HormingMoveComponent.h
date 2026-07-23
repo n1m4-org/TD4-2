@@ -99,6 +99,12 @@ namespace GameObjectComponent
 		// 弾のベジェ曲線用の初期情報を作成する
 		void InitializeBulletCurve(HomingBullet& bullet);
 
+		// ミサイルを移動方向へ向ける
+		void UpdateBulletRotation(
+			GameObject* bulletObject,
+			const Vector3& currentPosition,
+			const Vector3& nextPosition);
+
 		// 3次ベジェ曲線上の座標を計算
 		Vector3 CubicBezier(
 			const Vector3& p0,
@@ -118,7 +124,10 @@ namespace GameObjectComponent
 		std::vector<HomingBullet> bullets_;
 
 		// 弾の寿命
-		float bulletLifeTime_ = 2.2f;
+		float bulletLifeTime_ = 3.0f;
+
+		// 反射後、ロックオン対象へ到達するまでの時間
+		float reflectedBulletLifeTime_ = 1.5f;
 
 		// 弾のスケール
 		float bulletScale_ = 0.6f;
@@ -142,7 +151,7 @@ namespace GameObjectComponent
 		float straightSpeed_ = 28.0f;
 
 		// 自動発射の間隔
-		float autoFireInterval_ = 2.0f;
+		float autoFireInterval_ = 3.0f;
 
 		// 自動発射用タイマー
 		float autoFireTimer_ = 0.0f;

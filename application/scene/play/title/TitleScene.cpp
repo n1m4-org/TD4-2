@@ -70,6 +70,11 @@ void TitleScene::Initialize()
 
 	// 初期ステートを登場演出（Enter）に設定
 	ChangeState("Enter");
+
+	// BGMの読み込みと再生（ループ再生）
+	Audio::GetInstance()->LoadWave("TitleBGM", "titleBGM.wav", SoundGroup::BGM);
+	Audio::GetInstance()->LoadWave("check", "check.wav", SoundGroup::SE);
+
 }
 
 void TitleScene::OnFinalize()
@@ -79,6 +84,10 @@ void TitleScene::OnFinalize()
         DebugUIManager::GetInstance()->UnregisterDebugUI(this);
     }
 #endif
+
+	// シーン終了時にBGMを停止・破棄する
+	Audio::GetInstance()->StopWave("TitleBGM");
+	Audio::GetInstance()->UnloadWave("TitleBGM");
 }
 
 #include <cmath>
