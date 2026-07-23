@@ -136,6 +136,7 @@ void TestScene::Initialize()
 	auto reflectHand = std::make_unique<GameObject>(GameObjectTag::Player);
 	reflectHand->SetName("ReflectHand");
 	reflectHand->Initialize(sceneManager_->GetObject3dCommon(), sceneManager_->GetLightManager());
+	reflectHand->SetModel("racket");
 	reflectHand->SetActive(false);
 	reflectHand->SetPosition(kReflectHandLocalPosition);
 	reflectHand->SetScale(kReflectHandLocalScale);
