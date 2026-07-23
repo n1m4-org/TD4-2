@@ -254,6 +254,23 @@ void WaveScene::Initialize()
 	waveSystem_->Initialize(sceneManager_->GetSpriteCommon(), activeCamera);
 	waveSystem_->SetPlayer(player_.get());
 
+	// 現在のウェーブ数を表示するUI（影→本体の順で重ねて立体感を出す）
+	waveTextShadow_ = std::make_unique<FontSprite>();
+	waveTextShadow_->Initialize(sceneManager_->GetSpriteCommon(), "nico");
+	waveTextShadow_->SetPosition(WAVE_TEXT_POSITION + WAVE_TEXT_SHADOW_OFFSET);
+	waveTextShadow_->SetScale(WAVE_TEXT_SCALE);
+	waveTextShadow_->SetSpacing(WAVE_TEXT_SPACING);
+	waveTextShadow_->SetColor(WAVE_TEXT_SHADOW_COLOR);
+
+	waveText_ = std::make_unique<FontSprite>();
+	waveText_->Initialize(sceneManager_->GetSpriteCommon(), "nico");
+	waveText_->SetPosition(WAVE_TEXT_POSITION);
+	waveText_->SetScale(WAVE_TEXT_SCALE);
+	waveText_->SetSpacing(WAVE_TEXT_SPACING);
+	waveText_->SetColor(WAVE_TEXT_COLOR);
+
+	UpdateWaveText();
+
 	// ポーズメニュー(TestSceneと同様)
 	pauseMenu_ = std::make_unique<PauseMenu>();
 	pauseMenu_->Initialize(sceneManager_->GetSpriteCommon());
@@ -314,6 +331,9 @@ void WaveScene::OnFinalize()
 	retryButton_.reset();
 	quitButton_.reset();
 
+	waveText_.reset();
+	waveTextShadow_.reset();
+
 	Audio::GetInstance()->StopWave("game_BGM");
 	Audio::GetInstance()->UnloadWave("game_BGM");
 
@@ -352,6 +372,15 @@ void WaveScene::Draw2D()
 {
 	GameObjectManager::GetInstance()->Draw2D();
 
+	if (waveTextShadow_)
+	{
+		waveTextShadow_->Draw();
+	}
+	if (waveText_)
+	{
+		waveText_->Draw();
+	}
+
 	// 結果UI（演出終了後のオーバーレイ）：クリアかゲームオーバーのどちらかを表示
 	if (isClearUIVisible_)
 	{
@@ -370,6 +399,13 @@ void WaveScene::Draw2D()
 
 	// シーン遷移演出を描画（最前列）
 	transitionEffect_.Draw();
+}
+
+void WaveScene::UpdateWaveText()
+{
+	const std::string text = "WAVE " + std::to_string(waveSystem_->GetCurrentWaveIndex() + 1) + "OF" + std::to_string(waveSystem_->GetWaveCount());
+	waveText_->SetText(text);
+	waveTextShadow_->SetText(text);
 }
 
 void WaveScene::DrawShadow()
@@ -804,6 +840,7 @@ void WaveScene::CommonUpdate()
 	CollisionManager::GetInstance()->UpdatePreviousPositions();
 
 	waveSystem_->Update(TimeManager::GetInstance().GetGameContext().deltaTime);
+	UpdateWaveText();
 
 	GameObjectManager::GetInstance()->Update();
 	CollisionManager::GetInstance()->CheckCollisions();
