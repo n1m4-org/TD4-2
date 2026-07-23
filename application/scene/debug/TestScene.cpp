@@ -536,8 +536,8 @@ void TestScene::Initialize()
 
 	GameObjectManager::GetInstance()->Register(hormingTest_.get());
 
-	// クリアUIの生成（演出終了まで非表示）
-	InitializeClearUI();
+	// 結果UI（クリア／ゲームオーバー）の生成（演出終了まで非表示）
+	InitializeResultUI();
 
 	auto post = sceneManager_->GetPostProcessManager();
 	// 色収差(RGBシフト)を無効化
@@ -786,7 +786,7 @@ void TestScene::UpdateClearDirection()
 	}
 }
 
-void TestScene::InitializeClearUI()
+void TestScene::InitializeResultUI()
 {
 	auto* spriteCommon = sceneManager_->GetSpriteCommon();
 
@@ -794,54 +794,66 @@ void TestScene::InitializeClearUI()
 	const std::string kTexturePath = "./Resources/white1x1.png";
 
 	// 背景の暗幕（全画面・半透明。演出後の画面を少し暗くしてUIを見やすくする）
-	clearBackground_ = std::make_unique<Sprite>();
-	clearBackground_->Initialize(spriteCommon, kTexturePath);
-	clearBackground_->SetPosition({0.0f, 0.0f});
-	clearBackground_->SetSize({Sprite::kCoordinateWidth, Sprite::kCoordinateHeight});
-	clearBackground_->SetColor({0.0f, 0.05f, 0.15f, 0.5f});
+	resultBackground_ = std::make_unique<Sprite>();
+	resultBackground_->Initialize(spriteCommon, kTexturePath);
+	resultBackground_->SetPosition({0.0f, 0.0f});
+	resultBackground_->SetSize({Sprite::kCoordinateWidth, Sprite::kCoordinateHeight});
+	resultBackground_->SetColor({0.0f, 0.05f, 0.15f, 0.5f});
 
 	// 「クリア！」帯（金色・中心アンカー。後で文字画像へ差し替え予定）
 	clearTitleSprite_ = std::make_unique<Sprite>();
 	clearTitleSprite_->Initialize(spriteCommon, kTexturePath);
 	clearTitleSprite_->SetAnchorPoint({0.5f, 0.5f});
-	clearTitleSprite_->SetPosition(kClearTitlePos);
-	clearTitleSprite_->SetSize(kClearTitleSize);
+	clearTitleSprite_->SetPosition(kResultTitlePos);
+	clearTitleSprite_->SetSize(kResultTitleSize);
 	clearTitleSprite_->SetColor({1.0f, 0.85f, 0.2f, 0.95f});
 
+	// 「ゲームオーバー」帯（赤・中心アンカー。後で文字画像へ差し替え予定）
+	gameOverTitleSprite_ = std::make_unique<Sprite>();
+	gameOverTitleSprite_->Initialize(spriteCommon, kTexturePath);
+	gameOverTitleSprite_->SetAnchorPoint({0.5f, 0.5f});
+	gameOverTitleSprite_->SetPosition(kResultTitlePos);
+	gameOverTitleSprite_->SetSize(kResultTitleSize);
+	gameOverTitleSprite_->SetColor({0.75f, 0.12f, 0.12f, 0.95f});
+
 	// ボタンを横並びに配置（中央を挟んで左：もう一度／右：ゲームを終了）
-	const float halfSeparation = kClearButtonSize.x * 0.5f + kClearButtonGap * 0.5f;
-	const Vector2 retryPos = {kClearUICenterX - halfSeparation, kClearButtonRowY};
-	const Vector2 quitPos = {kClearUICenterX + halfSeparation, kClearButtonRowY};
+	const float halfSeparation = kResultButtonSize.x * 0.5f + kResultButtonGap * 0.5f;
+	const Vector2 retryPos = {kResultUICenterX - halfSeparation, kResultButtonRowY};
+	const Vector2 quitPos = {kResultUICenterX + halfSeparation, kResultButtonRowY};
 
 	// もう一度（緑）
 	retryButton_ = std::make_unique<MenuButton>();
-	retryButton_->Initialize(spriteCommon, kTexturePath, retryPos, kClearButtonSize);
+	retryButton_->Initialize(spriteCommon, kTexturePath, retryPos, kResultButtonSize);
 	retryButton_->SetColors({0.2f, 0.5f, 0.2f, 0.9f}, {0.4f, 1.0f, 0.4f, 1.0f});
 
 	// ゲームを終了（赤）
 	quitButton_ = std::make_unique<MenuButton>();
-	quitButton_->Initialize(spriteCommon, kTexturePath, quitPos, kClearButtonSize);
+	quitButton_->Initialize(spriteCommon, kTexturePath, quitPos, kResultButtonSize);
 	quitButton_->SetColors({0.5f, 0.2f, 0.2f, 0.9f}, {1.0f, 0.4f, 0.4f, 1.0f});
 }
 
-void TestScene::UpdateClearUI()
+void TestScene::UpdateResultUI()
 {
-	if (clearBackground_)
+	if (resultBackground_)
 	{
-		clearBackground_->Update();
+		resultBackground_->Update();
 	}
 	if (clearTitleSprite_)
 	{
 		clearTitleSprite_->Update();
 	}
+	if (gameOverTitleSprite_)
+	{
+		gameOverTitleSprite_->Update();
+	}
 
 	const Vector2 mousePos = Input::GetInstance()->GetMousePosition();
 	const bool clicked = Input::GetInstance()->IsMouseButtonTriggered(0);
 
-	// もう一度：TestSceneを最初から読み込み直す
+	// もう一度：TestSceneを最初から読み込み直す（ChangeSceneは末尾に"Scene"を自動付与するため"Test"を渡す）
 	if (retryButton_ && retryButton_->Update(mousePos, clicked))
 	{
-		sceneManager_->ChangeScene("TestScene");
+		sceneManager_->ChangeScene("Test");
 		return; // 二重ChangeScene防止
 	}
 
@@ -852,15 +864,15 @@ void TestScene::UpdateClearUI()
 	}
 }
 
-void TestScene::DrawClearUI()
+void TestScene::DrawResultUI(Sprite* titleSprite)
 {
-	if (clearBackground_)
+	if (resultBackground_)
 	{
-		clearBackground_->Draw();
+		resultBackground_->Draw();
 	}
-	if (clearTitleSprite_)
+	if (titleSprite)
 	{
-		clearTitleSprite_->Draw();
+		titleSprite->Draw();
 	}
 	if (retryButton_)
 	{
@@ -901,6 +913,12 @@ void TestScene::UpdateGameOverCamera()
 	Vector3 endRot = {0.8f, 0, 0};
 
 	camera->SetRotate(MathUtils::Lerp(startRot, endRot, t));
+
+	// 演出が終わったのでゲームオーバーUIを表示する
+	if (cameraTimer_ >= kGameOverTime)
+	{
+		isGameOverUIVisible_ = true;
+	}
 }
 
 void TestScene::GameOverDirection()
@@ -958,9 +976,10 @@ void TestScene::OnFinalize()
 	debugCamera_.reset();
 	topDownCamera_.reset();
 
-	// クリアUIの解放
-	clearBackground_.reset();
+	// 結果UI（クリア／ゲームオーバー）の解放
+	resultBackground_.reset();
 	clearTitleSprite_.reset();
+	gameOverTitleSprite_.reset();
 	retryButton_.reset();
 	quitButton_.reset();
 
@@ -970,8 +989,15 @@ void TestScene::CommonUpdate()
 {
 	static bool isDebugCameraActive = false;
 
-	// ESCでポーズメニューの切り替え
-	if (pauseMenu_)
+	// クリア/ゲームオーバーの演出中・結果画面ではポーズを開けないようにする
+	const bool isResultSequence =
+		cameraState_ == CameraState::Clear ||
+		cameraState_ == CameraState::GameOver ||
+		isClearUIVisible_ ||
+		isGameOverUIVisible_;
+
+	// ESCでポーズメニューの切り替え（通常プレイ中のみ）
+	if (pauseMenu_ && !isResultSequence)
 	{
 		const PauseMenu::Result pauseResult =
 			pauseMenu_->Update();
@@ -1025,10 +1051,10 @@ void TestScene::CommonUpdate()
 		UpdateCamera();
 	}
 
-	// クリア演出が終わってUIが出ている間はボタン入力を処理する
-	if (isClearUIVisible_)
+	// クリア／ゲームオーバー演出が終わってUIが出ている間はボタン入力を処理する
+	if (isClearUIVisible_ || isGameOverUIVisible_)
 	{
-		UpdateClearUI();
+		UpdateResultUI();
 	}
 
 	if (cameraState_ != CameraState::Playing)
@@ -1057,15 +1083,20 @@ void TestScene::Draw2D()
 	// ゲームオブジェクトの2D描画
 	GameObjectManager::GetInstance()->Draw2D();
 
-	// クリアUI（演出終了後のオーバーレイ）
+	// 結果UI（演出終了後のオーバーレイ）：クリアかゲームオーバーのどちらかを表示
 	if (isClearUIVisible_)
 	{
-		DrawClearUI();
-		// 最後にポーズ背景を描画
-		if (pauseMenu_)
-		{
-			pauseMenu_->Draw();
-		}
+		DrawResultUI(clearTitleSprite_.get());
+	}
+	else if (isGameOverUIVisible_)
+	{
+		DrawResultUI(gameOverTitleSprite_.get());
+	}
+
+	// ポーズメニュー（ポーズ中のみ内部で描画。手前に重ねる）
+	if (pauseMenu_)
+	{
+		pauseMenu_->Draw();
 	}
 }
 

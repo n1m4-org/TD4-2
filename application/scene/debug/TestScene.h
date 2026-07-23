@@ -49,10 +49,10 @@ private:
 	void StartClearDirection();
 	void UpdateClearDirection();
 
-	// クリアUI（演出終了後に表示するオーバーレイ）
-	void InitializeClearUI();
-	void UpdateClearUI();
-	void DrawClearUI();
+	// 結果UI（クリア／ゲームオーバー演出終了後に表示するオーバーレイ）
+	void InitializeResultUI();
+	void UpdateResultUI();
+	void DrawResultUI(Sprite* titleSprite);
 
 	// ディレクショナルライト設定
 	static constexpr Vector3 kLightDirection = { -0.2f, -1.0f, 0.3f };
@@ -92,9 +92,6 @@ private:
 	// 演出時間
 	const float kIntroTime = 2.0f;
 	const float kGameOverTime = 2.5f;
-	// 演出中かどうかのフラグ
-	bool isIntroPlaying_ = true;
-	bool isGameOverPlaying_ = false;
 
 	// エフェクトタイマー
 	float effectTimer_ = 0.0f;
@@ -102,9 +99,6 @@ private:
 	float rgbShiftStrength_ = 15.0f;
 
 	// --------- クリア演出用 --------- //
-	// クリア演出全体の時間
-	const float kClearDirectionTime = 2.2f;
-
 	// カメラが正面へ移動する時間
 	const float kClearCameraMoveTime = 0.8f;
 
@@ -129,28 +123,32 @@ private:
 
 	bool isClearDirectionStarted_ = false;
 
-	// --------- クリアUI用 --------- //
-	// 背景の暗幕
-	std::unique_ptr<Sprite> clearBackground_;
+	// --------- 結果UI用（クリア／ゲームオーバー共通） --------- //
+	// 背景の暗幕（両方で共通利用）
+	std::unique_ptr<Sprite> resultBackground_;
 	// 「クリア！」の帯（仮画像・後で文字画像へ差し替え予定）
 	std::unique_ptr<Sprite> clearTitleSprite_;
-	// もう一度（TestSceneを再読み込み）
+	// 「ゲームオーバー」の帯（仮画像・後で文字画像へ差し替え予定）
+	std::unique_ptr<Sprite> gameOverTitleSprite_;
+	// もう一度（TestSceneを再読み込み。両方で共通利用）
 	std::unique_ptr<MenuButton> retryButton_;
-	// ゲームを終了（アプリを閉じる）
+	// ゲームを終了（アプリを閉じる。両方で共通利用）
 	std::unique_ptr<MenuButton> quitButton_;
-	// クリアUIを表示中かどうか（演出終了で true）
+	// クリアUIを表示中かどうか（クリア演出終了で true）
 	bool isClearUIVisible_ = false;
+	// ゲームオーバーUIを表示中かどうか（ゲームオーバー演出終了で true）
+	bool isGameOverUIVisible_ = false;
 
 	// UIレイアウト（Sprite座標系 1920x1080 基準）
 	// 画面中央のX
-	static constexpr float kClearUICenterX = Sprite::kCoordinateWidth * 0.5f;
-	// 「クリア！」帯
-	static constexpr Vector2 kClearTitlePos = { kClearUICenterX, 300.0f };
-	static constexpr Vector2 kClearTitleSize = { 640.0f, 180.0f };
+	static constexpr float kResultUICenterX = Sprite::kCoordinateWidth * 0.5f;
+	// タイトル帯
+	static constexpr Vector2 kResultTitlePos = { kResultUICenterX, 300.0f };
+	static constexpr Vector2 kResultTitleSize = { 640.0f, 180.0f };
 	// ボタン
-	static constexpr Vector2 kClearButtonSize = { 380.0f, 130.0f };
+	static constexpr Vector2 kResultButtonSize = { 380.0f, 130.0f };
 	// ボタン行の中心Y
-	static constexpr float kClearButtonRowY = 640.0f;
+	static constexpr float kResultButtonRowY = 640.0f;
 	// ボタン間の隙間
-	static constexpr float kClearButtonGap = 140.0f;
+	static constexpr float kResultButtonGap = 140.0f;
 };

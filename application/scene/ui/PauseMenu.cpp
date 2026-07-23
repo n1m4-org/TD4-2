@@ -84,8 +84,15 @@ PauseMenu::Result PauseMenu::Update()
 		TogglePause();
 	}
 
+	// ポーズ中でなければボタン判定は一切行わない
+	// （ゲーム中の射撃・反射クリックでリスタートやタイトル遷移が誤発動するのを防ぐ）
+	if (!isPaused_)
+	{
+		return Result::None;
+	}
+
 	// ポーズ中だけSpriteを更新
-	if (isPaused_ && pauseBackground_)
+	if (pauseBackground_)
 	{
 		pauseBackground_->Update();
 	}
@@ -194,14 +201,14 @@ bool PauseMenu::UpdateButton(
 	}
 
 	const float halfWidth = baseSize.x * 0.5f;
+	const float halfHeight = baseSize.y * 0.5f;
 
-	// 横は今までどおり中央基準
+	// スプライトは中心アンカーで描画しているので、判定も中心基準にそろえる
 	const float left = centerPosition.x - halfWidth;
 	const float right = centerPosition.x + halfWidth;
 
-	// 縦は実際に表示されている位置に合わせる
-	const float top = centerPosition.y;
-	const float bottom = centerPosition.y + baseSize.y;
+	const float top = centerPosition.y - halfHeight;
+	const float bottom = centerPosition.y + halfHeight;
 
 	const bool isHovered =
 		mousePosition.x >= left &&
