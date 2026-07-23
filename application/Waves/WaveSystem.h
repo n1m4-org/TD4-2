@@ -11,7 +11,7 @@ class WaveSystem
 {
 	static constexpr uint32_t WAVE_FILE_COUNT = 16;
 	static constexpr uint32_t WAVE_COUNT = 5;
-	static constexpr float INTERVAL = 1.f;
+	static constexpr float INTERVAL = 3.f;
 
 
 	std::vector<std::unique_ptr<Wave>> waves_;
