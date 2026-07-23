@@ -172,30 +172,41 @@ void GameObjectComponent::ChargeMoveComponent::Cooldown(GameObject* owner)
 
 void GameObjectComponent::ChargeMoveComponent::Fire(GameObject* owner)
 {
-	if (isAttacking_)
+	if (!isAttacking_)
 	{
-		fireTime_ += TimeManager::GetInstance().GetGameContext().deltaTime;
+		return;
+	}
 
-		float t = fireTime_ / kFireTime;
-		t = std::clamp(t, 0.0f, 1.0f);
+	float dt = TimeManager::GetInstance().GetGameContext().deltaTime;
+	fireTime_ += dt;
 
-		float back = MathUtils::Lerp(maxBackDistance_, 0.0f, EaseOutQuad(t));
+	float t = fireTime_ / kFireTime;
+	t = std::clamp(t, 0.0f, 1.0f);
 
-		// プレイヤーへの向きを取得
-		Vector3 playerPosition = player_->GetPosition();
-		bulletDirection_ = playerPosition - owner->GetPosition();
+	float back = MathUtils::Lerp(maxBackDistance_, 0.0f, EaseOutQuad(t));
 
-		owner->SetPosition(chargeStartPosition_ - bulletDirection_ * back);
+	// 発射方向
+	Vector3 playerPosition = player_->GetPosition();
+	bulletDirection_ = playerPosition - chargeStartPosition_;
+	bulletDirection_.NormalizeSelf();
 
+	// モデルを元の位置へ戻す
+	owner->SetPosition(chargeStartPosition_ - bulletDirection_ * back);
 
-		if (t >= 1.0f)
-		{
-			// 弾生成
-			BulletInitialize(owner);
+	// Fireに入った瞬間だけ発射
+	if (!hasFired_)
+	{
+		BulletInitialize(owner);
+		hasFired_ = true;
+	}
 
-			state_ = State::Cooldown;
-		}
+	// 戻り終わったらクールタイム
+	if (t >= 1.0f)
+	{
+		fireTime_ = 0.0f;
+		hasFired_ = false;
 
+		state_ = State::Cooldown;
 	}
 }
 
@@ -223,7 +234,7 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 	// 　物理コンポーネントの追加
 	auto physics = std::make_unique<PhysicsComponent>(bullet);
 	physics->SetUseGravity(false);
-	physics->SetMovementVelocity(bulletDirection_);
+	physics->SetMovementVelocity(bulletDirection_ * bulletSpeed_);
 	bullet->AddComponent("Physics", std::move(physics));
 
 	// AABBコライダーの追加
