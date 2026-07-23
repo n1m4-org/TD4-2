@@ -8,7 +8,7 @@
 #include "application/collision/CollisionLayer.h"
 #include "application/gameobject/GameObjectTag.h"
 #include "application/gameobject/component/action/common/PhysicsComponent.h"
-#include "application/gameobject/component/action/common/SmashComponent.h"
+#include "application/gameobject/component/action/common/TrailComponent.h"
 #include "application/gameobject/component/action/common/StatusComponent.h"
 #include "application/gameobject/component/action/common/UIComponent.h"
 #include "application/gameobject/component/action/enemy/bomb/BombMoveComponent.h"
@@ -140,7 +140,7 @@ void EnemyFactory::RegisterDefaultEnemies()
 		if (!enemy) { return nullptr; }
 		enemy->AddComponent("Move", std::make_unique<DashMoveComponent>(player));
 		// 跳ね返した時に出すエフェクトコンポーネント
-		enemy->AddComponent("smash", std::make_unique<SmashComponent>());
+		enemy->AddComponent("trail", std::make_unique<TrailComponent>());
 		SetupCommonCollider(enemy);
 		return enemy;
 	});

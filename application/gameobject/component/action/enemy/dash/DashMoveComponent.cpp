@@ -4,7 +4,7 @@
 #include "effects/particle/ParticleManager.h"
 #include "gameobject/base/GameObject.h"
 #include "gameobject/component/action/common/PhysicsComponent.h"
-#include "gameobject/component/action/common/SmashComponent.h"
+#include "gameobject/component/action/common/TrailComponent.h"
 #include "gameobject/component/action/common/StatusComponent.h"
 #include "gameobject/component/action/player/PlayerReflectComponent.h"
 #include "gameobject/component/base/ICollisionComponent.h"
@@ -193,9 +193,9 @@ namespace GameObjectComponent
 				reflect->NotifyReflectSucceeded();
 
 				// 吹っ飛ばしエフェクトを再生
-				if (auto smash = owner_->GetComponent<SmashComponent>())
+				if (auto trail = owner_->GetComponent<TrailComponent>())
 				{
-					smash->Play(owner_);
+					trail->Play(owner_);
 				}
 			}
 			return;
