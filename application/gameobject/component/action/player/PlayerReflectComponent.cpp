@@ -27,9 +27,9 @@ namespace
 	constexpr float kNdcToScreenScale = 0.5f;
 	constexpr float kNearNdc = 0.0f;
 	constexpr float kFarNdc = 1.0f;
-	constexpr char kLockOnMarkerTexture[] = "./Resources/uvChecker.png";
+	constexpr char kLockOnMarkerTexture[] = "./Resources/lock_on.png";
 	constexpr Vector2 kLockOnMarkerAnchor = {0.5f, 0.5f};
-	constexpr Vector2 kLockOnMarkerSize = {64.0f, 64.0f};
+	constexpr Vector2 kLockOnMarkerSize = {96.0f, 96.0f};
 } // namespace
 
 GameObjectComponent::PlayerReflectComponent::PlayerReflectComponent(

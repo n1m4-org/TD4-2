@@ -1,4 +1,5 @@
 #include "TitleWaitState.h"
+#include "application/scene/play/title/TitleScene.h"
 #include "engine/scene/interface/BaseScene.h"
 #include "input/Input.h"
 #include "audio/Audio.h"
@@ -18,21 +19,27 @@ void TitleWaitState::OnUpdate(BaseScene& scene)
 void TitleWaitState::CheckTransition(BaseScene& scene)
 {
     auto input = Input::GetInstance();
+	bool isTriggered = false;
 	#ifdef _DEBUG
 	if (input && (input->TriggerKey(DIK_SPACE)))
 	{
-		Audio::GetInstance()->PlayWave("check");
-		Audio::GetInstance()->SetVolume("check", 1.0f);
-		scene.ChangeState("Exit");
+		isTriggered = true;
 	}
 	#else
-	if (input && (input->TriggerKey(DIK_SPACE) || input->IsMouseButtonTriggered(1)))
+	if (input && (input->TriggerKey(DIK_SPACE) || input->IsMouseButtonTriggered(0)))
 	{
-		Audio::GetInstance()->PlayWave("check");
-		Audio::GetInstance()->SetVolume("check", 1.0f);
-		scene.ChangeState("Exit");
+		isTriggered = true;
 	}
 	#endif
+
+	if (isTriggered)
+	{
+		if (auto title = dynamic_cast<TitleScene*>(&scene))
+		{
+			title->OnDecision();
+		}
+		scene.ChangeState("Exit");
+	}
 }
 
 const std::string& TitleWaitState::GetName() const

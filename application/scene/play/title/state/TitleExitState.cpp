@@ -35,7 +35,7 @@ void TitleExitState::CheckTransition(BaseScene& scene)
 			auto timer = std::make_unique<Timer>("wait_change_scene", 0.3f, DeltaTimeType::DeltaTime);
 			timer->SetOnFinish([title]()
 			{
-				title->GetSceneManager()->ChangeScene("Test");
+				title->GetSceneManager()->ChangeScene("Wave");
 			});
 			TimerManager::GetInstance().AddTimer(std::move(timer));
 		}
