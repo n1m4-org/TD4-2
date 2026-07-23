@@ -59,9 +59,9 @@ namespace
 
 	// 3Dカメラ演出のパラメータ
 	constexpr float kCameraOrbitSpeed = 0.25f;  // カメラ旋回速度
-	constexpr float kCameraRadius = 22.0f;      // カメラ旋回半径
-	constexpr float kCameraHeight = 7.0f;       // カメラ高さ
-	constexpr Vector3 kCameraTarget = { 0.0f, 1.5f, 0.0f }; // 注視点
+	constexpr float kCameraRadius = 35.0f;      // カメラ旋回半径（引き目アングル）
+	constexpr float kCameraHeight = 12.0f;      // カメラ高さ
+	constexpr Vector3 kCameraTarget = { 0.0f, 2.0f, 0.0f }; // 注視点
 }
 
 void TitleScene::Initialize()
@@ -89,38 +89,36 @@ void TitleScene::Initialize()
 	// 3D背景演出オブジェクトの初期化
 	Object3dCommon* objCommon = sceneManager_->GetObject3dCommon();
 	LightManager* lightManager = sceneManager_->GetLightManager();
+	Camera* camera = sceneManager_->GetCameraManager() ? sceneManager_->GetCameraManager()->GetActiveCamera() : nullptr;
 
-	if (objCommon && lightManager)
+	if (objCommon)
 	{
 		// スカイドーム
 		skydome_ = std::make_unique<Object3d>();
-		skydome_->Initialize(objCommon, lightManager);
+		skydome_->Initialize(objCommon, camera);
+		if (lightManager) skydome_->SetLightManager(lightManager);
 		skydome_->SetModel("skydome");
-
-		// 地面
-		ground_ = std::make_unique<Object3d>();
-		ground_->Initialize(objCommon, lightManager);
-		ground_->SetModel("plane");
-		ground_->SetScale({ 60.0f, 1.0f, 60.0f });
-		ground_->SetPosition({ 0.0f, 0.0f, 0.0f });
 
 		// プレイヤーモデル（中央）
 		playerModel_ = std::make_unique<Object3d>();
-		playerModel_->Initialize(objCommon, lightManager);
+		playerModel_->Initialize(objCommon, camera);
+		if (lightManager) playerModel_->SetLightManager(lightManager);
 		playerModel_->SetModel("cube");
-		playerModel_->SetPosition({ 0.0f, 1.5f, 0.0f });
+		playerModel_->SetTranslate({ 0.0f, 1.5f, 0.0f });
 		playerModel_->SetScale({ 2.0f, 2.0f, 2.0f });
 
 		// エネミーモデル（サイドアクセント）
 		enemyModel_ = std::make_unique<Object3d>();
-		enemyModel_->Initialize(objCommon, lightManager);
+		enemyModel_->Initialize(objCommon, camera);
+		if (lightManager) enemyModel_->SetLightManager(lightManager);
 		enemyModel_->SetModel("bombenemy");
-		enemyModel_->SetPosition({ 6.0f, 1.5f, 3.0f });
+		enemyModel_->SetTranslate(enemyStartPos_);
 		enemyModel_->SetScale({ 1.5f, 1.5f, 1.5f });
 	}
 
 	// パーティクルのロード
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
+	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 
 	// シーン遷移演出の初期化
 	transitionEffect_.Initialize(spCommon, "./Resources/white1x1.png", 30, 30, WinApp::kClientWidth, WinApp::kClientHeight);
@@ -165,8 +163,12 @@ void TitleScene::OnDecision()
 	Audio::GetInstance()->PlayWave("check");
 	Audio::GetInstance()->SetVolume("check", 1.0f);
 
-	// プレイヤー中央位置に決定パーティクルを発生
+	// プレイヤー中央およびボム位置に吹っ飛び爆破パーティクルを発生
 	ParticleManager::GetInstance()->Play("reflect", { 0.0f, 1.5f, 0.0f });
+	if (enemyModel_)
+	{
+		ParticleManager::GetInstance()->Play("bomber", enemyModel_->GetTranslate());
+	}
 }
 
 void TitleScene::CommonUpdate()
@@ -188,19 +190,19 @@ void TitleScene::CommonUpdate()
 				float t = std::clamp(decisionTimer_ / 1.2f, 0.0f, 1.0f);
 				float easedT = EaseOutQuad(t);
 
-				// 決定時はプレイヤーにぐっとズームインする演出
+				// 決定時は引き気味の広い画角へ移行し、ボムが上空へ吹っ飛ぶ全景を捉える
 				Vector3 normalPos = {
 					std::sin(cameraAngle_) * kCameraRadius,
 					kCameraHeight,
 					-std::cos(cameraAngle_) * kCameraRadius
 				};
-				Vector3 zoomPos = {
-					std::sin(cameraAngle_) * 8.0f,
-					3.0f,
-					-std::cos(cameraAngle_) * 8.0f
+				Vector3 pullBackPos = {
+					std::sin(cameraAngle_) * 40.0f,
+					15.0f,
+					-std::cos(cameraAngle_) * 40.0f
 				};
 
-				camPos = MathUtils::Lerp(normalPos, zoomPos, easedT);
+				camPos = MathUtils::Lerp(normalPos, pullBackPos, easedT);
 			}
 			else
 			{
@@ -222,24 +224,45 @@ void TitleScene::CommonUpdate()
 		}
 	}
 
-	// 3Dモデルの自転アニメーション
+	// 3Dモデルのアニメーション
 	if (playerModel_)
 	{
-		playerModel_->SetRotation({ 0.0f, logoAnimTimer_ * 0.8f, 0.0f });
+		playerModel_->SetRotate({ 0.0f, logoAnimTimer_ * 0.8f, 0.0f });
 		playerModel_->Update();
 	}
 	if (enemyModel_)
 	{
-		enemyModel_->SetRotation({ 0.0f, -logoAnimTimer_ * 1.2f, 0.0f });
+		if (isDecided_)
+		{
+			// 決定時は爆風で右上・上空奥へ勢いよく吹っ飛ぶダイナミック放物線アニメーション
+			constexpr Vector3 blastVelocity = { 20.0f, 28.0f, 18.0f };
+			constexpr float gravity = -48.0f;
+
+			float t = decisionTimer_;
+			Vector3 blastPos = {
+				enemyStartPos_.x + blastVelocity.x * t,
+				enemyStartPos_.y + blastVelocity.y * t + 0.5f * gravity * t * t,
+				enemyStartPos_.z + blastVelocity.z * t
+			};
+
+			// 激しい3軸回転
+			enemyRot_.x += dt * 14.0f;
+			enemyRot_.y += dt * 22.0f;
+			enemyRot_.z += dt * 18.0f;
+
+			enemyModel_->SetTranslate(blastPos);
+			enemyModel_->SetRotate(enemyRot_);
+		}
+		else
+		{
+			enemyModel_->SetTranslate(enemyStartPos_);
+			enemyModel_->SetRotate({ 0.0f, -logoAnimTimer_ * 1.2f, 0.0f });
+		}
 		enemyModel_->Update();
 	}
 	if (skydome_)
 	{
 		skydome_->Update();
-	}
-	if (ground_)
-	{
-		ground_->Update();
 	}
 
 	// --- 2D UI アニメーション演出 ---
@@ -288,10 +311,6 @@ void TitleScene::Draw3D()
 	if (skydome_)
 	{
 		skydome_->Draw();
-	}
-	if (ground_)
-	{
-		ground_->Draw();
 	}
 	if (playerModel_)
 	{

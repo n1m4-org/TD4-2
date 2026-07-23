@@ -1,7 +1,11 @@
 #pragma once
 #include <memory>
 
+// scene
+#include "engine/scene/interface/BaseScene.h"
+#include "graphics/2d/Sprite.h"
 #include "graphics/3d/Object3d.h"
+#include "transition/SceneTransitionEffect.h"
 
 /**
  * @brief タイトルシーン。
@@ -58,7 +62,6 @@ private:
 	
 	// 3D演出用オブジェクト
 	std::unique_ptr<Object3d> skydome_;
-	std::unique_ptr<Object3d> ground_;
 	std::unique_ptr<Object3d> playerModel_;
 	std::unique_ptr<Object3d> enemyModel_;
 
@@ -67,9 +70,11 @@ private:
 	float startTextAnimTimer_ = 0.0f;
 	float cameraAngle_ = 0.0f;
 
-	// 決定演出フラグ・タイマー
+	// 決定演出フラグ・タイマー・ボム吹っ飛びパラメータ
 	bool isDecided_ = false;
 	float decisionTimer_ = 0.0f;
+	Vector3 enemyStartPos_ = { 5.0f, 1.5f, 2.0f };
+	Vector3 enemyRot_ = { 0.0f, 0.0f, 0.0f };
 
 	// シーン遷移時にフェード演出
 	SceneTransitionEffect transitionEffect_;
