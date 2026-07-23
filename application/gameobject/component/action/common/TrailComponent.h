@@ -3,20 +3,21 @@
 #include "engine/gameobject/component/base/IActionComponent.h"
 #include "jsonEditor/JsonEditableBase.h"
 #include "math/Vector3.h"
+#include "math/Vector4.h"
 #include "engine/effects/particle/ParticleEffect.h"
 #include <string>
 
 namespace GameObjectComponent
 {
 	/**
-	 * @brief スマッシュ（弾の跳ね返され時・ヒット時等）のエフェクト再生と制御を行う汎用コンポーネント。
+	 * @brief トレイル（弾の跳ね返され時・ヒット時等）のエフェクト再生と制御を行う汎用コンポーネント。
 	 */
-	class SmashComponent : public IActionComponent
+	class TrailComponent : public IActionComponent
 		, public JsonEditableBase
 	{
 	public:
-		SmashComponent();
-		~SmashComponent();
+		TrailComponent(const std::string& effectName = "smash");
+		~TrailComponent();
 
 		/**
 		 * @brief コンポーネントの更新処理。
@@ -53,11 +54,18 @@ namespace GameObjectComponent
 		 */
 		const std::string& GetEffectName() const { return effectName_; }
 
+		/**
+		 * @brief レンダラーのカラー（ティントカラー）を設定する。
+		 * @param color カラー（RGBA）
+		 */
+		void SetColor(const Vector4& color);
+
 	private:
 		// 再生するエフェクト識別名
 		std::string effectName_ = "smash";
 
 		// 現在再生中のエフェクトインスタンス（ParticleManagerが所有）
 		ParticleEffect* currentEffect_ = nullptr;
+
 	};
 } // namespace GameObjectComponent

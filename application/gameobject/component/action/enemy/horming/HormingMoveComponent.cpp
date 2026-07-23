@@ -12,9 +12,10 @@
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
 
+#include "../../common/TrailComponent.h"
+#include "math/VectorColorCodes.h"
 #include <algorithm>
 #include <string>
-#include "../../common/SmashComponent.h"
 
 using namespace GameObjectComponent;
 
@@ -131,7 +132,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 	bulletObject->SetPosition(spawnPos);
 
 	// 跳ね返した時のエフェクト再生コンポーネント
-	bulletObject->AddComponent("smash", std::make_unique<SmashComponent>());
+	bulletObject->AddComponent("trail", std::make_unique<TrailComponent>());
 
 	// AABBコライダーの追加
 	bulletObject->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bulletObject));
@@ -181,9 +182,9 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 				reflect->NotifyReflectSucceeded();
 
 				// 吹っ飛ばしエフェクトを再生
-				if (auto smash = bulletObject->GetComponent<SmashComponent>())
+				if (auto smash = bulletObject->GetComponent<TrailComponent>())
 				{
-					smash->Play(bulletObject);
+					smash->SetColor(VectorColorCodes::Blue);
 				}
 
 				return;

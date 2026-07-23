@@ -102,7 +102,7 @@
     <ClCompile Include="gameobject\component\action\common\PhysicsComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
-    <ClCompile Include="gameobject\component\action\common\SmashComponent.cpp">
+    <ClCompile Include="gameobject\component\action\common\TrailComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
@@ -225,7 +225,7 @@
     <ClInclude Include="gameobject\component\action\common\PhysicsComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
-    <ClInclude Include="gameobject\component\action\common\SmashComponent.h">
+    <ClInclude Include="gameobject\component\action\common\TrailComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
