@@ -187,6 +187,8 @@
     <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
       <Filter>scene\play\title\state</Filter>
     </ClCompile>
+    <ClCompile Include="scene\state\SceneEnterState.cpp" />
+    <ClCompile Include="scene\state\SceneExitState.cpp" />
     <ClCompile Include="scene\ui\MenuButton.cpp">
       <Filter>scene\ui</Filter>
     </ClCompile>
@@ -306,6 +308,8 @@
     <ClInclude Include="scene\play\title\state\TitleWaitState.h">
       <Filter>scene\play\title\state</Filter>
     </ClInclude>
+    <ClInclude Include="scene\state\SceneEnterState.h" />
+    <ClInclude Include="scene\state\SceneExitState.h" />
     <ClInclude Include="scene\ui\MenuButton.h">
       <Filter>scene\ui</Filter>
     </ClInclude>
