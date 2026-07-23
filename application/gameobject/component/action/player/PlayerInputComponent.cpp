@@ -68,36 +68,15 @@ void GameObjectComponent::PlayerInputComponent::Update(GameObject* owner)
 	if (Input::GetInstance()->TriggerKey(DIK_LSHIFT))
 	{
 		isSlowMotionTriggered_ = true;
-	
-    	// UIを2秒間非表示
-		isHideUI_ = true;
-		uiHideTimer_ = 2.0f;
 	}
 	else
 	{
 		isSlowMotionTriggered_ = false;
 	}
-
-
-	if (isHideUI_)
-	{
-		uiHideTimer_ -= TimeManager::GetInstance().GetGameContext().deltaTime;
-
-		if (uiHideTimer_ <= 0.0f)
-		{
-			uiHideTimer_ = 0.0f;
-			isHideUI_ = false;
-		}
-	}
 }
 
 void GameObjectComponent::PlayerInputComponent::Draw2D()
 {
-	if (isHideUI_)
-	{
-		return;
-	}
-
 	ui_.background->Draw();
 
 	if (Input::GetInstance()->PushKey(DIK_W))

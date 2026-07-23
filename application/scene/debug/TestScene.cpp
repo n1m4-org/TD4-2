@@ -91,6 +91,7 @@ void TestScene::Initialize()
 	ParticleManager::GetInstance()->Load("reflect", "Resources/json/particle/player_reflect.json");
 	ParticleManager::GetInstance()->Load("bomber", "Resources/json/particle/BombEffect.json");
 	ParticleManager::GetInstance()->Load("bullet_hit", "Resources/json/particle/hit.json");
+	ParticleManager::GetInstance()->Load("enemy_dead", "Resources/json/particle/enemy_dead.json");
 	ParticleManager::GetInstance()->Load("hand", "Resources/json/particle/hand.json");
 	ParticleManager::GetInstance()->Load("smash", "Resources/json/particle/smash.json");
 
@@ -404,7 +405,7 @@ void TestScene::Initialize()
 	chargeEnemy_->AddComponent("Status", std::make_unique<StatusComponent>(chargeEnemy_.get()));
 	chargeEnemy_->AddComponent("Physics", std::make_unique<PhysicsComponent>(chargeEnemy_.get()));
 	// 死亡演出コンポーネント
-	chargeEnemy_->AddComponent("DeathDirection", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
+	chargeEnemy_->AddComponent("DeathDirection", std::make_unique<EnemyDeathDirectionComponent>("enemy_dead"));
 	chargeEnemy_->AddComponent(
 		"UI",
 		std::make_unique<UIComponent>(
@@ -587,7 +588,7 @@ void TestScene::Initialize()
 	// 一定間隔でプレイヤーに向かってホーミング弾を発射する
 	hormingTest_->AddComponent("Horming", std::make_unique<HormingMoveComponent>(player_.get()));
 	// 死亡演出をつける
-	hormingTest_->AddComponent("DeathEffect", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
+	hormingTest_->AddComponent("DeathEffect", std::make_unique<EnemyDeathDirectionComponent>("enemy_dead"));
 
 	// ポーズメニュー
 	pauseMenu_ = std::make_unique<PauseMenu>();

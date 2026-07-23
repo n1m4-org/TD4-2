@@ -16,7 +16,7 @@
             "minMoveDistance": 0.05000000074505806,
             "modules": [
                 {
-                    "count": 30,
+                    "count": 50,
                     "delay": 0.0,
                     "interval": 0.0,
                     "loops": 1,
@@ -48,9 +48,9 @@
                         "z": 0.0
                     },
                     "start": {
-                        "x": 1.0,
-                        "y": 1.0,
-                        "z": 1.0
+                        "x": 3.0,
+                        "y": 3.0,
+                        "z": 3.0
                     },
                     "type": "ScaleOverLifetime"
                 },
@@ -72,9 +72,9 @@
             ],
             "name": "e1",
             "position": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
+                "x": -2.123706579208374,
+                "y": 2.2003331184387207,
+                "z": 3.3896710872650146
             },
             "renderer": {
                 "billboard": false,

@@ -132,7 +132,7 @@ GameObject* EnemyFactory::CreateBaseEnemy(const SpawnCommand& command, const std
 	enemy->AddComponent("Status", std::make_unique<StatusComponent>(enemy));
 	enemy->AddComponent("Physics", std::make_unique<PhysicsComponent>(enemy));
 	// HPが尽きたら死亡演出を再生してDestroyする(TestSceneのChargeEnemy/HormingTestCubeと同様)
-	enemy->AddComponent("DeathDirection", std::make_unique<EnemyDeathDirectionComponent>("bullet_hit"));
+	enemy->AddComponent("DeathDirection", std::make_unique<EnemyDeathDirectionComponent>("enemy_dead"));
 
 	if (spriteCommon_ && camera_)
 	{
