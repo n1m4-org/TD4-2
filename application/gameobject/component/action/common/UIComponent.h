@@ -47,8 +47,10 @@ namespace GameObjectComponent
 	public: // ゲッター・セッター
 		void SetOffset3D(const Vector3& offset) { offset3D_ = offset; }
 		void SetBarSize(const Vector2& size) { barSize_ = size; }
+		void SetVisible(bool visible) { isVisible_ = visible; }
 		const Vector3& GetOffset3D() const { return offset3D_; }
 		const Vector2& GetBarSize() const { return barSize_; }
+		bool IsVisible() const { return isVisible_; }
 
 	private:
 		// スプライトの初期化
@@ -59,6 +61,9 @@ namespace GameObjectComponent
 		std::unique_ptr<Sprite> hpBarBg_;
 		// HPバー残量スプライト（UIComponentが所有）
 		std::unique_ptr<Sprite> hpBarFill_;
+
+		// 表示フラグ
+		bool isVisible_ = true;
 
 		// 描画カメラ。CameraManagerが所有し、シーン中は有効な前提
 		Camera* camera_ = nullptr;

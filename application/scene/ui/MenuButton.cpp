@@ -21,9 +21,13 @@ bool MenuButton::Update(const Vector2& mousePos, bool mouseTriggered)
 	// 中心アンカーの矩形当たり判定
 	const float halfW = size_.x * 0.5f;
 	const float halfH = size_.y * 0.5f;
+
+	bool previousHovered = hovered_;
 	hovered_ =
 		mousePos.x >= center_.x - halfW && mousePos.x <= center_.x + halfW &&
 		mousePos.y >= center_.y - halfH && mousePos.y <= center_.y + halfH;
+
+	isHoverEnter_ = !previousHovered && hovered_;
 
 	sprite_->SetColor(hovered_ ? hoverColor_ : normalColor_);
 	sprite_->SetPosition(center_);

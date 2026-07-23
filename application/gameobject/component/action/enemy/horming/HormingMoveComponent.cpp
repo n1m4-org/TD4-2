@@ -12,6 +12,7 @@
 #include "engine/gameobject/manager/GameObjectManager.h"
 #include "engine/time/TimeManager.h"
 #include "input/Input.h"
+#include "audio/Audio.h"
 
 #include "../../common/TrailComponent.h"
 #include "math/VectorColorCodes.h"
@@ -19,6 +20,7 @@
 #include <cmath>
 #include <numbers>
 #include <string>
+#include "effects/particle/ParticleManager.h"
 
 using namespace GameObjectComponent;
 
@@ -330,7 +332,9 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 	bulletObject->SetPosition(spawnPos);
 
 	// 跳ね返した時のエフェクト再生コンポーネント
-	bulletObject->AddComponent("trail", std::make_unique<TrailComponent>());
+	auto trail = std::make_unique<TrailComponent>();
+	trail->SetColor(VectorColorCodes::Red);
+	bulletObject->AddComponent("trail", move(trail));
 
 	// AABBコライダーの追加
 	bulletObject->AddComponent("Collider", std::make_unique<AABBColliderComponent>(bulletObject));
@@ -392,6 +396,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 			if ((info.otherCollider->GetCollisionLayer() & CollisionLayer::Player) ||
 				(info.otherCollider->GetCollisionLayer() & CollisionLayer::Bumpers))
 			{
+				ParticleManager::GetInstance()->Play("bullet_hit", bulletObject->GetPosition());
 				KillBullet(bulletObject);
 				return;
 			}
@@ -446,6 +451,7 @@ void HormingMoveComponent::FireBullet(GameObject* owner, int32_t bulletIndex, in
 		bullet.startPos,
 		bullet.controlPos1);
 
+	Audio::GetInstance()->PlayWave("se_missile");
 	GameObjectManager::GetInstance()->Register(bulletObject);
 
 	bullets_.push_back(bullet);

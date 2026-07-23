@@ -13,7 +13,7 @@
 #include "engine/time/TimeManager.h"
 #include "engine/math/Easing.h"
 #include "engine/math/MathUtils.h"
-
+#include "audio/Audio.h"
 
 #include "../bullet/BulletBehaviorComponent.h"
 #include "effects/particle/ParticleManager.h"
@@ -206,11 +206,19 @@ void GameObjectComponent::ChargeMoveComponent::BulletInitialize(GameObject* owne
 	// 弾を生成
 	auto bullet = bulletSpawnComponent_->Fire("Bullet", owner->GetPosition(), owner->GetRotation());
 
+	if (bullet)
+	{
+		// SE鳴らす
+		Audio::GetInstance()->PlayWave("se_bullet");
+	}
+
 	// 挙動のコンポーネント
 	bullet->AddComponent("Behavior", std::make_unique<BulletBehaviorComponent>(4.0f));
 
 	// 跳ね返した時に出すエフェクトコンポーネント
-	bullet->AddComponent("trail", std::make_unique<TrailComponent>());
+	auto trail = std::make_unique<TrailComponent>();
+	trail->SetColor(VectorColorCodes::Red);
+	bullet->AddComponent("trail", move(trail));
 
 	// 　物理コンポーネントの追加
 	auto physics = std::make_unique<PhysicsComponent>(bullet);

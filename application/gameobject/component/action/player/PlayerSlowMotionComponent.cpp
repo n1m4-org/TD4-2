@@ -6,6 +6,7 @@
 #include "math/VectorColorCodes.h"
 #include "time/TimeManager.h"
 #include "time/TimerManager.h"
+#include "audio/Audio.h"
 
 GameObjectComponent::PlayerSlowMotionComponent::PlayerSlowMotionComponent(LightManager* lightManager)
 	: lightManager_(lightManager)
@@ -44,6 +45,8 @@ void GameObjectComponent::PlayerSlowMotionComponent::Update(GameObject* owner)
 			dirLight.intensity = 0.0f;
 			dirLight.ambient = VectorColorCodes::Black;
 			lightManager_->SetDirectionalLight(dirLight);
+
+			Audio::GetInstance()->PlayWave("se_skill");
 		});
 
 		// slowMotionTimerの終了時に新たなタイマーを作成して徐々に元のタイムスケールに戻す

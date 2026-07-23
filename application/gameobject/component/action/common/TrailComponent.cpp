@@ -4,7 +4,6 @@
 #include "engine/effects/particle/ParticleManager.h"
 #include "engine/effects/particle/renderer/IRenderer.h"
 #include "engine/gameobject/base/GameObject.h"
-#include "math/VectorColorCodes.h"
 
 namespace GameObjectComponent
 {
@@ -30,18 +29,37 @@ namespace GameObjectComponent
 		{
 			// エフェクトの再生を行う
 			currentEffect_ = ParticleManager::GetInstance()->Play(effectName_, owner->GetPosition());
-			SetColor(VectorColorCodes::Red);
+
+			// SetColorで明示的に色指定されている場合のみ再適用する。
+			// ParticleManagerのプールは前の所有者が変更した色を保持したまま返ってくることがあるため、
+			// 色指定ありのTrailComponentが古い色を引き継がないようにする。
+			// 指定が無い場合はプリセット（JSON）側の色をそのまま活かす。
+			if (hasCustomColor_)
+			{
+				ApplyBaseColor();
+			}
 		}
 	}
 
 	void TrailComponent::Play(GameObject* owner)
 	{
-		// 位置が指定されていない場合、所有者の位置を使用
-		if (owner && currentEffect_ && !currentEffect_->IsPlaying())
+		if (!owner)
 		{
-			// ParticleManager経由でワンショット再生
-			currentEffect_ = ParticleManager::GetInstance()->Play(effectName_, owner->GetPosition());
-			SetColor(VectorColorCodes::Red);
+			return;
+		}
+
+		// 既に再生中なら何もしない（多重トリガー防止）
+		if (currentEffect_ && currentEffect_->IsPlaying())
+		{
+			return;
+		}
+
+		// ParticleManager経由でワンショット再生
+		currentEffect_ = ParticleManager::GetInstance()->Play(effectName_, owner->GetPosition());
+
+		if (hasCustomColor_)
+		{
+			ApplyBaseColor();
 		}
 	}
 
@@ -60,16 +78,26 @@ namespace GameObjectComponent
 
 	void TrailComponent::SetColor(const Vector4& color)
 	{
-		if (currentEffect_)
+		// 以後、再生し直されてもこの色を維持できるよう基準色として保持する
+		baseColor_ = color;
+		hasCustomColor_ = true;
+		ApplyBaseColor();
+	}
+
+	void TrailComponent::ApplyBaseColor()
+	{
+		if (!currentEffect_)
 		{
-			for (size_t i = 0; i < currentEffect_->GetEmitterCount(); ++i)
+			return;
+		}
+
+		for (size_t i = 0; i < currentEffect_->GetEmitterCount(); ++i)
+		{
+			if (auto emitter = currentEffect_->GetEmitter(i))
 			{
-				if (auto emitter = currentEffect_->GetEmitter(i))
+				if (auto renderer = emitter->GetRenderer())
 				{
-					if (auto renderer = emitter->GetRenderer())
-					{
-						renderer->SetTintColor(color);
-					}
+					renderer->SetTintColor(baseColor_);
 				}
 			}
 		}
