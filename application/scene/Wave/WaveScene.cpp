@@ -278,6 +278,23 @@ void WaveScene::Initialize()
 
 	UpdateWaveText();
 
+	// 敵の残り数を表示するUI
+	enemyCountTextShadow_ = std::make_unique<FontSprite>();
+	enemyCountTextShadow_->Initialize(sceneManager_->GetSpriteCommon(), "nico");
+	enemyCountTextShadow_->SetPosition(ENEMY_COUNT_POSITION + ENEMY_COUNT_SHADOW_OFFSET);
+	enemyCountTextShadow_->SetScale(ENEMY_COUNT_SCALE);
+	enemyCountTextShadow_->SetSpacing(ENEMY_COUNT_SPACING);
+	enemyCountTextShadow_->SetColor(ENEMY_COUNT_SHADOW_COLOR);
+
+	enemyCountText_ = std::make_unique<FontSprite>();
+	enemyCountText_->Initialize(sceneManager_->GetSpriteCommon(), "nico");
+	enemyCountText_->SetPosition(ENEMY_COUNT_POSITION);
+	enemyCountText_->SetScale(ENEMY_COUNT_SCALE);
+	enemyCountText_->SetSpacing(ENEMY_COUNT_SPACING);
+	enemyCountText_->SetColor(ENEMY_COUNT_COLOR);
+
+	UpdateEnemyCountText();
+
 	// ポーズメニュー(TestSceneと同様)
 	pauseMenu_ = std::make_unique<PauseMenu>();
 	pauseMenu_->Initialize(sceneManager_->GetSpriteCommon());
@@ -340,6 +357,8 @@ void WaveScene::OnFinalize()
 
 	waveText_.reset();
 	waveTextShadow_.reset();
+	enemyCountText_.reset();
+	enemyCountTextShadow_.reset();
 
 	Audio::GetInstance()->StopWave("game_BGM");
 	Audio::GetInstance()->UnloadWave("game_BGM");
@@ -396,6 +415,14 @@ void WaveScene::Draw2D()
 		{
 			waveText_->Draw();
 		}
+		if (enemyCountTextShadow_)
+		{
+			enemyCountTextShadow_->Draw();
+		}
+		if (enemyCountText_)
+		{
+			enemyCountText_->Draw();
+		}
 	}
 
 	// 結果UI（演出終了後のオーバーレイ）：クリアかゲームオーバーのどちらかを表示
@@ -424,6 +451,15 @@ void WaveScene::UpdateWaveText()
 	const std::string text = "WAVE " + std::to_string(waveSystem_->GetCurrentWaveIndex() + 1) + " OF " + std::to_string(waveSystem_->GetWaveCount());
 	waveText_->SetText(text);
 	waveTextShadow_->SetText(text);
+}
+
+void WaveScene::UpdateEnemyCountText()
+{
+	size_t enemyCount = GameObjectManager::GetInstance()->FindAllWithTag("Enemy").size();
+	// "ENEMIES:5" のようにコロンの後のスペースを詰めて距離感を調整
+	const std::string text = "ENEMIES:" + std::to_string(enemyCount);
+	enemyCountText_->SetText(text);
+	enemyCountTextShadow_->SetText(text);
 }
 
 void WaveScene::DrawShadow()
@@ -868,6 +904,7 @@ void WaveScene::CommonUpdate()
 
 	waveSystem_->Update(TimeManager::GetInstance().GetGameContext().deltaTime);
 	UpdateWaveText();
+	UpdateEnemyCountText();
 
 	GameObjectManager::GetInstance()->Update();
 	CollisionManager::GetInstance()->CheckCollisions();

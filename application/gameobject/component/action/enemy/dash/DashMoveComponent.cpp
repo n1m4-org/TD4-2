@@ -149,6 +149,11 @@ namespace GameObjectComponent
 			currentSpd_ = speed_;
 			Audio::GetInstance()->PlayWave("se_spawn");
 			state_ = State::Dash;
+
+			if (collider_)
+			{
+				collider_->SetCollisionLayer(CollisionLayer::EnemyBullet);
+			}
 			return;
 		}
 
@@ -201,6 +206,11 @@ namespace GameObjectComponent
 			currentSpd_ = 0.f;
 			elapsedTime_ = 0.f;
 			state_ = State::Idle;
+
+			if (collider_)
+			{
+				collider_->SetCollisionLayer(CollisionLayer::Enemy);
+			}
 		}
 
 		physics_->SetMovementVelocity(dashDirection_ * currentSpd_);

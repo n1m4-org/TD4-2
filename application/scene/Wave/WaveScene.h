@@ -121,6 +121,19 @@ class WaveScene : public BaseScene
 	static constexpr Vector4 WAVE_TEXT_SHADOW_COLOR = { 0.0f, 0.0f, 0.0f, 0.5f };
 	static constexpr Vector2 WAVE_TEXT_SHADOW_OFFSET = { 4.0f, 4.0f };
 
+	// 敵の残り数を表示するUI
+	std::unique_ptr<FontSprite> enemyCountText_;
+	// 影用テキスト
+	std::unique_ptr<FontSprite> enemyCountTextShadow_;
+	void UpdateEnemyCountText();
+
+	static constexpr Vector2 ENEMY_COUNT_POSITION = { 60.0f, 95.0f };
+	static constexpr float ENEMY_COUNT_SCALE = 0.65f;
+	static constexpr float ENEMY_COUNT_SPACING = 4.0f;
+	static constexpr Vector4 ENEMY_COUNT_COLOR = { 1.0f, 0.6f, 0.6f, 1.0f };
+	static constexpr Vector4 ENEMY_COUNT_SHADOW_COLOR = { 0.0f, 0.0f, 0.0f, 0.5f };
+	static constexpr Vector2 ENEMY_COUNT_SHADOW_OFFSET = { 4.0f, 4.0f };
+
 	// ポーズメニュー
 	std::unique_ptr<PauseMenu> pauseMenu_;
 

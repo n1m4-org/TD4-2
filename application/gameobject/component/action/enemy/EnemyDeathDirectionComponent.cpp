@@ -47,6 +47,14 @@ namespace GameObjectComponent
 				return;
 			}
 
+			// 落下死判定（Y座標が一定以下なら即座にHPを0にして死亡状態にする）
+			constexpr float kFallDeathY = -20.0f;
+			if (owner->GetPosition().y < kFallDeathY)
+			{
+				status_->SetHp(0);
+				status_->SetAlive(false);
+			}
+
 			if (status_->GetHp() <= 0)
 			{
 				StartDeath(owner);

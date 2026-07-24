@@ -48,7 +48,14 @@ public:
 	bool HasStarted() const { return started_; }
 
 	// デバッグ表示用
-	uint32_t GetCurrentWaveIndex() const { return current_; }
+	uint32_t GetCurrentWaveIndex() const
+	{
+		if (waves_.empty())
+		{
+			return 0;
+		}
+		return current_ < waves_.size() ? current_ : static_cast<uint32_t>(waves_.size() - 1);
+	}
 	size_t GetWaveCount() const { return waves_.size(); }
 
 private:
