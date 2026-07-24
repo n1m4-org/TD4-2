@@ -295,6 +295,29 @@ void WaveScene::Initialize()
 
 	UpdateEnemyCountText();
 
+	// SHIFTスローモーションのプロンプト表示用UI
+	shiftPromptTextShadow_ = std::make_unique<FontSprite>();
+	shiftPromptTextShadow_->Initialize(sceneManager_->GetSpriteCommon(), "nico");
+	shiftPromptTextShadow_->SetPosition(SHIFT_PROMPT_POSITION + SHIFT_PROMPT_SHADOW_OFFSET);
+	shiftPromptTextShadow_->SetScale(SHIFT_PROMPT_SCALE);
+	shiftPromptTextShadow_->SetSpacing(SHIFT_PROMPT_SPACING);
+	shiftPromptTextShadow_->SetColor(SHIFT_PROMPT_SHADOW_COLOR);
+	shiftPromptTextShadow_->SetAlignment(FontAlignment::Center);
+	shiftPromptTextShadow_->SetText("SHIFT");
+	shiftPromptTextShadow_->SetVisible(false);
+
+	shiftPromptText_ = std::make_unique<FontSprite>();
+	shiftPromptText_->Initialize(sceneManager_->GetSpriteCommon(), "nico");
+	shiftPromptText_->SetPosition(SHIFT_PROMPT_POSITION);
+	shiftPromptText_->SetScale(SHIFT_PROMPT_SCALE);
+	shiftPromptText_->SetSpacing(SHIFT_PROMPT_SPACING);
+	shiftPromptText_->SetColor(SHIFT_PROMPT_COLOR);
+	shiftPromptText_->SetAlignment(FontAlignment::Center);
+	shiftPromptText_->SetText("SHIFT");
+	shiftPromptText_->SetVisible(false);
+
+	UpdateShiftPromptText();
+
 	// ポーズメニュー(TestSceneと同様)
 	pauseMenu_ = std::make_unique<PauseMenu>();
 	pauseMenu_->Initialize(sceneManager_->GetSpriteCommon());
@@ -359,6 +382,8 @@ void WaveScene::OnFinalize()
 	waveTextShadow_.reset();
 	enemyCountText_.reset();
 	enemyCountTextShadow_.reset();
+	shiftPromptText_.reset();
+	shiftPromptTextShadow_.reset();
 
 	Audio::GetInstance()->StopWave("game_BGM");
 	Audio::GetInstance()->UnloadWave("game_BGM");
@@ -423,6 +448,14 @@ void WaveScene::Draw2D()
 		{
 			enemyCountText_->Draw();
 		}
+		if (shiftPromptTextShadow_ && shiftPromptTextShadow_->IsVisible())
+		{
+			shiftPromptTextShadow_->Draw();
+		}
+		if (shiftPromptText_ && shiftPromptText_->IsVisible())
+		{
+			shiftPromptText_->Draw();
+		}
 	}
 
 	// 結果UI（演出終了後のオーバーレイ）：クリアかゲームオーバーのどちらかを表示
@@ -460,6 +493,30 @@ void WaveScene::UpdateEnemyCountText()
 	const std::string text = "ENEMIES:" + std::to_string(enemyCount);
 	enemyCountText_->SetText(text);
 	enemyCountTextShadow_->SetText(text);
+}
+
+void WaveScene::UpdateShiftPromptText()
+{
+	if (!player_ || !shiftPromptText_ || !shiftPromptTextShadow_)
+	{
+		return;
+	}
+
+	// 敵の弾が5発以上あって、スローモーションが使用可能なときに表示
+	constexpr size_t kEnemyBulletManyCount = 5;
+	size_t bulletCount = GameObjectManager::GetInstance()->FindAllWithTag("EnemyBullet").size();
+
+	auto slowMotion = player_->GetComponent<PlayerSlowMotionComponent>();
+	bool isSlowMotionReady = slowMotion && !slowMotion->IsCooldown();
+
+	bool showPrompt = false;
+	if (cameraState_ == CameraState::Playing && isSlowMotionReady && bulletCount >= kEnemyBulletManyCount)
+	{
+		showPrompt = true;
+	}
+
+	shiftPromptText_->SetVisible(showPrompt);
+	shiftPromptTextShadow_->SetVisible(showPrompt);
 }
 
 void WaveScene::DrawShadow()
@@ -905,6 +962,7 @@ void WaveScene::CommonUpdate()
 	waveSystem_->Update(TimeManager::GetInstance().GetGameContext().deltaTime);
 	UpdateWaveText();
 	UpdateEnemyCountText();
+	UpdateShiftPromptText();
 
 	GameObjectManager::GetInstance()->Update();
 	CollisionManager::GetInstance()->CheckCollisions();

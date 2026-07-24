@@ -31,5 +31,11 @@ namespace GameObjectComponent
 		float slowMotionCooldown_ = 5.0f;
 		// スポットライトの位置オフセット
 		static constexpr Vector3 spotLightOffset_ = {0.0f, 30.0f, 0.0f};
+
+	public:
+		bool IsCooldown() const
+		{
+			return isCooldown_;
+		}
 	};
 } // namespace GameObjectComponent

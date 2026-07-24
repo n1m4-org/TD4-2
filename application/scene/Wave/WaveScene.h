@@ -134,6 +134,19 @@ class WaveScene : public BaseScene
 	static constexpr Vector4 ENEMY_COUNT_SHADOW_COLOR = { 0.0f, 0.0f, 0.0f, 0.5f };
 	static constexpr Vector2 ENEMY_COUNT_SHADOW_OFFSET = { 4.0f, 4.0f };
 
+	// SHIFTスローモーションのプロンプト表示用UI
+	std::unique_ptr<FontSprite> shiftPromptText_;
+	// 影用テキスト
+	std::unique_ptr<FontSprite> shiftPromptTextShadow_;
+	void UpdateShiftPromptText();
+
+	static constexpr Vector2 SHIFT_PROMPT_POSITION = { 960.0f, 660.0f };
+	static constexpr float SHIFT_PROMPT_SCALE = 0.5f;
+	static constexpr float SHIFT_PROMPT_SPACING = 4.0f;
+	static constexpr Vector4 SHIFT_PROMPT_COLOR = { 1.0f, 1.0f, 1.0f, 0.8f };
+	static constexpr Vector4 SHIFT_PROMPT_SHADOW_COLOR = { 0.0f, 0.0f, 0.0f, 0.4f };
+	static constexpr Vector2 SHIFT_PROMPT_SHADOW_OFFSET = { 3.0f, 3.0f };
+
 	// ポーズメニュー
 	std::unique_ptr<PauseMenu> pauseMenu_;
 
