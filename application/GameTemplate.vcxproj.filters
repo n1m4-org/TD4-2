@@ -1,238 +1,64 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Resources">
-      <UniqueIdentifier>{DDCF50C2-9294-D441-4F3F-7C1BBC892CB5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resources\shaders">
-      <UniqueIdentifier>{7017182E-6FB0-BB7B-B84B-996D35E442E5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Waves">
-      <UniqueIdentifier>{A4B44939-AABF-E8DF-39B1-ECF05FA95C0A}</UniqueIdentifier>
-    </Filter>
     <Filter Include="collision">
-      <UniqueIdentifier>{CB5E8A23-EC9E-46A8-5837-2247AF29A414}</UniqueIdentifier>
+      <UniqueIdentifier>{238A5ECB-9EEC-A846-5837-2247AF29A414}</UniqueIdentifier>
     </Filter>
     <Filter Include="gameobject">
-      <UniqueIdentifier>{77FE4252-2F4E-5102-6545-8111A6DB2382}</UniqueIdentifier>
+      <UniqueIdentifier>{5242FE77-4E2F-0251-6545-8111A6DB2382}</UniqueIdentifier>
     </Filter>
     <Filter Include="gameobject\component">
-      <UniqueIdentifier>{678FDE27-F550-C862-3050-C8AD830AB54F}</UniqueIdentifier>
+      <UniqueIdentifier>{27DE8F67-50F5-62C8-3050-C8AD830AB54F}</UniqueIdentifier>
     </Filter>
     <Filter Include="gameobject\component\action">
-      <UniqueIdentifier>{2F863FFC-E377-71D8-89DA-01F2AD6F1555}</UniqueIdentifier>
+      <UniqueIdentifier>{FC3F862F-77E3-D871-89DA-01F2AD6F1555}</UniqueIdentifier>
     </Filter>
     <Filter Include="gameobject\component\action\common">
-      <UniqueIdentifier>{B6C3C653-41B5-759B-5C99-ACB29017302B}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="gameobject\component\action\enemy">
-      <UniqueIdentifier>{A38D8791-C7B0-32A3-3755-D55401FE7DC1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="gameobject\component\action\enemy\bomb">
-      <UniqueIdentifier>{A2F2401F-9D84-893F-E510-2316B2DD05FD}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="gameobject\component\action\enemy\bullet">
-      <UniqueIdentifier>{0BA58D0B-3688-A68F-5043-58C63BF3159E}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="gameobject\component\action\enemy\charge">
-      <UniqueIdentifier>{91C1B32B-76A8-4857-5B25-3AE29B566E70}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="gameobject\component\action\enemy\dash">
-      <UniqueIdentifier>{2071E47C-3DEB-9CB8-134C-4C0807B69DF1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="gameobject\component\action\enemy\horming">
-      <UniqueIdentifier>{EEC6CC74-8BA8-ECFC-C9A8-C4D398BA9E11}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="gameobject\component\action\player">
-      <UniqueIdentifier>{40F09B82-DC0F-0CCE-0F15-FA42698939F4}</UniqueIdentifier>
+      <UniqueIdentifier>{53C6C3B6-B541-9B75-5C99-ACB29017302B}</UniqueIdentifier>
     </Filter>
     <Filter Include="resources">
-      <UniqueIdentifier>{55B558C7-EF82-0E6E-00E5-993B9E55D93B}</UniqueIdentifier>
+      <UniqueIdentifier>{C758B555-82EF-6E0E-00E5-993B9E55D93B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{C250CFDD-9492-41D4-4F3F-7C1BBC892CB5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\shaders">
+      <UniqueIdentifier>{2E181770-B06F-7BBB-B84B-996D35E442E5}</UniqueIdentifier>
     </Filter>
     <Filter Include="scene">
-      <UniqueIdentifier>{1E7F604B-8641-5ADE-94E1-5FEF8627609B}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\Wave">
-      <UniqueIdentifier>{893A30A0-8BA7-EFEA-0B1D-DD0D7B0A0308}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\clear">
-      <UniqueIdentifier>{7853F6DF-BF3B-44DD-F780-87114114CAF0}</UniqueIdentifier>
+      <UniqueIdentifier>{4B607F1E-4186-DE5A-94E1-5FEF8627609B}</UniqueIdentifier>
     </Filter>
     <Filter Include="scene\debug">
-      <UniqueIdentifier>{043A9A6E-2075-85F6-1633-A6DA8AC323DB}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\gameover">
-      <UniqueIdentifier>{715B90F6-140D-56B7-A5E4-011F01DAB95E}</UniqueIdentifier>
+      <UniqueIdentifier>{6E9A3A04-7520-F685-1633-A6DA8AC323DB}</UniqueIdentifier>
     </Filter>
     <Filter Include="scene\play">
-      <UniqueIdentifier>{70549714-C486-8BD1-27AB-5E9361D090E7}</UniqueIdentifier>
+      <UniqueIdentifier>{14975470-86C4-D18B-27AB-5E9361D090E7}</UniqueIdentifier>
     </Filter>
     <Filter Include="scene\play\title">
-      <UniqueIdentifier>{049E5710-6DAA-B6AB-07A8-40C40F20C526}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\play\title\state">
-      <UniqueIdentifier>{59A26E78-117C-D4D7-621C-6511A4C9C91B}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\state">
-      <UniqueIdentifier>{00E80580-F9EF-9B0C-B63F-84B8DF75DDF3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\ui">
-      <UniqueIdentifier>{69E5C875-BCC1-6A96-6277-EDEF3879AD75}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="transition">
-      <UniqueIdentifier>{1E305752-7650-F36A-BC8C-FA0131920CDA}</UniqueIdentifier>
+      <UniqueIdentifier>{10579E04-AA6D-ABB6-07A8-40C40F20C526}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Waves\EnemyFactory.cpp">
-      <Filter>Waves</Filter>
-    </ClCompile>
-    <ClCompile Include="Waves\EnemySpawner.cpp">
-      <Filter>Waves</Filter>
-    </ClCompile>
-    <ClCompile Include="Waves\SpawnCommand.cpp">
-      <Filter>Waves</Filter>
-    </ClCompile>
-    <ClCompile Include="Waves\Wave.cpp">
-      <Filter>Waves</Filter>
-    </ClCompile>
-    <ClCompile Include="Waves\WaveData.cpp">
-      <Filter>Waves</Filter>
-    </ClCompile>
-    <ClCompile Include="Waves\WaveSystem.cpp">
-      <Filter>Waves</Filter>
-    </ClCompile>
     <ClCompile Include="gameobject\component\action\common\PhysicsComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
     <ClCompile Include="gameobject\component\action\common\StatusComponent.cpp">
       <Filter>gameobject\component\action\common</Filter>
     </ClCompile>
-    <ClCompile Include="gameobject\component\action\common\TrailComponent.cpp">
-      <Filter>gameobject\component\action\common</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\common\UIComponent.cpp">
-      <Filter>gameobject\component\action\common</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.cpp">
-      <Filter>gameobject\component\action\enemy</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.cpp">
-      <Filter>gameobject\component\action\enemy</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\EnemySpawnDirectionComponent.cpp">
-      <Filter>gameobject\component\action\enemy</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\bomb\BombMoveComponent.cpp">
-      <Filter>gameobject\component\action\enemy\bomb</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.cpp">
-      <Filter>gameobject\component\action\enemy\bullet</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.cpp">
-      <Filter>gameobject\component\action\enemy\bullet</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.cpp">
-      <Filter>gameobject\component\action\enemy\charge</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.cpp">
-      <Filter>gameobject\component\action\enemy\charge</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\charge\ChargeMoveComponent.cpp">
-      <Filter>gameobject\component\action\enemy\charge</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.cpp">
-      <Filter>gameobject\component\action\enemy\charge</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\dash\DashMoveComponent.cpp">
-      <Filter>gameobject\component\action\enemy\dash</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\enemy\horming\HormingMoveComponent.cpp">
-      <Filter>gameobject\component\action\enemy\horming</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\player\PlayerInputComponent.cpp">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\player\PlayerMoveComponent.cpp">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\player\PlayerReflectComponent.cpp">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClCompile>
-    <ClCompile Include="gameobject\component\action\player\PlayerSlowMotionComponent.cpp">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="resources\LoadGameResources.cpp">
       <Filter>resources</Filter>
     </ClCompile>
-    <ClCompile Include="scene\Wave\WaveScene.cpp">
-      <Filter>scene\Wave</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\clear\ClearScene.cpp">
-      <Filter>scene\clear</Filter>
-    </ClCompile>
     <ClCompile Include="scene\debug\ParticleTestScene.cpp">
       <Filter>scene\debug</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\debug\TestScene.cpp">
-      <Filter>scene\debug</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\gameover\GameOverScene.cpp">
-      <Filter>scene\gameover</Filter>
     </ClCompile>
     <ClCompile Include="scene\play\title\TitleScene.cpp">
       <Filter>scene\play\title</Filter>
     </ClCompile>
-    <ClCompile Include="scene\play\title\state\TitleEnterState.cpp">
-      <Filter>scene\play\title\state</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\play\title\state\TitleExitState.cpp">
-      <Filter>scene\play\title\state</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\play\title\state\TitleWaitState.cpp">
-      <Filter>scene\play\title\state</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\state\SceneEnterState.cpp">
-      <Filter>scene\state</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\state\SceneExitState.cpp">
-      <Filter>scene\state</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\ui\MenuButton.cpp">
-      <Filter>scene\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\ui\PauseMenu.cpp">
-      <Filter>scene\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="transition\SceneTransitionEffect.cpp">
-      <Filter>transition</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Waves\EnemyFactory.h">
-      <Filter>Waves</Filter>
-    </ClInclude>
-    <ClInclude Include="Waves\EnemySpawner.h">
-      <Filter>Waves</Filter>
-    </ClInclude>
-    <ClInclude Include="Waves\SpawnCommand.h">
-      <Filter>Waves</Filter>
-    </ClInclude>
-    <ClInclude Include="Waves\Wave.h">
-      <Filter>Waves</Filter>
-    </ClInclude>
-    <ClInclude Include="Waves\WaveData.h">
-      <Filter>Waves</Filter>
-    </ClInclude>
-    <ClInclude Include="Waves\WaveSystem.h">
-      <Filter>Waves</Filter>
-    </ClInclude>
     <ClInclude Include="collision\CollisionLayer.h">
       <Filter>collision</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\GameObjectTag.h">
-      <Filter>gameobject</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\component\action\common\PhysicsComponent.h">
       <Filter>gameobject\component\action\common</Filter>
@@ -240,101 +66,14 @@
     <ClInclude Include="gameobject\component\action\common\StatusComponent.h">
       <Filter>gameobject\component\action\common</Filter>
     </ClInclude>
-    <ClInclude Include="gameobject\component\action\common\TrailComponent.h">
-      <Filter>gameobject\component\action\common</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\common\UIComponent.h">
-      <Filter>gameobject\component\action\common</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\EnemyDeathDirectionComponent.h">
-      <Filter>gameobject\component\action\enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\EnemyLongRangeMoveCompornent.h">
-      <Filter>gameobject\component\action\enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\EnemySpawnDirectionComponent.h">
-      <Filter>gameobject\component\action\enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\bomb\BombMoveComponent.h">
-      <Filter>gameobject\component\action\enemy\bomb</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\bullet\BulletBehaviorComponent.h">
-      <Filter>gameobject\component\action\enemy\bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\bullet\BulletSpawnComponent.h">
-      <Filter>gameobject\component\action\enemy\bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\charge\ChargeAttackCompornent.h">
-      <Filter>gameobject\component\action\enemy\charge</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\charge\ChargeBulletSpawnComponent.h">
-      <Filter>gameobject\component\action\enemy\charge</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\charge\ChargeMoveComponent.h">
-      <Filter>gameobject\component\action\enemy\charge</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\charge\ChargePreparationCompornent.h">
-      <Filter>gameobject\component\action\enemy\charge</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\dash\DashMoveComponent.h">
-      <Filter>gameobject\component\action\enemy\dash</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\enemy\horming\HormingMoveComponent.h">
-      <Filter>gameobject\component\action\enemy\horming</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\player\PlayerInputComponent.h">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\player\PlayerMoveComponent.h">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\player\PlayerReflectComponent.h">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClInclude>
-    <ClInclude Include="gameobject\component\action\player\PlayerSlowMotionComponent.h">
-      <Filter>gameobject\component\action\player</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\Wave\WaveScene.h">
-      <Filter>scene\Wave</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\clear\ClearScene.h">
-      <Filter>scene\clear</Filter>
+    <ClInclude Include="gameobject\GameObjectTag.h">
+      <Filter>gameobject</Filter>
     </ClInclude>
     <ClInclude Include="scene\debug\ParticleTestScene.h">
       <Filter>scene\debug</Filter>
     </ClInclude>
-    <ClInclude Include="scene\debug\TestScene.h">
-      <Filter>scene\debug</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\gameover\GameOverScene.h">
-      <Filter>scene\gameover</Filter>
-    </ClInclude>
     <ClInclude Include="scene\play\title\TitleScene.h">
       <Filter>scene\play\title</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\play\title\state\TitleEnterState.h">
-      <Filter>scene\play\title\state</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\play\title\state\TitleExitState.h">
-      <Filter>scene\play\title\state</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\play\title\state\TitleWaitState.h">
-      <Filter>scene\play\title\state</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\state\SceneEnterState.h">
-      <Filter>scene\state</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\state\SceneExitState.h">
-      <Filter>scene\state</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\ui\MenuButton.h">
-      <Filter>scene\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\ui\PauseMenu.h">
-      <Filter>scene\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="transition\SceneTransitionEffect.h">
-      <Filter>transition</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
